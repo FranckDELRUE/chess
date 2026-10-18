@@ -48,7 +48,6 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:data"))
     implementation(project(":core:engine"))
-    implementation(project(":spike:llm"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

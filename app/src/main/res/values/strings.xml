@@ -16,10 +16,4 @@
     <string name="engine_debug_result">Profondeur %1$d · évaluation %2$s · %3$d ms</string>
     <string name="engine_debug_pv">Meilleure ligne : %1$s</string>
     <string name="engine_debug_best">Meilleur coup : %1$s</string>
-    <string name="home_llm_debug">Debug LLM</string>
-    <string name="llm_debug_title">Debug LLM embarqué (spike S0-6)</string>
-    <string name="llm_debug_model">Modèle</string>
-    <string name="llm_debug_prompt">Prompt</string>
-    <string name="llm_debug_generate">Générer</string>
-    <string name="llm_debug_batch">Lot LLM</string>
 </resources>

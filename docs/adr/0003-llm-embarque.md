@@ -1,6 +1,6 @@
 # ADR 0003 — Pas de LLM embarqué en v1 : gabarits hors ligne, LLM sur la station PC
 
-- **Statut** : proposé (S0-6), à relire en S0-8
+- **Statut** : accepté (S0-8), proposé en S0-6
 - **Date** : 2026-10-18
 
 ## Contexte
@@ -12,7 +12,7 @@ Snapdragon 6 Gen 1. Mesures : `docs/spikes/rapport-s0.md`.
 ## Décision
 1. **Aucun LLM sur la tablette en v1.** Le retour du professeur hors ligne repose uniquement sur
    les gabarits de `:core:pedagogy` (rapides, testables, exacts par construction).
-2. **Le LLM tourne sur la station PC** (modèle de 8 à 14 Md choisi en S0-7), pour « Explique-moi
+2. **Le LLM tourne sur la station PC** (qwen3:14b, repli mistral-nemo:12b, voir ADR 0005), pour « Explique-moi
    plus » et les questions libres, quand le PC est joignable. Hors ligne, ces actions proposent le
    gabarit détaillé.
 3. Quand un LLM est appelé, il reçoit des **faits déjà traduits en français par le code** (coups en
@@ -28,6 +28,11 @@ Snapdragon 6 Gen 1. Mesures : `docs/spikes/rapport-s0.md`.
   pré-traduits, et 40 % de réponses fausses (coups ou prises inventés). Contraire à la règle 3.
 - **Mémoire** : 1,8 à 2,4 Go de PSS, au-delà du budget de 3 Go pour toute l'app avec Stockfish et Maia.
 - La chauffe n'est pas un obstacle (stable en 5 min) : ce n'est pas elle qui disqualifie.
+
+## Confirmation S0-7
+Avec les mêmes prompts, qwen3:14b sur la station donne 10 réponses correctes sur 15 et aucune
+fausse en 1,2 s par phrase (faits pré-traduits), contre 5 correctes et 6 fausses pour Qwen3-1.7B
+sur la tablette. Les faits pré-traduits restent décisifs (4 correctes sur 15 avec le JSON brut).
 
 ## Conséquences
 - `:core:pedagogy` doit couvrir tous les motifs par des gabarits de qualité dès S4 (déjà prévu).

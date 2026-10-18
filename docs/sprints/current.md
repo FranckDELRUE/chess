@@ -68,9 +68,9 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 **Acceptation** : mesures consignées ; modèle LLM PC présélectionné.
 
 ### S0-8 · Documentation et décisions
-- [ ] ADR 0001 (architecture) relu et accepté.
-- [ ] ADR 0002 (moteur humain) et ADR 0003 (LLM embarqué) rédigés à partir des spikes.
-- [ ] `docs/spikes/rapport-s0.md` complet ; ajustements proposés pour les sprints suivants.
+- [x] ADR 0001 (architecture) relu et accepté.
+- [x] ADR 0002 (moteur humain) et ADR 0003 (LLM embarqué) rédigés à partir des spikes.
+- [x] `docs/spikes/rapport-s0.md` complet ; ajustements proposés pour les sprints suivants.
 - [ ] Corpus de test : 100 parties de **Heidoji** exportées en PGN dans `testdata/pgn/` (export manuel depuis Lichess et Chess.com).
 
 **Acceptation** : rapport et ADR versionnés ; le plan S1–S13 est confirmé ou ajusté.
@@ -100,3 +100,7 @@ Dette : notes de qualité attribuées par Claude, à relire ; cache du prompt sy
 
 **S0-7** — Fait : `station-pc/` (venv Python 3.12, `requirements.txt` épinglé, FastAPI `/health` avec GPU, moteurs et modèles Ollama, `start.bat` sur le port 8765, README d'installation, 17 tests pytest) ; `station-pc/scripts/fetch-engines.ps1` (Stockfish 19 et lc0 CUDA 12, SHA-256) ; benchmarks `bench.stockfish`, `bench.lc0`, `bench.llm` (mêmes prompts et contrôle de fidélité que S0-6, portés en Python). Mesures dans `docs/spikes/rapport-s0.md` : Stockfish 32 threads profondeur 20 en 0,9 s (×6 la tablette), profondeur 30 en 39,7 s en médiane (jusqu'à 20 min sur les positions déséquilibrées) ; Maia plus rapide sur CPU (≈ 1,5 ms) que sur CUDA (4–14 ms) ; qwen3:14b 8,9 Go de VRAM, 1,2 s par phrase, 10/15 réponses correctes et 0 fausse avec les faits pré-traduits ; mistral-nemo:12b 0,4 s par phrase, 9/15 et 2 fausses. **LLM présélectionné : qwen3:14b (repli mistral-nemo:12b).**
 Dette : mesures sur portable avec d'autres applications actives (≈ 3 Go de VRAM pris, bridage non suivi) ; un seul réglage Stockfish ; prompts et contrôle de fidélité dupliqués Kotlin/Python ; notes de qualité attribuées par Claude, à relire ; avertissement de dépréciation de `fastapi.testclient`.
+
+**S0-8** — Fait : ADR 0001, 0002 et 0003 relus et passés en « accepté » (0001 précise : pas de LLM sur la tablette, lc0 CUDA réservé à l'affinage de Maia) ; ADR 0005 (rôles de la station PC : Stockfish limité par temps, Maia sur la tablette, qwen3:14b avec repli mistral-nemo:12b, gabarit toujours affiché) ; `rapport-s0.md` : synthèse tablette/PC en tête et ajustements S1–S13 en fin, reportés dans la section 6 et les tableaux d'IA de `docs/dossier-conception.md` (S9 : critère « profondeur 30 en 3 s » remplacé par « 3 s, profondeur ≥ 22 », LLM embarqué retiré ; S11 : gabarit détaillé hors ligne) ; écran « Debug LLM » et `:spike:llm` retirés de l'app (module conservé pour mémoire, plus construit), APK debug 186 → 153 Mo. `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
+Écart (validé) : remplacement des 10 positions de test de S0-4 par des positions du corpus reporté en S2 (backlog).
+Reste : corpus des 100 parties de Heidoji dans `testdata/pgn/` ; capture de démo de fin de sprint (tablette verrouillée).
