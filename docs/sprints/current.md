@@ -44,10 +44,10 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 **Acceptation** : mesures consignées dans `docs/spikes/rapport-s0.md`.
 
 ### S0-5 · Spike Maia sur la tablette
-- [ ] Obtenir les réseaux Maia (1100, 1500, 1900) et les convertir en ONNX (ou utiliser un export existant).
-- [ ] Inférence ONNX Runtime Mobile : encodage d'une position → distribution de coups → coup légal.
-- [ ] Mesurer : temps par coup (politique seule), mémoire, taille des fichiers.
-- [ ] Vérifier sur 20 positions que le coup proposé est légal et plausible pour le niveau.
+- [x] Obtenir les réseaux Maia (1100, 1500, 1900) et les convertir en ONNX (ou utiliser un export existant).
+- [x] Inférence ONNX Runtime Mobile : encodage d'une position → distribution de coups → coup légal.
+- [x] Mesurer : temps par coup (politique seule), mémoire, taille des fichiers.
+- [x] Vérifier sur 20 positions que le coup proposé est légal et plausible pour le niveau.
 
 **Acceptation** : solution Maia viable sur la tablette, ou plan B documenté (Maia sur PC, Stockfish « humanisé »).
 
@@ -89,3 +89,7 @@ Dette : detekt 2 est en alpha (1.23.x incompatible avec Kotlin 2.4) ; la CI n'a 
 
 **S0-4** — Fait : Stockfish 19 compilé pour `arm64-v8a` (NDK 29, CMake 3.31.6) en bibliothèque JNI ; `ChessEngine` (`start`, `setOption`, `newGame`, `analyze` en `Flow`, `close`), `UciParser` et `UciEngine` testés en JVM, `StockfishEngine` ; écran « Debug moteur » (analyse, lot 10×3, chauffe 5 min) ; mesures dans `docs/spikes/rapport-s0.md` (profondeur 16 : médiane 0,6 s ; 18 : 1,7 s ; 20 : 5,5 s ; ≈ 430 Mo ; batterie 22 → 26 °C, aucun bridage). ADR 0004. Vérifié sur la tablette.
 Dette : réseau NNUE non versionné (lancer `scripts/fetch-stockfish-net.ps1` avant le build) et APK de 112 Mo ; plusieurs des 10 positions de test sont déséquilibrées (à remplacer par des positions du corpus Heidoji en S0-8) ; écran de debug aussi présent en release (à masquer avant toute diffusion) ; mesures faites à 4 threads seulement ; sonde thermique = batterie ; ni LTO ni PGO essayés ; CI : installation du NDK et de CMake ajoutée mais non éprouvée sur GitHub.
+
+**S0-5** — Fait : Maia-1 1100/1500/1900 convertis par `lc0 leela2onnx` (`scripts/fetch-maia-nets.ps1`, `tools/maia2onnx/maia2onnx.py`) ; `Lc0Encoder`, `Lc0PolicyMap`, `PolicyDecoder`, `MaiaEngine : ChessEngine` (ONNX Runtime Android 1.30.0) dans `:core:engine`, validés contre les priors de lc0 (écart < 0,001 sur 20 positions × 3 réseaux) ; bouton « Lot Maia 20×3 » ; mesures dans `docs/spikes/rapport-s0.md` (1,5–3,6 ms par coup, +21 Mo pour 3 réseaux, 60/60 coups légaux, perte moyenne 17/15/4 cp) ; ADR 0002 (proposé). Vérifié sur la tablette. **Conclusion : Maia viable sur la tablette.**
+Écart au périmètre (validé) : coups légaux fournis par Stockfish `go perft 1` derrière `LegalMoveProvider`, faute de générateur dans `:core:chess` (S1).
+Dette : perft Stockfish ≈ 30 ms par coup et dépendance à la session Stockfish (S1) ; champs FEN hors placement lus dans `:core:engine` sans validation `:core:chess` (S1) ; historique synthétisé (`fen_only`), à passer en S3 ; coup déterministe à `Temperature` 0 ; APK +41 Mo (ONNX Runtime complet, build minimale à étudier) ; tests JVM sur ONNX Runtime desktop 1.18.0 (le JBR plante avec ≥ 1.19), test de bout en bout ignoré en CI faute de modèles ; écran de debug toujours présent en release.

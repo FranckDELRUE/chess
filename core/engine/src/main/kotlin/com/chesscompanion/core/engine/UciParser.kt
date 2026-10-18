@@ -27,6 +27,14 @@ object UciParser {
         return EngineEvent.BestMove(tokens[1], tokens.valueAfter("ponder"))
     }
 
+    /** Ligne `e2e4: 1` de `go perft 1` → `e2e4` ; null pour les autres lignes. */
+    fun parsePerftMove(line: String): String? = perftMove.matchEntire(line.trim())?.groupValues?.get(1)
+
+    /** Ligne finale de `go perft` (`Nodes searched: 20`). */
+    fun isPerftEnd(line: String): Boolean = line.trim().startsWith("Nodes searched")
+
+    private val perftMove = Regex("([a-h][1-8][a-h][1-8][qrbn]?): \\d+")
+
     private fun tokenize(line: String) = line.trim().split(' ').filter { it.isNotEmpty() }
 
     private fun List<String>.valueAfter(key: String): String? =

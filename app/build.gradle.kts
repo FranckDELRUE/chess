@@ -15,6 +15,10 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        // Stockfish is built for arm64-v8a only; also keeps ONNX Runtime's other ABIs out of the APK.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     buildTypes {

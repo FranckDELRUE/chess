@@ -34,11 +34,19 @@ android {
 dependencies {
     implementation(project(":core:chess"))
     api(libs.kotlinx.coroutines.core)
+    implementation(libs.onnxruntime.android)
 }
 
 dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.coroutines.test)
+    // JVM unit tests run the Maia ONNX models with desktop ONNX Runtime (same Java API as Android).
+    testImplementation(libs.onnxruntime.jvm)
     testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+// The Android AAR's native libraries cannot load on the JVM: unit tests use the desktop artifact.
+configurations.matching { it.name.contains("UnitTest") }.configureEach {
+    exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime-android")
 }

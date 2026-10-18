@@ -24,3 +24,29 @@
 ## kotlinx.coroutines 1.10.2
 
 - **Licence** : Apache 2.0, compatible GPL v3.
+
+## Maia-1 (réseaux 1100, 1500, 1900)
+
+- **Auteurs** : CSSLab, université de Toronto (McIlroy-Young, Sen, Kleinberg, Anderson, 2020).
+- **Licence** : GPL v3, celle du dépôt https://github.com/CSSLab/maia-chess. Le dépôt ne donne pas
+  de licence distincte pour les poids : on les considère couverts par la GPL v3 (à revérifier avant
+  toute publication).
+- **Source** : release `v1.0`, fichiers `maia-{1100,1500,1900}.pb.gz` ; non versionnés
+  (`scripts/fetch-maia-nets.ps1`, sommes SHA-256 figées dans le script).
+- **Dérivés** : `core/engine/src/main/assets/maia-*.onnx`, conversion mécanique par
+  `lc0 leela2onnx` (non versionnés) ; `core/engine/src/test/resources/maia-reference.tsv`
+  (politiques calculées par lc0 avec ces poids).
+
+## Leela Chess Zero (lc0) v0.32.1
+
+- **Licence** : GPL v3. Outil du PC uniquement (conversion ONNX et référence de test), non embarqué.
+- **Source** : https://github.com/LeelaChessZero/lc0, binaire `lc0-v0.32.1-windows-cpu-openblas.zip`.
+- **Repris** : la table des 1858 coups de la politique (`kMoveStrs`, `src/neural/encoder.cc`), en
+  fixture de test (`lc0-policy-moves.txt`), et la logique d'encodage (`EncodePositionForNN`)
+  réécrite en Kotlin (`Lc0Encoder`, `Lc0PolicyMap`).
+
+## ONNX Runtime
+
+- **Licence** : MIT, compatible GPL v3.
+- `com.microsoft.onnxruntime:onnxruntime-android` 1.30.0 (application) ;
+  `com.microsoft.onnxruntime:onnxruntime` 1.18.0 (tests JVM seulement).
