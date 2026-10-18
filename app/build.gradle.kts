@@ -8,6 +8,8 @@ plugins {
 android {
     namespace = "com.chesscompanion"
     compileSdk = 37
+    // Same NDK as the native modules, so their libraries are stripped when packaged.
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "com.chesscompanion"
@@ -46,6 +48,7 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:data"))
     implementation(project(":core:engine"))
+    implementation(project(":spike:llm"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

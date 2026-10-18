@@ -1,7 +1,7 @@
 # Rapport des spikes du sprint S0
 
 Appareil : tablette Honor HEY2-W09, Android 14, Snapdragon 6 Gen 1 (4 × A78 + 4 × A55), 8 Go.
-Les sections S0-6 et S0-7 seront ajoutées par leurs stories.
+La section S0-7 sera ajoutée par sa story.
 
 ---
 
@@ -187,3 +187,163 @@ appelée en réseau local quand le PC est joignable ; (2) Stockfish « humanisé
 1. `scripts/fetch-maia-nets.ps1`, `python tools/maia2onnx/maia2onnx.py`, puis `./gradlew installDebug`.
 2. Dans l'app : « Debug moteur », puis « Lot Maia 20×3 » (≈ 2 min).
 3. Résultats : `adb logcat -s MAIA_BENCH`. Mémoire : `adb shell dumpsys meminfo com.chesscompanion`.
+
+---
+
+## S0-6 · LLM embarqué sur la tablette
+
+**Date** : 2026-10-18 · **Moteur** : llama.cpp `v0.7.0` (MIT), CPU seul, lié en statique dans
+`libllm_jni.so` (6,3 Mo après strip), module isolé `:spike:llm`.
+**Build** : NDK 29, `-O3`, `GGML_CPU_ARM_ARCH=armv8.2-a+dotprod+fp16`, repack ARM et llamafile actifs,
+pool de threads de ggml (sans OpenMP), sans KleidiAI. Code natif compilé en Release même en build debug.
+**Réglages** : contexte 1024 jetons, poids en `mmap`, `temperature` 0,7, `top_k` 40, `top_p` 0,9
+(graines 1 à 3), 96 jetons au plus ; décodage glouton pour la réponse à froid et le balayage des threads.
+
+### Modèles testés
+
+| Modèle | Quantification (source) | Fichier | Licence |
+|--------|-------------------------|--------:|---------|
+| Qwen3-1.7B (Alibaba) | Q4_K_M (unsloth) | 1 056 Mo | Apache 2.0 |
+| EuroLLM-1.7B-Instruct (projet UTTER) | Q4_K_M (mradermacher) | 996 Mo | Apache 2.0 |
+
+Apache 2.0 est compatible GPL v3 et permet l'usage personnel comme la redistribution. Les licences
+sont celles des dépôts officiels (`Qwen/Qwen3-1.7B`, `utter-project/EuroLLM-1.7B-Instruct`) ; les GGUF
+sont des conversions communautaires, vérifiées par SHA-256. Rien n'est embarqué dans l'APK.
+Qwen3 est utilisé sans raisonnement (bloc `<think>` vide, réglage officiel `enable_thinking=False`).
+
+### Prompts
+
+- **JSON** (prompt du sprint) : consigne en français, lexique des motifs, puis le fait brut,
+  par exemple `{"motif":"hanging_piece","piece":"knight","square":"f3","best":"Nd2"}`.
+- **FRENCH** (variante ajoutée, voir « Écarts ») : les mêmes faits déjà traduits par le code
+  (« Motif : pièce en prise, non défendue. Pièce : ton cavalier en f3. Meilleur coup : Cd2. »)
+  et un exemple résolu dans la consigne.
+- 5 faits (pièce en prise, fourchette, clouage, mat du couloir, prise gratuite) × 3 essais × 2 prompts.
+  Les prompts font 190 à 237 jetons.
+
+### Vitesse (4 threads, médianes sur 15 réponses par prompt)
+
+| Modèle | Prompt | Premier jeton | Lecture du prompt | Génération | Jetons générés |
+|--------|--------|--------------:|------------------:|-----------:|---------------:|
+| Qwen3-1.7B | JSON | 3,27 s | 67 jetons/s | 12,3 jetons/s | 61 |
+| Qwen3-1.7B | FRENCH | 3,14 s | 66 jetons/s | 12,5 jetons/s | 21 |
+| EuroLLM-1.7B | JSON | 2,74 s | 83 jetons/s | 15,5 jetons/s | 34 |
+| EuroLLM-1.7B | FRENCH | 2,38 s | 81 jetons/s | 15,6 jetons/s | 19 |
+
+- **Une phrase** (≈ 20 jetons) demande donc **3,6 s (EuroLLM) à 4,8 s (Qwen3)** de bout en bout.
+  Le temps est dominé par la lecture du prompt (≈ 200 jetons), pas par la génération.
+- Chargement du modèle : 2,7 à 3,0 s.
+
+Threads (glouton, fait principal, prompt JSON) :
+
+| Threads | Qwen3 lecture | Qwen3 génération | EuroLLM lecture | EuroLLM génération |
+|--------:|--------------:|-----------------:|----------------:|-------------------:|
+| 2 | 39 jetons/s | 11,8 jetons/s | 49 jetons/s | 14,9 jetons/s |
+| **4** | **75 jetons/s** | **12,6 jetons/s** | **88 jetons/s** | **15,5 jetons/s** |
+| 6 | 53 jetons/s | 10,6 jetons/s | 61 jetons/s | 12,5 jetons/s |
+| 8 | 64 jetons/s | 9,1 jetons/s | 68 jetons/s | 11,4 jetons/s |
+
+4 threads (les 4 cœurs A78) est optimal ; ajouter les A55 ralentit. La génération est limitée par la
+bande passante mémoire (presque la même à 2 et 4 threads).
+
+### Mémoire
+
+| Modèle | PSS avant → modèle chargé | Après 30 réponses | Après fermeture |
+|--------|--------------------------:|------------------:|----------------:|
+| Qwen3-1.7B | 159 → 2 366 Mo | 2 391 Mo | 209 Mo |
+| EuroLLM-1.7B | 209 → 1 817 Mo | 1 832 Mo | 191 Mo |
+
+- Le PSS dépasse la taille du fichier de 0,6 à 1,3 Go : tampon de calcul (318 Mo pour Qwen3, dont le
+  vocabulaire compte 151 k jetons), cache KV, et probablement la copie « repack » des poids pour les
+  noyaux ARM en plus des pages `mmap`. Non investigué (voir dette).
+- Avec Stockfish (≈ 430 Mo) et Maia, Qwen3 ferait dépasser l'objectif de **3 Go pour toute l'app** ;
+  EuroLLM tiendrait de justesse. La mémoire est bien rendue à la fermeture.
+
+### Chauffe (Qwen3, 4 threads, 5 min, 58 réponses enchaînées, prompt FRENCH)
+
+| Instant | Batterie | Lecture du prompt | Génération |
+|---------|---------:|------------------:|-----------:|
+| Début | 30 °C | 75 jetons/s | 12,8 jetons/s |
+| ≈ 1 min | 30 °C | 67 jetons/s | 12,7 jetons/s |
+| ≈ 2,5 min | 31 °C | 64 jetons/s | 12,6 jetons/s |
+| Fin (5 min) | 31 °C | 64 jetons/s | 12,5 jetons/s |
+
+La tablette sortait du lot (déjà à 30 °C). La lecture du prompt perd ≈ 15 % dans la première minute
+puis se stabilise ; la génération ne bouge pas. Aucun bridage gênant, comme pour Stockfish.
+
+### Qualité du français et fidélité aux faits
+
+Chaque réponse est notée à la main : **correcte** (exacte, une phrase, utilisable telle quelle),
+**approximative** (exacte sur l'essentiel, mais formulation fautive ou imprécise), **fausse**
+(fait inventé ou contredit, hors sujet). Les 60 textes sont dans le journal (`text=`).
+
+| Modèle | Prompt | Correctes | Approximatives | Fausses | Une seule phrase | Sans invention (contrôle auto) |
+|--------|--------|----------:|---------------:|--------:|-----------------:|-------------------------------:|
+| Qwen3-1.7B | JSON | 0 | 1 | 14 | 0/15 | 8/15 |
+| Qwen3-1.7B | FRENCH | 5 | 4 | 6 | 15/15 | 9/15 |
+| EuroLLM-1.7B | JSON | 0 | 0 | 15 | 10/15 | 7/15 |
+| EuroLLM-1.7B | FRENCH | 0 | 1 | 14 | 10/15 | 8/15 |
+
+Exemples réels :
+- Qwen3, JSON (fait principal) : « Tu as capturé la tour en f3 avec un cavalier, ce qui est un coup
+  très bien ! » : contresens (le cavalier est **en prise**, il n'a rien capturé), pièce inventée,
+  trois phrases ; ailleurs « bishou », « le dame », « bon sens de la jeu », un émoji, du Markdown.
+- Qwen3, FRENCH, bonnes réponses : « Ton cavalier en c7 peut attaquer le roi en e8 et la tour en a8
+  avec échec : joue Cc7+ ! », « Ta tour en e8 va achever le mat : joue Te8# ! ».
+- Qwen3, FRENCH, fautes : « Ton cavalier en f3 peut prendre en c2 avec échec : joue Cd2 ! ». Le
+  modèle **recopie la structure de l'exemple** et invente une prise avec échec. Les 3 essais sont
+  identiques : le modèle est très sûr de lui, même en échantillonnant.
+- EuroLLM, JSON : fuite de gabarit (« {{motif.motif}} est une pièce en prise… »), une partie entière
+  inventée (« 1. e4 e6 2. f4 exf4 3. Rf3… »), « chevalier », « reine ». En FRENCH, il recopie
+  aussi l'exemple (« peut prendre en c4 avec échec ») ou part hors sujet.
+
+Contrôle automatique (`FactFidelity`) : il repère cases, coups et pièces absents du fait, et compte
+les phrases. Il attrape la plupart des inventions (c2, c4, « dame »…), mais il lit des mots, pas le
+sens : « Ton fou en d4 » (le fou est adverse) ou « tu as capturé » au lieu de « tu es en prise »
+passent. **Il ne suffit pas comme garde-fou.**
+
+### Écarts au périmètre et dette
+
+- **Écart** : module `:spike:llm` hors de la liste de `CLAUDE.md` (le prompt du sprint demande un
+  « module expérimental isolé »). L'app en dépend seulement pour l'écran « Debug LLM ».
+- **Écart** : prompt FRENCH ajouté au prompt JSON du sprint, pour savoir si des faits pré-traduits
+  rendent un petit modèle utilisable (réponse : partiellement, pour Qwen3 seulement).
+- **Évaluation** : notes de qualité attribuées par Claude sur 60 réponses ; à relire par Franck.
+- **Non essayé** : cache KV du prompt système (réutiliser les ≈ 180 jetons fixes ramènerait le premier
+  jeton vers 0,5 s), KleidiAI, Q4_0 (repack plus efficace), `mmap` désactivé (mémoire), autres
+  modèles (Gemma 3 1B, Llama 3.2 1B : licences non libres, à signaler avant usage), MediaPipe LLM.
+- **Build** : CMake télécharge l'archive llama.cpp (38 Mo, SHA-256 épinglé) à la première
+  configuration, aussi en CI ; la CI compile llama.cpp en plus (non éprouvé sur GitHub).
+- **APK** : +6 Mo. Le module de l'app déclare maintenant `ndkVersion`, donc les `.so` sont enfin
+  strippés (Stockfish passe de 18 à 1,6 Mo dans l'APK).
+- L'écran « Debug LLM » est aussi dans la build release (comme « Debug moteur »).
+
+### Conclusion et recommandation
+
+**Le LLM embarqué ne convient pas au professeur hors ligne : le réserver au PC.**
+
+1. **Trop lent pour le retour immédiat** : 3,6 à 4,8 s par phrase contre moins de 200 ms visés ; les
+   gabarits restent indispensables. Même avec le cache du prompt système, on resterait vers 2 s.
+2. **Pas fiable** : avec le fait brut, 0 réponse correcte sur 30 et des contresens nets (pièce capturée
+   au lieu de pièce en prise). Même avec des faits pré-mâchés, le meilleur modèle (Qwen3) donne 40 %
+   de réponses fausses, dont des coups inventés : cela contredit la règle 3, et le contrôle
+   automatique ne rattrape pas les erreurs de sens.
+3. **Trop gourmand** : 1,8 à 2,4 Go de PSS, incompatible avec le budget de 3 Go pour toute l'app
+   quand Stockfish et Maia sont chargés.
+
+Conséquences proposées (à trancher en S0-8, ADR 0003) :
+- Le retour du professeur hors ligne repose **uniquement sur les gabarits** de `:core:pedagogy`.
+- « Explique-moi plus » et les questions libres passent par la **station PC** (S0-7 teste le même
+  prompt sur des modèles de 8 à 14 Md). Hors ligne, le bouton propose le gabarit détaillé.
+- Garder `:spike:llm` jusqu'à S0-8 comme référence (pont JNI et mesures), puis le retirer de l'app.
+- Réévaluer si un modèle de 1 à 3 Md nettement meilleur en français sort, ou si le NPU devient
+  exploitable (backlog). Si l'essai reprend : Qwen3 plutôt qu'EuroLLM, prompt FRENCH, cache du
+  prompt système.
+
+### Reproduire les mesures
+
+1. `scripts/fetch-llm-models.ps1 -Push` (télécharge les deux GGUF dans `build/llm/` et les copie dans
+   `/sdcard/Android/data/com.chesscompanion/files/models/`), puis `./gradlew installDebug`.
+2. Lancer `adb logcat -v brief -s LLM_BENCH:I > llm.log` **avant** le lot (le tampon de logcat est
+   trop petit pour tout garder).
+3. Dans l'app : « Debug LLM », puis « Lot LLM » (≈ 10 min) ; « Chauffe 5 min » avec le modèle choisi.

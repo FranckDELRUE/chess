@@ -50,3 +50,20 @@
 - **Licence** : MIT, compatible GPL v3.
 - `com.microsoft.onnxruntime:onnxruntime-android` 1.30.0 (application) ;
   `com.microsoft.onnxruntime:onnxruntime` 1.18.0 (tests JVM seulement).
+
+## llama.cpp v0.7.0 (spike S0-6)
+
+- **Auteurs** : The ggml authors. **Licence** : MIT, compatible GPL v3.
+- **Source** : https://github.com/ggml-org/llama.cpp, archive de l'étiquette `v0.7.0`, téléchargée par
+  CMake (`spike/llm/src/main/cpp/CMakeLists.txt`, SHA-256 épinglé) ; non versionnée, non modifiée.
+- Liée en statique dans `libllm_jni.so` (module `:spike:llm`, à retirer après S0, voir ADR 0003).
+
+## Modèles LLM du spike S0-6 (non embarqués)
+
+- **Qwen3-1.7B** (Alibaba, équipe Qwen) : Apache 2.0 (https://huggingface.co/Qwen/Qwen3-1.7B).
+  Fichier `Qwen3-1.7B-Q4_K_M.gguf`, quantification d'unsloth (https://huggingface.co/unsloth/Qwen3-1.7B-GGUF).
+- **EuroLLM-1.7B-Instruct** (projet UTTER) : Apache 2.0 (https://huggingface.co/utter-project/EuroLLM-1.7B-Instruct).
+  Fichier `EuroLLM-1.7B-Instruct.Q4_K_M.gguf`, quantification de mradermacher
+  (https://huggingface.co/mradermacher/EuroLLM-1.7B-Instruct-GGUF).
+- Apache 2.0 : usage personnel et redistribution permis, compatible GPL v3. Fichiers non versionnés,
+  copiés sur la tablette par `scripts/fetch-llm-models.ps1 -Push` (SHA-256 figées dans le script).
