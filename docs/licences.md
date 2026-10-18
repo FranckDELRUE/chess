@@ -67,3 +67,14 @@
   (https://huggingface.co/mradermacher/EuroLLM-1.7B-Instruct-GGUF).
 - Apache 2.0 : usage personnel et redistribution permis, compatible GPL v3. Fichiers non versionnés,
   copiés sur la tablette par `scripts/fetch-llm-models.ps1 -Push` (SHA-256 figées dans le script).
+
+## Station PC (S0-7)
+
+- **Dépendances Python** (`station-pc/requirements.txt`) : FastAPI 0.146.0 (MIT), Starlette (BSD),
+  Uvicorn 0.54.0 (BSD), httpx 0.28.1 (BSD), Pydantic (MIT), pytest 9.1.1 (MIT). Toutes compatibles GPL v3.
+- **Stockfish 19** Windows `x86-64-universal` (GPL v3) et **lc0 v0.32.1** CUDA 12 (GPL v3, avec les
+  bibliothèques d'exécution CUDA redistribuables de NVIDIA livrées par le projet lc0) : téléchargés par
+  `station-pc/scripts/fetch-engines.ps1` (SHA-256 publiées par GitHub), non versionnés, outils du PC seulement.
+- **Ollama** (MIT) : application installée à part, pas une dépendance du code.
+- **Modèles** : qwen3:14b (Qwen3-14B, Apache 2.0) et mistral-nemo:12b (Mistral-Nemo-Instruct-2407,
+  Apache 2.0), via le catalogue Ollama ; non versionnés.

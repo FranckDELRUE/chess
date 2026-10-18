@@ -1,7 +1,7 @@
 # Rapport des spikes du sprint S0
 
 Appareil : tablette Honor HEY2-W09, Android 14, Snapdragon 6 Gen 1 (4 × A78 + 4 × A55), 8 Go.
-La section S0-7 sera ajoutée par sa story.
+Station PC (S0-7) : i9-13980HX, 32 Go, RTX 4080 Laptop 12 Go.
 
 ---
 
@@ -347,3 +347,120 @@ Conséquences proposées (à trancher en S0-8, ADR 0003) :
 2. Lancer `adb logcat -v brief -s LLM_BENCH:I > llm.log` **avant** le lot (le tampon de logcat est
    trop petit pour tout garder).
 3. Dans l'app : « Debug LLM », puis « Lot LLM » (≈ 10 min) ; « Chauffe 5 min » avec le modèle choisi.
+
+---
+
+## S0-7 · Station PC
+
+**Date** : 2026-10-18 · **Machine** : PC portable, i9-13980HX (8 P + 16 E, 32 threads), 32 Go,
+RTX 4080 Laptop 12 Go (pilote 595.79), Windows 11, sur secteur, avec les applications habituelles
+ouvertes (navigateurs, DaVinci Resolve, ComfyUI : ≈ 3 Go de VRAM déjà pris).
+**Logiciel** : `station-pc/` (Python 3.12, FastAPI 0.146, route `/health`, `start.bat`) ;
+Stockfish 19 `x86-64-universal` ; lc0 v0.32.1 CUDA 12 ; Ollama 0.40.6. Scripts dans `station-pc/bench/`,
+résultats JSON dans `build/station/results/`.
+
+### Stockfish 19, 32 threads, hash 2 Go, profondeur 30 (10 positions de S0-4)
+
+| Pos | P20 (s) | P25 (s) | P30 (s) | nps (M) à P30 | Éval. P30 (cp) |
+|----:|--------:|--------:|--------:|--------------:|---------------:|
+| 1 | 0,7 | 1,7 | 5,2 | 14,1 | 0 |
+| 2 | 0,9 | 4,0 | 12,4 | 15,1 | +39 |
+| 3 | 0,6 | 2,0 | 5,5 | 14,3 | −11 |
+| 4 | 0,9 | 6,5 | 33,7 | 12,2 | +719 |
+| 5 | 11,7 | 63,2 | 350,2 | 10,4 | +816 |
+| 6 | 4,0 | 71,0 | 1 185,9 | 10,5 | +1 074 |
+| 7 | 0,1 | 0,2 | 0,5 | 14,4 | 0 |
+| 8 | 4,8 | 29,1 | 115,4 | 11,8 | +384 |
+| 9 | 1,2 | 20,9 | 93,8 | 11,2 | +659 |
+| 10 | 0,5 | 4,6 | 45,7 | 13,6 | +341 |
+| **Médiane** | **0,9** | **5,6** | **39,7** | **12,9** | |
+
+- **Profondeur 20 : 0,9 s contre 5,5 s sur la tablette (×6).** La profondeur 30 prend 0,5 à 40 s sur
+  les positions équilibrées, mais 6 à 20 min sur les positions très déséquilibrées (5, 6) : la recherche
+  creuse longtemps les lignes gagnantes. Pour l'analyse de partie, limiter par temps (par exemple
+  10 s par coup) plutôt que par profondeur.
+- 10 à 15 M nœuds/s, en baisse au fil des recherches longues : le portable se bride (puissance et
+  chauffe). Un PC de bureau ferait environ le double ; non mesuré ici.
+
+### lc0 + Maia (politique seule, `go nodes 1`, 20 positions de S0-5 × 5 passes)
+
+| Backend | Maia 1100 | Maia 1500 | Maia 1900 | Démarrage jusqu'au 1er coup | VRAM |
+|---------|----------:|----------:|----------:|----------------------------:|-----:|
+| CUDA (`cuda-auto`) | 4,8 / 14,0 ms | 12,7 / 14,2 ms | 13,9 / 4,4 ms | 0,4–0,7 s | ≈ 0,7 Go |
+| CUDA fp16 | 11,3 / 5,1 ms | 4,6 / 14,2 ms | 5,4 / 14,1 ms | 0,4–0,6 s | ≈ 0,7 Go |
+| CPU OpenBLAS (S0-5) | **1,7 ms** | **1,5 ms** | **1,6 ms** | < 0,1 s | 0 |
+
+(Médianes de deux passages, « première / seconde ».)
+
+- **Le GPU est plus lent que le CPU pour Maia** : 4 à 14 ms par coup (deux paliers selon l'état de
+  fréquence du GPU portable) contre ≈ 1,5 ms, temps de dialogue UCI compris. Le réseau de Maia est
+  minuscule ; la latence de lancement des noyaux CUDA domine.
+- Même coup sur les trois backends dans 60 positions sur 60.
+- Maia tourne déjà en 1,5 à 3,6 ms sur la tablette (S0-5) : **la station n'apporte rien pour Maia**.
+  lc0 CUDA ne servirait qu'à des réseaux plus gros ou à une recherche (`nodes` > 1), hors périmètre.
+
+### LLM « professeur » via Ollama (mêmes prompts, faits et échantillonnage que S0-6)
+
+| Modèle (Q4_K_M) | Licence | VRAM | Chargement à froid | Premier jeton | Génération | Phrase complète (FRENCH) |
+|-----------------|---------|-----:|-------------------:|--------------:|-----------:|-------------------------:|
+| qwen3:14b | Apache 2.0 | 8,9 Go | 9,1 s | 76 ms | 19–22 jetons/s | 1,2 s |
+| mistral-nemo:12b | Apache 2.0 | 6,8 Go | 7,5 s | 40–45 ms | 57 jetons/s | 0,4 s |
+
+- Premier jeton très court : Ollama garde en cache le prompt système d'une requête à l'autre.
+- **VRAM juste pour qwen3:14b** : avec ≈ 3 Go déjà pris par d'autres applications, il tient (10,8 Go
+  sur 12,3). Lors d'un premier passage où la VRAM n'était pas encore libérée, seule la moitié du
+  modèle était sur le GPU : 10 à 13 jetons/s et 47 s pour la première réponse. Mistral-Nemo laisse
+  plus de marge.
+- La génération de qwen3:14b (≈ 20 jetons/s) est sous ce qu'on attend d'une RTX 4080 ; non creusé
+  (GPU portable partagé avec l'affichage et les autres applications).
+
+### Qualité (même grille que S0-6, 15 réponses par ligne, notes de Claude)
+
+| Modèle | Prompt | Correctes | Approximatives | Fausses | Une seule phrase | Sans invention (contrôle auto) |
+|--------|--------|----------:|---------------:|--------:|-----------------:|-------------------------------:|
+| qwen3:14b | JSON | 4 | 8 | 3 | 15/15 | 15/15 |
+| qwen3:14b | FRENCH | **10** | 5 | **0** | 15/15 | 15/15 |
+| mistral-nemo:12b | JSON | 4 | 5 | 6 | 11/15 | 14/15 |
+| mistral-nemo:12b | FRENCH | 9 | 4 | 2 | 13/15 | 14/15 |
+| *rappel tablette : Qwen3-1.7B* | *FRENCH* | *5* | *4* | *6* | *15/15* | *9/15* |
+
+Exemples réels :
+- qwen3:14b, FRENCH : « Ton cavalier en f3 est en prise et non défendu : joue Cd2 pour le sauver ! » ;
+  « Ton cavalier peut prendre gratuitement le fou adverse en d4 : joue Cxd4 ! ».
+- qwen3:14b, approximations : « menacer à la fois ton roi et ta tour » (ce sont les pièces adverses),
+  « cloué par la dame en d8 » (cloué *devant* la dame) ; en JSON, notation anglaise (Nc7+, Bxf6)
+  malgré la consigne, et deux fois « en déplaçant ton roi sur e8 » pour le mat de la tour.
+- mistral-nemo:12b, fautes : « tu vas être mat en e8 avec le Roque », « ton fou sur e8 »,
+  « Ton cavalier est en danger, tu peux le sauver en jouant Ta8! » (mat du couloir) ; « épinglant »
+  (anglicisme).
+- Le contrôle automatique laisse passer presque toutes ces erreurs de sens (« ton roi » au lieu de la
+  tour, mauvais possessif) : il confirme qu'il ne suffit pas comme garde-fou.
+
+### Écarts et dette
+
+- Mesures sur un portable avec les applications habituelles ouvertes : nœuds/s de Stockfish et
+  jetons/s de Qwen3 sont sans doute sous-estimés ; le bridage n'a pas été suivi (pas de sonde CPU).
+- Stockfish : un seul réglage (32 threads, 2 Go) ; pas de comparaison 16/24 threads ni de limite par temps.
+- lc0 : les mesures de VRAM sont bruitées (mémoire GPU totale, autres applications actives).
+- Prompts et contrôle de fidélité copiés de Kotlin vers Python (`bench/prompts.py`, `bench/fidelity.py`) :
+  deux copies à garder alignées tant que les deux spikes vivent.
+- `fastapi.testclient` signale une dépréciation (httpx → httpx2 côté Starlette) : sans effet pour l'instant.
+
+### Conclusion et présélection
+
+- **Analyse profonde** : Stockfish sur la station, par temps (≈ 10 s par coup donne au moins la
+  profondeur 25 à 30 en milieu de partie équilibré), soit 6 fois plus vite que la tablette.
+- **Maia** : reste sur la tablette (ONNX, S0-5). lc0 CUDA sur la station n'est pas nécessaire.
+- **LLM présélectionné : qwen3:14b** (Apache 2.0), raisonnement désactivé, avec des faits **pré-traduits
+  en français par le code** (prompt FRENCH) : 10 réponses correctes sur 15, aucune fausse, 1,2 s par
+  phrase. **Repli : mistral-nemo:12b** si la VRAM manque (3 fois plus rapide, 2 réponses fausses sur 15).
+- Le LLM du PC reste un **complément** (« Explique-moi plus », questions libres) : même à ce niveau,
+  5 réponses sur 15 sont imprécises. Il faut donc toujours afficher le gabarit exact à côté, et garder
+  la règle 3 (le LLM ne reçoit que des faits et des lignes moteur).
+- Charger le modèle au démarrage de la station (`keep_alive`) pour éviter 7 à 9 s d'attente au premier appel.
+
+### Reproduire les mesures
+
+Voir `station-pc/README.md` (installation), puis depuis `station-pc/` :
+`python -m bench.stockfish` (≈ 30 min, surtout les positions 5 et 6), `python -m bench.lc0` (≈ 1 min),
+`python -m bench.llm` (≈ 3 min). Fermer les applications gourmandes en VRAM avant `bench.llm`.

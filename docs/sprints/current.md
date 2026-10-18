@@ -60,10 +60,10 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 **Acceptation** : recommandation chiffrée (garder, réserver au PC, ou abandonner le LLM embarqué).
 
 ### S0-7 · Spike station PC
-- [ ] Dossier `station-pc/` : environnement Python, FastAPI, route `/health`.
-- [ ] Stockfish x86-64 multi-cœurs : temps pour profondeur 30.
-- [ ] lc0 avec backend CUDA + réseau Maia : temps par coup.
-- [ ] Ollama avec 2 LLM de 8–14 Md (4 bits) : jetons/s, VRAM, qualité du français sur le même prompt que S0-6.
+- [x] Dossier `station-pc/` : environnement Python, FastAPI, route `/health`.
+- [x] Stockfish x86-64 multi-cœurs : temps pour profondeur 30.
+- [x] lc0 avec backend CUDA + réseau Maia : temps par coup.
+- [x] Ollama avec 2 LLM de 8–14 Md (4 bits) : jetons/s, VRAM, qualité du français sur le même prompt que S0-6.
 
 **Acceptation** : mesures consignées ; modèle LLM PC présélectionné.
 
@@ -97,3 +97,6 @@ Dette : perft Stockfish ≈ 30 ms par coup et dépendance à la session Stockfis
 **S0-6** — Fait : module isolé `:spike:llm` (llama.cpp `v0.7.0` en JNI, récupéré par CMake avec SHA-256 épinglé ; `TextGenerator`, `Utf8StreamDecoder`, `FactFidelity`, `TeacherPrompt`, 22 tests JVM) ; écran « Debug LLM » (réponse en flux, lot, chauffe 5 min) ; Qwen3-1.7B et EuroLLM-1.7B-Instruct en Q4_K_M, tous deux Apache 2.0 (`scripts/fetch-llm-models.ps1 -Push`) ; mesures dans `docs/spikes/rapport-s0.md` : premier jeton 2,4–3,3 s, génération 12,5 (Qwen3) et 15,5 (EuroLLM) jetons/s à 4 threads, PSS 2,4 et 1,8 Go, chauffe 30 → 31 °C sans bridage. Qualité : 0/30 réponse correcte avec le fait JSON brut, 5/15 au mieux (Qwen3) avec des faits pré-traduits. ADR 0003 (proposé). Vérifié sur la tablette. **Conclusion : pas de LLM embarqué en v1, LLM réservé au PC.**
 Écarts au périmètre : module `:spike:llm` hors de la liste des modules ; variante de prompt « FRENCH » (faits pré-traduits + exemple) ajoutée au prompt du sprint.
 Dette : notes de qualité attribuées par Claude, à relire ; cache du prompt système, KleidiAI et Q4_0 non essayés ; CMake télécharge llama.cpp (38 Mo) à la configuration, aussi en CI (non éprouvé sur GitHub) ; `:spike:llm` à retirer de l'app en S0-8 ; `ndkVersion` ajouté à `:app` (les `.so` sont maintenant strippés) ; écran de debug présent en release.
+
+**S0-7** — Fait : `station-pc/` (venv Python 3.12, `requirements.txt` épinglé, FastAPI `/health` avec GPU, moteurs et modèles Ollama, `start.bat` sur le port 8765, README d'installation, 17 tests pytest) ; `station-pc/scripts/fetch-engines.ps1` (Stockfish 19 et lc0 CUDA 12, SHA-256) ; benchmarks `bench.stockfish`, `bench.lc0`, `bench.llm` (mêmes prompts et contrôle de fidélité que S0-6, portés en Python). Mesures dans `docs/spikes/rapport-s0.md` : Stockfish 32 threads profondeur 20 en 0,9 s (×6 la tablette), profondeur 30 en 39,7 s en médiane (jusqu'à 20 min sur les positions déséquilibrées) ; Maia plus rapide sur CPU (≈ 1,5 ms) que sur CUDA (4–14 ms) ; qwen3:14b 8,9 Go de VRAM, 1,2 s par phrase, 10/15 réponses correctes et 0 fausse avec les faits pré-traduits ; mistral-nemo:12b 0,4 s par phrase, 9/15 et 2 fausses. **LLM présélectionné : qwen3:14b (repli mistral-nemo:12b).**
+Dette : mesures sur portable avec d'autres applications actives (≈ 3 Go de VRAM pris, bridage non suivi) ; un seul réglage Stockfish ; prompts et contrôle de fidélité dupliqués Kotlin/Python ; notes de qualité attribuées par Claude, à relire ; avertissement de dépréciation de `fastapi.testclient`.
