@@ -1,0 +1,26 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+.idea/
+*.iml
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Modèles et poids (trop lourds pour Git)
+models/
+*.onnx
+*.gguf
+*.pb.gz
+
+# Station PC
+station-pc/.venv/
+__pycache__/
+*.pyc
+
+# Divers
+.DS_Store
+Thumbs.db
