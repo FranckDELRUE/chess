@@ -52,10 +52,10 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 **Acceptation** : solution Maia viable sur la tablette, ou plan B documenté (Maia sur PC, Stockfish « humanisé »).
 
 ### S0-6 · Spike LLM embarqué
-- [ ] Tester 2 modèles open source de 1–2 Md de paramètres, quantifiés 4 bits, via llama.cpp (JNI) ou MediaPipe LLM.
-- [ ] Prompt test : reformuler un « fait pédagogique » en une phrase de professeur en français.
-- [ ] Mesurer : jetons/s, temps jusqu'au premier jeton, mémoire, chauffe ; noter la qualité du français.
-- [ ] Vérifier la licence de chaque modèle (compatibilité usage personnel et GPL v3).
+- [x] Tester 2 modèles open source de 1–2 Md de paramètres, quantifiés 4 bits, via llama.cpp (JNI) ou MediaPipe LLM.
+- [x] Prompt test : reformuler un « fait pédagogique » en une phrase de professeur en français.
+- [x] Mesurer : jetons/s, temps jusqu'au premier jeton, mémoire, chauffe ; noter la qualité du français.
+- [x] Vérifier la licence de chaque modèle (compatibilité usage personnel et GPL v3).
 
 **Acceptation** : recommandation chiffrée (garder, réserver au PC, ou abandonner le LLM embarqué).
 
@@ -93,3 +93,7 @@ Dette : réseau NNUE non versionné (lancer `scripts/fetch-stockfish-net.ps1` av
 **S0-5** — Fait : Maia-1 1100/1500/1900 convertis par `lc0 leela2onnx` (`scripts/fetch-maia-nets.ps1`, `tools/maia2onnx/maia2onnx.py`) ; `Lc0Encoder`, `Lc0PolicyMap`, `PolicyDecoder`, `MaiaEngine : ChessEngine` (ONNX Runtime Android 1.30.0) dans `:core:engine`, validés contre les priors de lc0 (écart < 0,001 sur 20 positions × 3 réseaux) ; bouton « Lot Maia 20×3 » ; mesures dans `docs/spikes/rapport-s0.md` (1,5–3,6 ms par coup, +21 Mo pour 3 réseaux, 60/60 coups légaux, perte moyenne 17/15/4 cp) ; ADR 0002 (proposé). Vérifié sur la tablette. **Conclusion : Maia viable sur la tablette.**
 Écart au périmètre (validé) : coups légaux fournis par Stockfish `go perft 1` derrière `LegalMoveProvider`, faute de générateur dans `:core:chess` (S1).
 Dette : perft Stockfish ≈ 30 ms par coup et dépendance à la session Stockfish (S1) ; champs FEN hors placement lus dans `:core:engine` sans validation `:core:chess` (S1) ; historique synthétisé (`fen_only`), à passer en S3 ; coup déterministe à `Temperature` 0 ; APK +41 Mo (ONNX Runtime complet, build minimale à étudier) ; tests JVM sur ONNX Runtime desktop 1.18.0 (le JBR plante avec ≥ 1.19), test de bout en bout ignoré en CI faute de modèles ; écran de debug toujours présent en release.
+
+**S0-6** — Fait : module isolé `:spike:llm` (llama.cpp `v0.7.0` en JNI, récupéré par CMake avec SHA-256 épinglé ; `TextGenerator`, `Utf8StreamDecoder`, `FactFidelity`, `TeacherPrompt`, 22 tests JVM) ; écran « Debug LLM » (réponse en flux, lot, chauffe 5 min) ; Qwen3-1.7B et EuroLLM-1.7B-Instruct en Q4_K_M, tous deux Apache 2.0 (`scripts/fetch-llm-models.ps1 -Push`) ; mesures dans `docs/spikes/rapport-s0.md` : premier jeton 2,4–3,3 s, génération 12,5 (Qwen3) et 15,5 (EuroLLM) jetons/s à 4 threads, PSS 2,4 et 1,8 Go, chauffe 30 → 31 °C sans bridage. Qualité : 0/30 réponse correcte avec le fait JSON brut, 5/15 au mieux (Qwen3) avec des faits pré-traduits. ADR 0003 (proposé). Vérifié sur la tablette. **Conclusion : pas de LLM embarqué en v1, LLM réservé au PC.**
+Écarts au périmètre : module `:spike:llm` hors de la liste des modules ; variante de prompt « FRENCH » (faits pré-traduits + exemple) ajoutée au prompt du sprint.
+Dette : notes de qualité attribuées par Claude, à relire ; cache du prompt système, KleidiAI et Q4_0 non essayés ; CMake télécharge llama.cpp (38 Mo) à la configuration, aussi en CI (non éprouvé sur GitHub) ; `:spike:llm` à retirer de l'app en S0-8 ; `ndkVersion` ajouté à `:app` (les `.so` sont maintenant strippés) ; écran de debug présent en release.
