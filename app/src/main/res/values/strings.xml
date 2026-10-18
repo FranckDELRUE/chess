@@ -2,4 +2,17 @@
 <resources>
     <string name="app_name">Chess Companion</string>
     <string name="home_flip_board">Retourner l\'échiquier</string>
+    <string name="home_engine_debug">Debug moteur</string>
+    <string name="engine_debug_title">Debug Stockfish (spike S0-4)</string>
+    <string name="engine_debug_fen">FEN</string>
+    <string name="engine_debug_depth">Profondeur</string>
+    <string name="engine_debug_threads">Threads</string>
+    <string name="engine_debug_analyze">Analyser</string>
+    <string name="engine_debug_stop">Stop</string>
+    <string name="engine_debug_batch">Lot 10×3</string>
+    <string name="engine_debug_thermal">Chauffe 5 min</string>
+    <string name="engine_debug_status">État : %1$s</string>
+    <string name="engine_debug_result">Profondeur %1$d · évaluation %2$s · %3$d ms</string>
+    <string name="engine_debug_pv">Meilleure ligne : %1$s</string>
+    <string name="engine_debug_best">Meilleur coup : %1$s</string>
 </resources>

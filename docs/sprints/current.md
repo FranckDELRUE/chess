@@ -37,9 +37,9 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 > Note S0-3 : `FenParser` (placement seul) + `Board` dans `:core:chess` ; `ChessBoard` dans `:core:ui` ; pièces Cburnett (CC BY-SA 3.0) converties en VectorDrawable, voir `docs/licences.md`. Vérifié sur la tablette en paysage et en portrait (position initiale) ; les 3 FEN de test sont dans les `@Preview` et le parseur est testé. Dette : couleurs des cases en constantes (pas encore de thèmes d'échiquier), attribution à afficher dans un futur écran « À propos », bouton « Retourner » non vérifié visuellement (logique testée).
 
 ### S0-4 · Spike Stockfish sur la tablette
-- [ ] Compiler Stockfish (dernière version stable) pour `arm64-v8a` via NDK + CMake.
-- [ ] Mini-wrapper UCI (`uci`, `position fen`, `go depth N`, `stop`) derrière une interface `ChessEngine`.
-- [ ] Mesurer sur la tablette : temps pour profondeur 16, 18, 20 sur 10 positions de milieu de partie ; mémoire ; température après 5 min.
+- [x] Compiler Stockfish (dernière version stable) pour `arm64-v8a` via NDK + CMake.
+- [x] Mini-wrapper UCI (`uci`, `position fen`, `go depth N`, `stop`) derrière une interface `ChessEngine`.
+- [x] Mesurer sur la tablette : temps pour profondeur 16, 18, 20 sur 10 positions de milieu de partie ; mémoire ; température après 5 min.
 
 **Acceptation** : mesures consignées dans `docs/spikes/rapport-s0.md`.
 
@@ -86,3 +86,6 @@ Dette : pas de `jvmToolchain` (seul le JDK 25 d'Android Studio est installé, ci
 
 **S0-2** — Fait : ktlint (plugin 14.2.0, `.editorconfig`) et detekt 2.0.0-alpha.6 (`config/detekt/detekt.yml`) sur tous les sous-projets, sans erreur (3 reformatages dans `Theme.kt`) ; JUnit 5.13.4 sur les 5 modules, 1 test d'exemple chacun (5 exécutés) ; workflow `.github/workflows/ci.yml` ; `.gitignore` et README mis à jour. `ktlintCheck detekt test assembleDebug` passent en local.
 Dette : detekt 2 est en alpha (1.23.x incompatible avec Kotlin 2.4) ; la CI n'a pas encore tourné sur GitHub (critère « verte sur `main` » à vérifier après push/merge) ; tests d'exemple triviaux, remplacés au fil des sprints.
+
+**S0-4** — Fait : Stockfish 19 compilé pour `arm64-v8a` (NDK 29, CMake 3.31.6) en bibliothèque JNI ; `ChessEngine` (`start`, `setOption`, `newGame`, `analyze` en `Flow`, `close`), `UciParser` et `UciEngine` testés en JVM, `StockfishEngine` ; écran « Debug moteur » (analyse, lot 10×3, chauffe 5 min) ; mesures dans `docs/spikes/rapport-s0.md` (profondeur 16 : médiane 0,6 s ; 18 : 1,7 s ; 20 : 5,5 s ; ≈ 430 Mo ; batterie 22 → 26 °C, aucun bridage). ADR 0004. Vérifié sur la tablette.
+Dette : réseau NNUE non versionné (lancer `scripts/fetch-stockfish-net.ps1` avant le build) et APK de 112 Mo ; plusieurs des 10 positions de test sont déséquilibrées (à remplacer par des positions du corpus Heidoji en S0-8) ; écran de debug aussi présent en release (à masquer avant toute diffusion) ; mesures faites à 4 threads seulement ; sonde thermique = batterie ; ni LTO ni PGO essayés ; CI : installation du NDK et de CMake ajoutée mais non éprouvée sur GitHub.
