@@ -27,3 +27,8 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
   mesurer 16/24/32 threads et le bridage du portable.
 - Revoir les jetons/s de qwen3:14b (≈ 20 jetons/s, attendu plus haut sur une RTX 4080) ; essayer
   Q4_K_M contre Q5, `num_gpu`, application seule.
+
+## Issu de S0-8
+- S2 : remplacer les 10 positions de test Stockfish de S0-4 (plusieurs déséquilibrées) par des
+  positions de milieu de partie tirées du corpus Heidoji, puis refaire les mesures tablette et PC.
+- Supprimer `spike/llm/` du dépôt si le LLM embarqué n'est pas réévalué d'ici S13.

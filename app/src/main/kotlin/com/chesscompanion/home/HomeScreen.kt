@@ -28,7 +28,6 @@ import com.chesscompanion.core.ui.theme.ChessTheme
 @Composable
 fun HomeScreen(
     onOpenEngineDebug: () -> Unit,
-    onOpenLlmDebug: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -36,7 +35,6 @@ fun HomeScreen(
         state = state,
         onFlip = viewModel::flipBoard,
         onOpenEngineDebug = onOpenEngineDebug,
-        onOpenLlmDebug = onOpenLlmDebug,
     )
 }
 
@@ -45,19 +43,18 @@ internal fun HomeContent(
     state: HomeUiState,
     onFlip: () -> Unit,
     onOpenEngineDebug: () -> Unit,
-    onOpenLlmDebug: () -> Unit = {},
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
             if (maxWidth > maxHeight) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     ChessBoard(state.fen, state.flipped, Modifier.weight(1f).fillMaxSize())
-                    SidePanel(onFlip, onOpenEngineDebug, onOpenLlmDebug, Modifier.weight(1f).fillMaxSize())
+                    SidePanel(onFlip, onOpenEngineDebug, Modifier.weight(1f).fillMaxSize())
                 }
             } else {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     ChessBoard(state.fen, state.flipped, Modifier.fillMaxWidth().weight(1f))
-                    SidePanel(onFlip, onOpenEngineDebug, onOpenLlmDebug, Modifier.fillMaxWidth().weight(1f))
+                    SidePanel(onFlip, onOpenEngineDebug, Modifier.fillMaxWidth().weight(1f))
                 }
             }
         }
@@ -68,14 +65,12 @@ internal fun HomeContent(
 private fun SidePanel(
     onFlip: () -> Unit,
     onOpenEngineDebug: () -> Unit,
-    onOpenLlmDebug: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onFlip) { Text(stringResource(R.string.home_flip_board)) }
             OutlinedButton(onClick = onOpenEngineDebug) { Text(stringResource(R.string.home_engine_debug)) }
-            OutlinedButton(onClick = onOpenLlmDebug) { Text(stringResource(R.string.home_llm_debug)) }
         }
     }
 }

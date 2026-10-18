@@ -3,6 +3,17 @@
 Appareil : tablette Honor HEY2-W09, Android 14, Snapdragon 6 Gen 1 (4 × A78 + 4 × A55), 8 Go.
 Station PC (S0-7) : i9-13980HX, 32 Go, RTX 4080 Laptop 12 Go.
 
+## Synthèse (S0-8)
+
+| Tâche | Tablette (toujours disponible) | Station PC (si joignable) | Décision |
+|-------|--------------------------------|---------------------------|----------|
+| Analyse Stockfish | P16 0,6 s · P18 1,7 s · P20 5,5 s (médianes, 4 threads) | P20 0,9 s · P25 5,6 s · P30 39,7 s (32 threads) | Tablette en direct ; PC pour la revue profonde, limitée par temps (ADR 0004, 0005) |
+| Adversaire Maia-1 | 1,5–3,6 ms par coup, +21 Mo | 4–14 ms en CUDA (plus lent) | Tablette seulement (ADR 0002) |
+| LLM professeur | 3,6–4,8 s par phrase, 5/15 correctes au mieux, 2,4 Go | qwen3:14b 1,2 s, 10/15 correctes, 0 fausse | Pas de LLM sur la tablette ; qwen3:14b sur le PC, en complément des gabarits (ADR 0003, 0005) |
+
+Leçon commune aux deux spikes LLM : les faits **pré-traduits en français par le code** valent bien
+plus que la taille du modèle ; avec le JSON brut, aucun modèle ne dépasse 4 réponses correctes sur 15.
+
 ---
 
 ## S0-4 · Stockfish sur la tablette
@@ -464,3 +475,27 @@ Exemples réels :
 Voir `station-pc/README.md` (installation), puis depuis `station-pc/` :
 `python -m bench.stockfish` (≈ 30 min, surtout les positions 5 et 6), `python -m bench.lc0` (≈ 1 min),
 `python -m bench.llm` (≈ 3 min). Fermer les applications gourmandes en VRAM avant `bench.llm`.
+
+---
+
+## Ajustements proposés pour les sprints S1 à S13 (S0-8)
+
+Le plan reste valable dans son ordre et son découpage. Ajustements :
+
+- **S1** : le générateur de coups légaux de `:core:chess` remplace `go perft 1` derrière
+  `LegalMoveProvider` (dette S0-5), et les champs FEN hors placement passent par `:core:chess`.
+  Le corpus de parties de Heidoji (`testdata/pgn/`) sert au critère « 100 PGN réimportés ».
+- **S2** : critère « profondeur 18 en moins de 5 s » déjà tenu (1,7 s en médiane). Remplacer les 10
+  positions de test déséquilibrées de S0-4 par des positions tirées du corpus et refaire les mesures.
+  Masquer les écrans de debug en release.
+- **S3** : Maia-1 en ONNX sur la tablette (ADR 0002), sans changement.
+- **S4** : `:core:pedagogy` produit des faits **déjà rédigés en français** (notation française, noms
+  de pièces, motif expliqué) : c'est la base des gabarits et, plus tard, l'entrée du LLM.
+- **S9** : retirer « LLM embarqué sur tablette » (ADR 0003) ; lc0 CUDA n'est plus requis (ADR 0005).
+  Remplacer le critère « profondeur 30 en moins de 3 s » par « une analyse limitée à 3 s revient du
+  PC avec au moins la profondeur 22 en milieu de partie ». Précharger le LLM au démarrage.
+- **S11** : « Explique-moi plus » utilise le LLM du PC ; hors ligne, un gabarit détaillé (et non une
+  « version courte » sur la tablette). La phrase du LLM s'affiche à côté du gabarit exact.
+- **S12** : l'affinage de Maia sur le PC est le seul usage restant de lc0 CUDA.
+- **S13** : retirer `:spike:llm` du dépôt s'il n'a pas resservi ; build minimale d'ONNX Runtime pour
+  réduire l'APK ; seuls les réseaux Maia sont à télécharger ou copier (pas de modèle LLM).
