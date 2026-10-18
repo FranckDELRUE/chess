@@ -1,0 +1,21 @@
+# Complète la configuration par défaut de detekt (buildUponDefaultConfig).
+style:
+  MagicNumber:
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotation: true
+  MaxLineLength:
+    maxLineLength: 120
+  ReturnCount:
+    max: 3
+  UnusedPrivateFunction:
+    ignoreAnnotated:
+      - 'Preview'
+complexity:
+  LongMethod:
+    ignoreAnnotated:
+      - 'Composable'
+naming:
+  FunctionNaming:
+    ignoreAnnotated:
+      - 'Composable'

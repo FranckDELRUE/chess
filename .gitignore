@@ -24,3 +24,12 @@ __pycache__/
 # Divers
 .DS_Store
 Thumbs.db
+
+# Kotlin / Gradle
+.kotlin/
+*.hprof
+
+# Secrets et signature
+*.jks
+*.keystore
+keystore.properties

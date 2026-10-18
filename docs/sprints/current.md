@@ -20,10 +20,10 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 **Acceptation** : `./gradlew assembleDebug` réussit ; l'app s'ouvre sur la tablette.
 
 ### S0-2 · Qualité et intégration continue
-- [ ] ktlint et detekt configurés, sans erreur sur le code existant.
-- [ ] JUnit 5 sur les modules Kotlin purs, un test d'exemple par module.
-- [ ] GitHub Actions : build + tests + qualité sur chaque push et pull request.
-- [ ] `.gitignore`, `README.md` à jour.
+- [x] ktlint et detekt configurés, sans erreur sur le code existant.
+- [x] JUnit 5 sur les modules Kotlin purs, un test d'exemple par module.
+- [x] GitHub Actions : build + tests + qualité sur chaque push et pull request.
+- [x] `.gitignore`, `README.md` à jour.
 
 **Acceptation** : la CI est verte sur `main`.
 
@@ -81,3 +81,6 @@ _(à compléter en fin de story : fait, dette, ajustements)_
 **S0-1** — Fait : 5 modules, AGP 9.4.0 / Gradle 9.6.0 / Kotlin 2.4.21 / KSP 2.3.12 / Hilt 2.60.1 / Room 2.8.5 / Compose BOM 2026.09.00 ; `assembleDebug` OK ; écran d'accueil adaptatif (WindowSizeClass). compileSdk/targetSdk 37.
 Vérifié sur la tablette Honor (HEY2-W09, Android 14) : `installDebug` OK, l'app s'ouvre en paysage (échiquier à gauche, panneau à droite), sans crash.
 Dette : pas de `jvmToolchain` (seul le JDK 25 d'Android Studio est installé, cible Java 17 via compileOptions) ; Room et `ChessEngine` sont des squelettes ; le mapping `Side` de :core:chess est provisoire ; `local.properties` pointe vers `C:/Users/Public/Android`.
+
+**S0-2** — Fait : ktlint (plugin 14.2.0, `.editorconfig`) et detekt 2.0.0-alpha.6 (`config/detekt/detekt.yml`) sur tous les sous-projets, sans erreur (3 reformatages dans `Theme.kt`) ; JUnit 5.13.4 sur les 5 modules, 1 test d'exemple chacun (5 exécutés) ; workflow `.github/workflows/ci.yml` ; `.gitignore` et README mis à jour. `ktlintCheck detekt test assembleDebug` passent en local.
+Dette : detekt 2 est en alpha (1.23.x incompatible avec Kotlin 2.4) ; la CI n'a pas encore tourné sur GitHub (critère « verte sur `main` » à vérifier après push/merge) ; tests d'exemple triviaux, remplacés au fil des sprints.
