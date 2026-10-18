@@ -20,3 +20,10 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - LLM embarqué, si l'essai reprend : cache KV du prompt système (premier jeton de ≈ 3 s vers ≈ 0,5 s),
   KleidiAI et Q4_0 dans llama.cpp, `mmap` désactivé pour réduire le PSS, nouveaux modèles de 1 à 3 Md.
 - Gabarits « détaillés » de `:core:pedagogy` pour « Explique-moi plus » hors ligne (le LLM reste sur le PC).
+
+## Issu de S0-7
+- Station : précharger le LLM au démarrage (`keep_alive`) et exposer son état dans `/health`.
+- Analyse de partie sur la station limitée par temps (≈ 10 s par coup) plutôt que par profondeur ;
+  mesurer 16/24/32 threads et le bridage du portable.
+- Revoir les jetons/s de qwen3:14b (≈ 20 jetons/s, attendu plus haut sur une RTX 4080) ; essayer
+  Q4_K_M contre Q5, `num_gpu`, application seule.

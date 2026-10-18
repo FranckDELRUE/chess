@@ -36,3 +36,4 @@ keystore.properties
 
 # Stockfish NNUE network (98 MB, fetched by scripts/fetch-stockfish-net.ps1)
 core/engine/src/main/assets/*.nnue
+.pytest_cache/
