@@ -36,6 +36,12 @@ docs/
 testdata/pgn/README.md             Où déposer tes parties pour les tests
 ```
 
+## Moteur Stockfish (à partir de S0-4)
+
+Le réseau NNUE (98 Mo) n'est pas versionné : avant le premier `installDebug`, lancer
+`powershell scripts/fetch-stockfish-net.ps1`. Le NDK 29.0.14206865 et CMake 3.31.6 sont requis.
+Le moteur n'existe que pour `arm64-v8a` (la tablette, pas l'émulateur x86).
+
 ## Commandes
 
 | Action | Commande |
