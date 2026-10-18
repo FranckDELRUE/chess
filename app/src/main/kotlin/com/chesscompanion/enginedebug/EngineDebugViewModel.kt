@@ -10,6 +10,7 @@ import com.chesscompanion.core.engine.ChessEngine
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.EngineInfo
 import com.chesscompanion.core.engine.Score
+import com.chesscompanion.core.engine.UciEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -21,7 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class DebugStatus { IDLE, STARTING, ANALYZING, BATCH, THERMAL, ERROR }
+enum class DebugStatus { IDLE, STARTING, ANALYZING, BATCH, THERMAL, MAIA, ERROR }
 
 data class EngineDebugState(
     val fen: String = FenParser.START_POSITION,
@@ -111,9 +112,18 @@ class EngineDebugViewModel
                 )
             }
 
+        /** Maia 1100/1500/1900 on 20 positions: timings, memory, legality, cp loss (Logcat tag MAIA_BENCH). */
+        fun runMaiaBatch() =
+            launchJob(DebugStatus.MAIA) { engine ->
+                MaiaBenchmark(context) { line ->
+                    Log.i(MaiaBenchmark.TAG, line)
+                    _state.update { it.copy(log = it.log + line) }
+                }.run(engine)
+            }
+
         private fun launchJob(
             status: DebugStatus,
-            block: suspend (ChessEngine) -> Unit,
+            block: suspend (UciEngine) -> Unit,
         ) {
             if (_state.value.busy) return
             _state.update {

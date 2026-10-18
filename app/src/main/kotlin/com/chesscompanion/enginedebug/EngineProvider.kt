@@ -1,8 +1,8 @@
 package com.chesscompanion.enginedebug
 
 import android.content.Context
-import com.chesscompanion.core.engine.ChessEngine
 import com.chesscompanion.core.engine.StockfishEngine
+import com.chesscompanion.core.engine.UciEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,9 +17,9 @@ class EngineProvider
         @param:ApplicationContext private val context: Context,
     ) {
         private val lock = Mutex()
-        private var engine: ChessEngine? = null
+        private var engine: UciEngine? = null
 
-        suspend fun get(): ChessEngine =
+        suspend fun get(): UciEngine =
             lock.withLock {
                 engine ?: StockfishEngine.create(context).also {
                     it.start(mapOf("Threads" to DEFAULT_THREADS.toString(), "Hash" to DEFAULT_HASH_MB.toString()))

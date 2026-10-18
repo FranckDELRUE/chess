@@ -26,6 +26,9 @@ class UciEngineTest {
                             "bestmove e2e4 ponder e7e5",
                         )
                 line == "stop" -> pending += "bestmove e2e4"
+                line == "go perft 1" ->
+                    pending +=
+                        listOf("info string NNUE", "e2e4: 1", "e7e8q: 1", "", "Nodes searched: 2")
                 line == "quit" -> Unit
             }
         }
@@ -70,5 +73,33 @@ class UciEngineTest {
                 listOf("setoption name Threads value 2", "isready", "ucinewgame", "isready"),
                 transport.sent,
             )
+        }
+
+    @Test
+    fun `default options are sent before caller options`() =
+        runTest {
+            val transport = FakeTransport()
+            UciEngine(transport, mapOf("EvalFile" to "/net.nnue")).start(mapOf("Threads" to "4"))
+            assertEquals(
+                listOf("uci", "setoption name EvalFile value /net.nnue", "setoption name Threads value 4", "isready"),
+                transport.sent,
+            )
+        }
+
+    @Test
+    fun `legalMoves reads perft 1 output`() =
+        runTest {
+            val transport = FakeTransport()
+            val moves = UciEngine(transport).legalMoves("4k3/4P3/8/8/8/8/8/4K3 w - - 0 1")
+            assertEquals(setOf("e2e4", "e7e8q"), moves)
+            assertEquals(listOf("position fen 4k3/4P3/8/8/8/8/8/4K3 w - - 0 1", "go perft 1"), transport.sent)
+        }
+
+    @Test
+    fun `searchMoves restricts the search`() =
+        runTest {
+            val transport = FakeTransport()
+            UciEngine(transport).analyze("8/8/8/8/8/8/8/K6k w - - 0 1", 2, listOf("a1a2", "a1b1")).toList()
+            assertTrue(transport.sent.contains("go depth 2 searchmoves a1a2 a1b1"))
         }
 }

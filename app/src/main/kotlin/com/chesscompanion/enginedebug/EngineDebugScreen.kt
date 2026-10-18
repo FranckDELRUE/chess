@@ -42,6 +42,7 @@ fun EngineDebugScreen(viewModel: EngineDebugViewModel = hiltViewModel()) {
         onStop = viewModel::stop,
         onBatch = viewModel::runBatch,
         onThermal = viewModel::runThermal,
+        onMaia = viewModel::runMaiaBatch,
     )
 }
 
@@ -56,6 +57,7 @@ internal fun EngineDebugContent(
     onStop: () -> Unit,
     onBatch: () -> Unit,
     onThermal: () -> Unit,
+    onMaia: () -> Unit,
 ) {
     Surface(Modifier.fillMaxSize()) {
         Column(
@@ -89,6 +91,10 @@ internal fun EngineDebugContent(
                     onClick = onThermal,
                     enabled = !state.busy,
                 ) { Text(stringResource(R.string.engine_debug_thermal)) }
+                OutlinedButton(
+                    onClick = onMaia,
+                    enabled = !state.busy,
+                ) { Text(stringResource(R.string.engine_debug_maia)) }
             }
             Text(stringResource(R.string.engine_debug_status, state.status.name))
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }

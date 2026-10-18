@@ -42,6 +42,16 @@ Le réseau NNUE (98 Mo) n'est pas versionné : avant le premier `installDebug`, 
 `powershell scripts/fetch-stockfish-net.ps1`. Le NDK 29.0.14206865 et CMake 3.31.6 sont requis.
 Le moteur n'existe que pour `arm64-v8a` (la tablette, pas l'émulateur x86).
 
+## Réseaux Maia (à partir de S0-5)
+
+Les réseaux Maia-1 et leur conversion ONNX ne sont pas versionnés. Une fois :
+
+1. `powershell scripts/fetch-maia-nets.ps1` (poids Maia 1100/1500/1900 et lc0 pour Windows dans `build/maia/`) ;
+2. `python tools/maia2onnx/maia2onnx.py` (écrit `core/engine/src/main/assets/maia-*.onnx` et régénère la
+   référence de test `maia-reference.tsv`).
+
+Sans les modèles, `MaiaPipelineTest` est ignoré (cas de la CI).
+
 ## Commandes
 
 | Action | Commande |
