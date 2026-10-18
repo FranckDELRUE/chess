@@ -79,5 +79,5 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 _(à compléter en fin de story : fait, dette, ajustements)_
 
 **S0-1** — Fait : 5 modules, AGP 9.4.0 / Gradle 9.6.0 / Kotlin 2.4.21 / KSP 2.3.12 / Hilt 2.60.1 / Room 2.8.5 / Compose BOM 2026.09.00 ; `assembleDebug` OK ; écran d'accueil adaptatif (WindowSizeClass). compileSdk/targetSdk 37.
-Reste à vérifier : ouverture de l'app sur la tablette Honor (aucun appareil connecté pendant la story).
+Vérifié sur la tablette Honor (HEY2-W09, Android 14) : `installDebug` OK, l'app s'ouvre en paysage (échiquier à gauche, panneau à droite), sans crash.
 Dette : pas de `jvmToolchain` (seul le JDK 25 d'Android Studio est installé, cible Java 17 via compileOptions) ; Room et `ChessEngine` sont des squelettes ; le mapping `Side` de :core:chess est provisoire ; `local.properties` pointe vers `C:/Users/Public/Android`.
