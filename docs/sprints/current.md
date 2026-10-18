@@ -71,7 +71,7 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 - [x] ADR 0001 (architecture) relu et accepté.
 - [x] ADR 0002 (moteur humain) et ADR 0003 (LLM embarqué) rédigés à partir des spikes.
 - [x] `docs/spikes/rapport-s0.md` complet ; ajustements proposés pour les sprints suivants.
-- [ ] Corpus de test : 100 parties de **Heidoji** exportées en PGN dans `testdata/pgn/` (export manuel depuis Lichess et Chess.com).
+- [x] Corpus de test : 100 parties de **Heidoji** exportées en PGN dans `testdata/pgn/` (export manuel depuis Lichess et Chess.com).
 
 **Acceptation** : rapport et ADR versionnés ; le plan S1–S13 est confirmé ou ajusté.
 
@@ -103,4 +103,5 @@ Dette : mesures sur portable avec d'autres applications actives (≈ 3 Go de VRA
 
 **S0-8** — Fait : ADR 0001, 0002 et 0003 relus et passés en « accepté » (0001 précise : pas de LLM sur la tablette, lc0 CUDA réservé à l'affinage de Maia) ; ADR 0005 (rôles de la station PC : Stockfish limité par temps, Maia sur la tablette, qwen3:14b avec repli mistral-nemo:12b, gabarit toujours affiché) ; `rapport-s0.md` : synthèse tablette/PC en tête et ajustements S1–S13 en fin, reportés dans la section 6 et les tableaux d'IA de `docs/dossier-conception.md` (S9 : critère « profondeur 30 en 3 s » remplacé par « 3 s, profondeur ≥ 22 », LLM embarqué retiré ; S11 : gabarit détaillé hors ligne) ; écran « Debug LLM » et `:spike:llm` retirés de l'app (module conservé pour mémoire, plus construit), APK debug 186 → 153 Mo. `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
 Écart (validé) : remplacement des 10 positions de test de S0-4 par des positions du corpus reporté en S2 (backlog).
-Reste : corpus des 100 parties de Heidoji dans `testdata/pgn/` ; capture de démo de fin de sprint (tablette verrouillée).
+Corpus : `testdata/pgn/chesscom-heidoji-100.pgn`, 100 parties standard de Chess.com (2019-10 → 2024-03) par l'API publique au lieu d'un export manuel ; le compte Lichess n'a aucune partie. Légalité non vérifiée (test d'import de S1).
+Reste : capture de démo de fin de sprint (tablette verrouillée).
