@@ -28,11 +28,13 @@ tablette, et des spikes qui confirment ce que la tablette et le PC savent faire.
 **Acceptation** : la CI est verte sur `main`.
 
 ### S0-3 · Échiquier Compose minimal
-- [ ] Composant `ChessBoard` dans `:core:ui` : 8×8, coordonnées, pièces affichées depuis une FEN.
-- [ ] Échiquier retournable ; écran d'accueil qui l'affiche à gauche, panneau vide à droite (paysage).
-- [ ] Jeu de pièces libre de droits (par exemple Cburnett, CC BY-SA ou équivalent), licence notée.
+- [x] Composant `ChessBoard` dans `:core:ui` : 8×8, coordonnées, pièces affichées depuis une FEN.
+- [x] Échiquier retournable ; écran d'accueil qui l'affiche à gauche, panneau vide à droite (paysage).
+- [x] Jeu de pièces libre de droits (par exemple Cburnett, CC BY-SA ou équivalent), licence notée.
 
 **Acceptation** : la position initiale et une FEN arbitraire s'affichent correctement en paysage et en portrait.
+
+> Note S0-3 : `FenParser` (placement seul) + `Board` dans `:core:chess` ; `ChessBoard` dans `:core:ui` ; pièces Cburnett (CC BY-SA 3.0) converties en VectorDrawable, voir `docs/licences.md`. Vérifié sur la tablette en paysage et en portrait (position initiale) ; les 3 FEN de test sont dans les `@Preview` et le parseur est testé. Dette : couleurs des cases en constantes (pas encore de thèmes d'échiquier), attribution à afficher dans un futur écran « À propos », bouton « Retourner » non vérifié visuellement (logique testée).
 
 ### S0-4 · Spike Stockfish sur la tablette
 - [ ] Compiler Stockfish (dernière version stable) pour `arm64-v8a` via NDK + CMake.
