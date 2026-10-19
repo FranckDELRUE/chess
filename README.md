@@ -29,12 +29,24 @@ README.md                          Ce fichier
 docs/
   dossier-conception.md            Référence : vision, architecture, sprints, risques
   backlog.md                       Idées hors sprint
-  sprints/current.md               Sprint en cours (S1), stories et critères
-  adr/0001-architecture-generale.md
-  prompts/instructions-projet-claude.md
-  prompts/prompts-sprint-0.md      Un prompt Claude Code par story du S0
-testdata/pgn/README.md             Où déposer tes parties pour les tests
+  sprints/current.md               Sprint en cours, stories et critères
+  sprints/s0.md                    Sprint terminé (S1 le rejoint à sa clôture)
+  adr/                             Décisions d'architecture (0001 à 0007)
+  spikes/rapport-s0.md             Mesures des spikes de S0
+  prompts/                         Instructions du projet Claude, prompts du S0
+testdata/pgn/                      Corpus de parties de Heidoji pour les tests
 ```
+
+## Modules
+
+| Module | Rôle | État |
+| --- | --- | --- |
+| `:core:chess` | Règles, FEN, SAN, PGN, arbre de coups (Kotlin pur) | S1 : perft exact, 100 parties réimportées |
+| `:core:ui` | Échiquier Compose interactif, annotations | S1 |
+| `:core:engine` | `ChessEngine`, Stockfish (JNI), Maia (ONNX) | coups légaux par les règles depuis S1-5 |
+| `:core:data` | Room, dépôts | squelette |
+| `:feature:play` | Écran de partie à deux joueurs | S1 (créé avant S3, voir ADR 0007) |
+| `:app` | Navigation, thème, écran « Debug moteur » | |
 
 ## Moteur Stockfish (à partir de S0-4)
 
@@ -58,7 +70,8 @@ Sans les modèles, `MaiaPipelineTest` est ignoré (cas de la CI).
 | --- | --- |
 | Compiler | `gradlew.bat assembleDebug` |
 | Installer sur la tablette | `gradlew.bat installDebug` |
-| Tests (JUnit 5) | `gradlew.bat test` |
+| Tests (JUnit 5, dont l'UI sur la JVM) | `gradlew.bat test` |
+| Perft profond (≈ 750 M nœuds, environ 1 min) | `gradlew.bat :core:chess:test -PslowTests` |
 | Qualité | `gradlew.bat ktlintCheck detekt` |
 | Corriger le style automatiquement | `gradlew.bat ktlintFormat` |
 

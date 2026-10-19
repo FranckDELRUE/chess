@@ -160,14 +160,14 @@ Les écrans ne parlent qu'aux modules cœur ; seuls `:core:engine`, `:core:data`
 | Langage / UI | Kotlin, Jetpack Compose, Material 3 | Écrans adaptatifs, paysage prioritaire sur tablette |
 | Architecture | MVVM + UDF, cas d'usage, Hilt | Séparation UI / domaine / données, injection |
 | Asynchrone | Coroutines, Flow, WorkManager | Analyses longues et imports en tâche de fond |
-| Règles d'échecs | chesslib (Kotlin/Java) ou module maison | Coups légaux, FEN, PGN, SAN |
+| Règles d'échecs | Module maison `:core:chess` (0x88, Zobrist ; ADR 0006) | Coups légaux, FEN, PGN, SAN |
 | Moteur fort | Stockfish compilé pour arm64 (NDK, CMake) | Analyse, évaluation, adversaires techniques |
 | Moteur humain | Maia via ONNX Runtime Mobile | Adversaires au style humain par ELO |
 | IA embarquée | llama.cpp ou MediaPipe LLM (modèle 1–2 Md), ML Kit | Reformulation du professeur hors ligne, lecture de texte |
 | IA locale PC | FastAPI, Stockfish, lc0 CUDA, Ollama, modèle vision | Analyses profondes, LLM professeur, lecture des livres |
 | Données | Room (SQLite), DataStore | Parties, répertoire, livres, puzzles, révisions |
 | Réseau | Ktor client, kotlinx.serialization | APIs Lichess, Chess.com, station PC |
-| Qualité | JUnit 5, Turbine, Compose UI Test, ktlint, detekt, GitHub Actions | Tests et intégration continue |
+| Qualité | JUnit 5, Turbine, Compose UI Test sur la JVM avec Robolectric (ADR 0007), ktlint, detekt, GitHub Actions | Tests et intégration continue |
 
 ### Modules Gradle
 
@@ -331,13 +331,15 @@ Critères d'acceptation : `./gradlew build` et les tests passent en CI ; le spik
 
 ### S1 — Échiquier et règles
 
-- [ ] En tant que joueur, je déplace les pièces par glisser ou par toucher, avec coups légaux en surbrillance (désactivable).
-- [ ] Promotion, roque, prise en passant, mat, pat, répétition, règle des 50 coups.
-- [ ] Retourner l'échiquier, naviguer dans les coups, notation SAN affichée.
-- [ ] Import et export PGN et FEN.
-- [ ] Flèches et cases colorées dessinées au doigt.
+Détaillé story par story dans `docs/sprints/current.md` (archivé en `s1.md` à la clôture du sprint).
 
-Critères d'acceptation : suite de tests perft validée sur les positions de référence ; 100 PGN réels (parties de Heidoji) réimportés à l'identique.
+- [x] En tant que joueur, je déplace les pièces par glisser ou par toucher, avec coups légaux en surbrillance (désactivable).
+- [x] Promotion, roque, prise en passant, mat, pat, répétition, règle des 50 coups (et matériel insuffisant).
+- [x] Retourner l'échiquier, naviguer dans les coups, notation SAN affichée (en français dans la liste).
+- [x] Import et export PGN et FEN.
+- [x] Flèches et cases colorées dessinées au doigt.
+
+Critères d'acceptation : suite de tests perft validée sur les positions de référence (tenu) ; 100 PGN réels (parties de Heidoji) réimportés à l'identique (tenu).
 
 ### S2 — Moteur Stockfish
 

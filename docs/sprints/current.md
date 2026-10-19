@@ -136,3 +136,45 @@ Dette : **vérification sur la tablette non faite** (à faire avec S1-5 et S1-6 
 
 **S1-8** — Fait : `:core:ui` : `BoardAnnotations` (cases colorées et flèches, immuable ; même couleur = efface, autre couleur = remplace ; flèche vers sa propre case = case marquée), trois couleurs vert, rouge, bleu (choix validé) ; `ChessBoard` dessine les cases marquées sous les pièces et les flèches au-dessus (droites, cavalier compris), `DragMode.ARROW` trace depuis n'importe quelle case avec une flèche d'aperçu sous le doigt ; description accessible « e4, marquée en rouge » ; gestes extraits dans `BoardGestures` (seul état gardé : le glissement en cours). `:feature:play` : mode « Annoter » explicite (choix validé, pas d'appui long) avec interrupteur, trois pastilles de couleur et « Effacer les annotations » ; `AnnotationInput` (machine à états immuable) intercepte toucher et dépôt quand le mode est actif ; annotations éphémères (choix validé), effacées dès que la position affichée change. Tests : `BoardAnnotations` (3), centre des cases (1), ViewModel (4 : marquer sans sélectionner, flèche sans jouer, sortie du mode, effacement au changement de position), 1 test UI Robolectric (case marquée en rouge puis effacée). `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
 Dette : **tracé des flèches au doigt non vérifié sur la tablette** (verrouillée), à ajouter à la vérification de ce soir ; annotations non sauvegardées dans le PGN (backlog).
+
+---
+
+## Rétrospective S1 (brouillon du 2026-10-19, à compléter après la démo sur la tablette)
+
+### Résultat
+- **Critères du sprint tenus** : perft exact sur les 6 positions de chessprogramming.org et les cas de Martin Sedlak (≈ 20 M nœuds en CI, 750 M nœuds en test lent : 70 s, 9 à 17 M nœuds/s sur le PC) ; les 100 parties de Heidoji sont légales, finissent sur la position de leur en-tête `CurrentPosition` et sont réimportées à l'identique.
+- Stories 1 à 8 faites, mergées via les PR #10, #11, #13, #14, #15, #16 et #17 ; CI verte sur `main`. **Reste** : mesure Maia sur la tablette (S1-5), démo (S1-9) et vérifications visuelles (S1-6 à S1-8).
+- Tests : 307 par défaut (`:core:chess` 233, `:feature:play` 31, `:core:engine` 31, `:core:ui` 9, `:app` 3), plus 10 de perft profond avec `-PslowTests`.
+- Modules : `:feature:play` ajouté (ADR 0007), `:core:chess`, `:core:ui` et `:core:engine` étoffés. ADR 0006 et 0007 écrits.
+
+### Ce qui a bien marché
+- **Le perft comme oracle** : un écart se voit en quelques secondes ; l'examen des coups générés a montré, pour la position 6, que la FEN de référence était fausse et non le générateur.
+- **Le contrôle croisé avec lc0** (coups légaux et priors Maia sur 20 positions) a validé le remplacement de `go perft 1` sans mesure approximative.
+- **Planifier avant de coder, une story à la fois** : chaque écart (module `:feature:play`, Robolectric, retrait de `go perft 1`) a été validé avant, donc aucun n'a surpris.
+- **Des machines à états immuables** (`MoveInput`, `AnnotationInput`, `GameSession`) : toute la logique des écrans se teste sans Android ; les tests UI ne font que vérifier le câblage.
+
+### Ce qui a coûté
+- **Des références de test recopiées de mémoire** (FEN de la position 6, valeurs de Sedlak à profondeur réduite) étaient fausses : le perft a signalé « 41 coups au lieu de 46 » alors que le générateur était exact. À faire : toute valeur de référence vient d'une source relue ou d'un outil (lc0, Stockfish `go perft`), jamais de la mémoire.
+- **La vérification sur l'appareil n'a pas suivi** : la tablette est restée verrouillée pendant les stories 5 à 8, donc quatre vérifications se sont empilées au lieu d'être faites story par story. Pour S2 : tablette branchée et déverrouillée avant de commencer, démo courte à la fin de chaque story d'interface.
+- **detekt** a demandé plusieurs refactorings tardifs (fonctions trop longues, trop de fonctions par classe) : prévoir de découper tôt les écrans et les ViewModels.
+
+### Dette ouverte (à solder)
+| Dette | Où | Quand |
+| --- | --- | --- |
+| Mesure du coût d'un coup Maia sur la tablette (≈ 35 ms → ≈ 4 ms visés) | S1-5 | ce soir |
+| Paysage, portrait, sombre, glisser-déposer, promotion | S1-6 | ce soir |
+| Ouvrir et enregistrer un vrai `.pgn` | S1-7 | ce soir |
+| Flèches tracées au doigt | S1-8 | ce soir |
+| Annotations non sauvegardées dans le PGN (`[%csl]`, `[%cal]`) ; édition des variantes ; défilement automatique de la liste | backlog | S6 à S10 |
+| Erreurs PGN en anglais | S1-4 | S4 (textes du professeur) |
+| Écrans de debug visibles en release ; APK de 150 Mo | S0 | S2 puis S13 |
+
+### Ajustements proposés pour la suite
+- **S2** (Stockfish) : la partie contre Stockfish réutilise `GameSession`, `MoveInput` et l'écran de `:feature:play` (un joueur remplacé par le moteur) ; `ChessEngine` accepte déjà une FEN, `Position.toFen()` suffit. Remplacer les 10 positions de test de S0-4 par des positions du corpus Heidoji, désormais lisibles avec `PgnReader`. Masquer les écrans de debug en release.
+- **S3** (Maia) : l'historique des positions est maintenant réel (`GameSession.line`) ; passer `Lc0Encoder` du mode `fen_only` à l'historique de 8 positions, comme prévu dans la dette de S0-5.
+- **S4** (professeur) : `PieceLetters.FRENCH` et `San.write` fournissent déjà la notation française des faits pédagogiques ; les messages d'erreur de `:core:chess` seront à traduire.
+- **S6** (revue de parties) : déplacer `GameDocuments` dans `:core:data` ; `PgnReader.readAll` rend déjà les erreurs partie par partie, utile pour les imports de Lichess et Chess.com ; lire les horloges `[%clk]` (aujourd'hui du texte brut).
+- **S7 et S10** (répertoire, livres) : annotations en `[%csl]` et `[%cal]` dans le PGN, édition des variantes.
+
+La planification de S2 (`current.md` du sprint suivant) reste à faire à part, comme prévu par le déroulé de sprint.
+
