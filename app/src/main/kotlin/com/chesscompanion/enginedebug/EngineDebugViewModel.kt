@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chesscompanion.core.chess.FenParser
+import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.InvalidFenException
 import com.chesscompanion.core.engine.ChessEngine
 import com.chesscompanion.core.engine.EngineEvent
@@ -25,7 +25,7 @@ import javax.inject.Inject
 enum class DebugStatus { IDLE, STARTING, ANALYZING, BATCH, THERMAL, MAIA, ERROR }
 
 data class EngineDebugState(
-    val fen: String = FenParser.START_POSITION,
+    val fen: String = Fen.START,
     val depth: Int = 16,
     val threads: Int = EngineProvider.DEFAULT_THREADS,
     val status: DebugStatus = DebugStatus.IDLE,
@@ -61,7 +61,7 @@ class EngineDebugViewModel
         fun analyze() {
             val fen = _state.value.fen.trim()
             try {
-                FenParser.parseBoard(fen)
+                Fen.parse(fen)
             } catch (e: InvalidFenException) {
                 _state.update { it.copy(status = DebugStatus.ERROR, error = e.message) }
                 return

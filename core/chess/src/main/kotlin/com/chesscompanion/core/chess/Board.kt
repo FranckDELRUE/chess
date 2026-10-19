@@ -7,16 +7,18 @@ class Board(
     private val squares: List<Piece?>,
 ) {
     init {
-        require(squares.size == SQUARE_COUNT) { "A board has $SQUARE_COUNT squares, got ${squares.size}" }
+        require(squares.size == Square.COUNT) { "A board has ${Square.COUNT} squares, got ${squares.size}" }
     }
+
+    operator fun get(square: Square): Piece? = squares[square.index]
 
     fun pieceAt(
         file: Int,
         rank: Int,
-    ): Piece? {
-        require(file in 0 until SIZE && rank in 0 until SIZE) { "Square out of range: $file,$rank" }
-        return squares[rank * SIZE + file]
-    }
+    ): Piece? = get(Square.of(file, rank))
+
+    /** Occupied squares with their piece, from a1 to h8. */
+    fun pieces(): List<Pair<Square, Piece>> = Square.all.mapNotNull { square -> get(square)?.let { square to it } }
 
     override fun equals(other: Any?): Boolean = other is Board && other.squares == squares
 
@@ -24,6 +26,5 @@ class Board(
 
     companion object {
         const val SIZE = 8
-        private const val SQUARE_COUNT = SIZE * SIZE
     }
 }

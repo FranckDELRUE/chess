@@ -29,7 +29,7 @@ README.md                          Ce fichier
 docs/
   dossier-conception.md            Référence : vision, architecture, sprints, risques
   backlog.md                       Idées hors sprint
-  sprints/current.md               Sprint en cours (S0), stories et critères
+  sprints/current.md               Sprint en cours (S1), stories et critères
   adr/0001-architecture-generale.md
   prompts/instructions-projet-claude.md
   prompts/prompts-sprint-0.md      Un prompt Claude Code par story du S0
