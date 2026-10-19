@@ -3,10 +3,11 @@ package com.chesscompanion.core.engine.maia
 import com.chesscompanion.core.chess.Board
 import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.PieceType
+import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.Side
 
 /**
- * Encodes a FEN into lc0's `INPUT_CLASSICAL_112_PLANE` tensor (shape 112 x 8 x 8, flattened),
+ * Encodes a position into lc0's `INPUT_CLASSICAL_112_PLANE` tensor (shape 112 x 8 x 8, flattened),
  * the input format of the Maia-1 networks. Mirrors `EncodePositionForNN` in lc0's `encoder.cc`:
  *
  * - the board is seen from the side to move ("ours"); for Black, ranks are mirrored;
@@ -39,10 +40,11 @@ object Lc0Encoder {
     private const val ALL = -1L
     private val pieceOrder =
         listOf(PieceType.PAWN, PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK, PieceType.QUEEN, PieceType.KING)
-    private val startBoard = Fen.parseBoard(Fen.START)
 
-    fun encode(fen: String): FloatArray {
-        val position = FenFields.parse(fen)
+    /** Throws `InvalidFenException` for an invalid FEN (rule 2). */
+    fun encode(fen: String): FloatArray = encode(Fen.parse(fen))
+
+    fun encode(position: Position): FloatArray {
         val planes = LongArray(PLANES)
         writeHistory(position, planes)
         writeAuxiliary(position, planes)
@@ -51,20 +53,22 @@ object Lc0Encoder {
         planes.forEachIndexed { p, mask ->
             if (mask != 0L) for (sq in 0 until SQUARES) if (mask and bit(sq) != 0L) out[p * SQUARES + sq] = 1f
         }
-        out.fill(position.halfMoves.toFloat(), RULE_50 * SQUARES, (RULE_50 + 1) * SQUARES)
+        out.fill(position.halfmoveClock.toFloat(), RULE_50 * SQUARES, (RULE_50 + 1) * SQUARES)
         return out
     }
 
     private fun writeHistory(
-        position: FenFields,
+        position: Position,
         planes: LongArray,
     ) {
         val current = piecePlanes(position.board, position.sideToMove)
         current.copyInto(planes)
-        val isStart = position.board == startBoard && position.castling == "KQkq" && position.sideToMove == Side.WHITE
+        val start = Position.START
+        val isStart =
+            position.board == start.board && position.castling == start.castling && position.sideToMove == Side.WHITE
         if (isStart) return
         val filled = current.copyOf()
-        position.enPassantFile?.let { file ->
+        position.enPassant?.file?.let { file ->
             // The opponent just pushed a pawn from (their) rank 7 to rank 5: undo it.
             filled[THEIR_PAWNS] = (filled[THEIR_PAWNS] and bit(RANK_5 + file).inv()) or bit(RANK_7 + file)
         }
@@ -72,16 +76,16 @@ object Lc0Encoder {
     }
 
     private fun writeAuxiliary(
-        position: FenFields,
+        position: Position,
         planes: LongArray,
     ) {
-        val white = position.sideToMove == Side.WHITE
+        val us = position.sideToMove
         val rights = position.castling
-        if ((if (white) 'Q' else 'q') in rights) planes[OUR_QUEENSIDE] = ALL
-        if ((if (white) 'K' else 'k') in rights) planes[OUR_KINGSIDE] = ALL
-        if ((if (white) 'q' else 'Q') in rights) planes[THEIR_QUEENSIDE] = ALL
-        if ((if (white) 'k' else 'K') in rights) planes[THEIR_KINGSIDE] = ALL
-        if (!white) planes[BLACK_TO_MOVE] = ALL
+        if (rights.has(us, kingside = false)) planes[OUR_QUEENSIDE] = ALL
+        if (rights.has(us, kingside = true)) planes[OUR_KINGSIDE] = ALL
+        if (rights.has(us.opposite, kingside = false)) planes[THEIR_QUEENSIDE] = ALL
+        if (rights.has(us.opposite, kingside = true)) planes[THEIR_KINGSIDE] = ALL
+        if (us == Side.BLACK) planes[BLACK_TO_MOVE] = ALL
         planes[ONES] = ALL
     }
 
@@ -104,33 +108,4 @@ object Lc0Encoder {
     }
 
     private fun bit(square: Int): Long = 1L shl square
-}
-
-/** The FEN fields the encoder needs. Only the placement is validated by `:core:chess` for now. */
-internal class FenFields(
-    val board: Board,
-    val sideToMove: Side,
-    val castling: String,
-    val enPassantFile: Int?,
-    val halfMoves: Int,
-) {
-    companion object {
-        private const val SIDE = 1
-        private const val CASTLING = 2
-        private const val EN_PASSANT = 3
-        private const val HALF_MOVES = 4
-
-        fun parse(fen: String): FenFields {
-            val fields = fen.trim().split(Regex("\\s+"))
-            val side = if (fields.getOrNull(SIDE) == "b") Side.BLACK else Side.WHITE
-            val enPassant = fields.getOrNull(EN_PASSANT)?.takeIf { it.length == 2 && it[0] in 'a'..'h' }
-            return FenFields(
-                board = Fen.parseBoard(fen),
-                sideToMove = side,
-                castling = fields.getOrNull(CASTLING)?.takeIf { it != "-" }.orEmpty(),
-                enPassantFile = enPassant?.let { it[0] - 'a' },
-                halfMoves = fields.getOrNull(HALF_MOVES)?.toIntOrNull() ?: 0,
-            )
-        }
-    }
 }

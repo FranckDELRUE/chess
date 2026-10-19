@@ -1,6 +1,7 @@
 package com.chesscompanion.core.engine.maia
 
 import com.chesscompanion.core.chess.PieceType
+import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.Side
 import kotlin.math.exp
 import kotlin.math.pow
@@ -17,24 +18,23 @@ object PolicyDecoder {
     /** Softmax over the logits of [legalMoves] only, sorted by decreasing prior. */
     fun decode(
         logits: FloatArray,
-        fen: String,
+        position: Position,
         legalMoves: Collection<String>,
     ): List<MovePrior> {
         require(logits.size == Lc0PolicyMap.SIZE) { "Expected ${Lc0PolicyMap.SIZE} logits, got ${logits.size}" }
         if (legalMoves.isEmpty()) return emptyList()
-        val moveLogits = policyIndices(fen, legalMoves).map { (move, index) -> move to logits[index] }
+        val moveLogits = policyIndices(position, legalMoves).map { (move, index) -> move to logits[index] }
         val max = moveLogits.maxOf { it.second }
         val weights = moveLogits.map { (move, logit) -> move to exp((logit - max).toDouble()) }
         val total = weights.sumOf { it.second }
         return weights.map { (move, w) -> MovePrior(move, (w / total).toFloat()) }.sortedByDescending { it.prior }
     }
 
-    /** lc0 policy index of each of [legalMoves] in the position [fen]. */
+    /** lc0 policy index of each of [legalMoves] in [position]. */
     fun policyIndices(
-        fen: String,
+        position: Position,
         legalMoves: Collection<String>,
     ): Map<String, Int> {
-        val position = FenFields.parse(fen)
         val black = position.sideToMove == Side.BLACK
         return legalMoves.associateWith { move ->
             val king = position.board.pieceAt(move[0] - 'a', move[1] - '1')?.type == PieceType.KING

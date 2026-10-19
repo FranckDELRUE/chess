@@ -2,6 +2,7 @@ package com.chesscompanion.enginedebug
 
 import android.content.Context
 import com.chesscompanion.core.engine.EngineEvent
+import com.chesscompanion.core.engine.RulesLegalMoveProvider
 import com.chesscompanion.core.engine.Score
 import com.chesscompanion.core.engine.UciEngine
 import com.chesscompanion.core.engine.maia.Lc0Encoder
@@ -91,7 +92,7 @@ class MaiaBenchmark(
         stockfish: UciEngine,
         bestScores: List<Int>,
     ) {
-        val maia = MaiaEngine(OnnxMaiaNetwork(bytes), stockfish)
+        val maia = MaiaEngine(OnnxMaiaNetwork(bytes))
         var legal = 0
         var rawLegal = 0
         var agree = 0
@@ -100,7 +101,7 @@ class MaiaBenchmark(
         BenchmarkPositions.MAIA_FENS.forEachIndexed { i, fen ->
             val evaluation = maia.evaluate(fen)
             val top = evaluation.priors.first()
-            val isLegal = top.move in stockfish.legalMoves(fen)
+            val isLegal = top.move in RulesLegalMoveProvider.legalMoves(fen)
             stockfish.newGame()
             val loss = (bestScores[i] - score(stockfish, fen, listOf(top.move))).coerceAtLeast(0)
             if (isLegal) legal++
@@ -117,7 +118,7 @@ class MaiaBenchmark(
         log(
             "net=$net summary legal=$legal/20 raw_legal=$rawLegal/20 sf_agree=$agree/20 " +
                 "mean_loss=${losses.average().toInt()}cp median_loss=${losses.sorted()[losses.size / 2]}cp " +
-                "perft_median=%.1fms".format(legalMs.sorted()[legalMs.size / 2]),
+                "legal_median=%.1fms".format(legalMs.sorted()[legalMs.size / 2]),
         )
     }
 

@@ -1,5 +1,6 @@
 package com.chesscompanion.core.engine.maia
 
+import com.chesscompanion.core.chess.InvalidFenException
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.LegalMoveProvider
 import kotlinx.coroutines.flow.single
@@ -7,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class MaiaEngineTest {
     private val fen = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"
@@ -36,6 +38,28 @@ class MaiaEngineTest {
             val evaluation = MaiaEngine(network, legal).evaluate(fen)
             assertFalse(evaluation.rawBestIsLegal)
             assertEquals(3, evaluation.priors.size)
+        }
+
+    @Test
+    fun `legal moves come from the rules by default`() =
+        runTest {
+            val evaluation = MaiaEngine(network).evaluate(fen)
+            assertEquals(
+                setOf("e2e3", "e2e4", "e1d1", "e1f1", "e1d2", "e1f2"),
+                evaluation.priors.map { it.move }.toSet(),
+            )
+            assertEquals("e2e3", evaluation.priors.first().move)
+        }
+
+    @Test
+    fun `invalid fen is rejected`() =
+        runTest {
+            assertThrows<InvalidFenException> { MaiaEngine(network).evaluate("4k3/8/8/8/8/8/8/8 w - - 0 1") }
+            assertThrows<InvalidFenException> {
+                Lc0Encoder.encode(
+                    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1",
+                )
+            }
         }
 
     @Test

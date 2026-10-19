@@ -10,13 +10,12 @@ import kotlinx.coroutines.withContext
 /**
  * Implémentation de [ChessEngine] pour tout moteur parlant UCI via un [UciTransport].
  * [defaultOptions] sont envoyées à chaque `start`, avant les options de l'appelant.
- * Fournit aussi les coups légaux via `go perft 1` (Stockfish), en attendant `:core:chess` (S1).
+ * Les coups légaux viennent des règles (`RulesLegalMoveProvider`), plus de Stockfish (S1-5).
  */
 class UciEngine(
     private val transport: UciTransport,
     private val defaultOptions: Map<String, String> = emptyMap(),
-) : ChessEngine,
-    LegalMoveProvider {
+) : ChessEngine {
     private val searchLock = Mutex()
 
     override suspend fun start(options: Map<String, String>) {
@@ -76,19 +75,6 @@ class UciEngine(
                     if (!finished) withContext(NonCancellable) { stopSearch() }
                 }
             }
-        }
-
-    override suspend fun legalMoves(fen: String): Set<String> =
-        searchLock.withLock {
-            transport.send("position fen $fen")
-            transport.send("go perft 1")
-            val moves = mutableSetOf<String>()
-            while (true) {
-                val line = transport.readLine() ?: error("Engine stopped during perft")
-                if (UciParser.isPerftEnd(line)) break
-                UciParser.parsePerftMove(line)?.let { moves += it }
-            }
-            moves
         }
 
     override suspend fun close() {

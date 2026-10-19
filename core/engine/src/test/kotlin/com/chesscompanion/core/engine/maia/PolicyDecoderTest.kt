@@ -1,12 +1,13 @@
 package com.chesscompanion.core.engine.maia
 
+import com.chesscompanion.core.chess.Fen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
 class PolicyDecoderTest {
-    private val fen = "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"
+    private val position = Fen.parse("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1")
 
     private fun logits(vararg values: Pair<String, Float>) =
         FloatArray(Lc0PolicyMap.SIZE) { 5f }.also { array ->
@@ -19,7 +20,7 @@ class PolicyDecoderTest {
         val priors =
             PolicyDecoder.decode(
                 logits("e2e4" to 2f, "e2e3" to 1f, "e1d1" to 0f),
-                fen,
+                position,
                 setOf("e2e4", "e2e3", "e1d1"),
             )
         assertEquals(listOf("e2e4", "e2e3", "e1d1"), priors.map { it.move })
@@ -29,7 +30,7 @@ class PolicyDecoderTest {
 
     @Test
     fun `no legal move gives no prior and no choice`() {
-        assertEquals(emptyList<MovePrior>(), PolicyDecoder.decode(logits(), fen, emptySet()))
+        assertEquals(emptyList<MovePrior>(), PolicyDecoder.decode(logits(), position, emptySet()))
         assertNull(PolicyDecoder.choose(emptyList(), 0.0))
     }
 
