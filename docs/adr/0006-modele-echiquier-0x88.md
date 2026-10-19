@@ -27,7 +27,8 @@ et l'import de PGN (des milliers de coups). Le calcul profond reste à Stockfish
    0 et 1 par défaut).
 6. **Partie en arbre de coups** dès S1 (S1-4) : chaque nœud porte un coup, ses commentaires et NAG ;
    le premier enfant est la ligne principale, les suivants des variantes. Le répertoire (S7) et les
-   cours tirés des livres (S10) en ont besoin.
+   cours tirés des livres (S10) en ont besoin. `GameSession` (S1-6) garde le chemin du coup courant
+   dans cet arbre : jouer depuis une position passée y ajoute une variante.
 
 ## Conséquences
 - Une allocation par coup joué : négligeable à l'échelle de l'interface et de Maia, à mesurer sur
