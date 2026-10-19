@@ -1,10 +1,13 @@
 package com.chesscompanion.core.engine.maia
 
 import com.chesscompanion.core.chess.Fen
+import com.chesscompanion.core.chess.IllegalMoveException
+import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.engine.ChessEngine
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.LegalMoveProvider
 import com.chesscompanion.core.engine.RulesLegalMoveProvider
+import com.chesscompanion.core.engine.SearchRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -22,7 +25,7 @@ data class MaiaEvaluation(
 
 /**
  * Maia as a [ChessEngine]: one network evaluation, no search ("policy only", like lc0 `go nodes 1`).
- * `depth` is ignored. Option `Temperature` (default 0): 0 plays the most likely move, higher values
+ * Search limits are ignored. Option `Temperature` (default 0): 0 plays the most likely move, higher values
  * sample among the legal moves (see [PolicyDecoder.choose]). The FEN is validated by `:core:chess`
  * and the legal moves come from the rules by default (S1-5).
  */
@@ -47,11 +50,14 @@ class MaiaEngine(
 
     override suspend fun newGame() = Unit
 
-    override fun analyze(
-        fen: String,
-        depth: Int,
-    ): Flow<EngineEvent> =
+    /** Joue les coups de [request] sur sa FEN (validés par les règles) ; limites et force ignorées. */
+    override fun analyze(request: SearchRequest): Flow<EngineEvent> =
         flow {
+            val fen =
+                request.moves
+                    .fold(Fen.parse(request.fen)) { position, uci ->
+                        position.play(Move.parseUci(uci) ?: throw IllegalMoveException("Invalid UCI move $uci"))
+                    }.toFen()
             val move = PolicyDecoder.choose(evaluate(fen).priors, temperature, random)
             emit(EngineEvent.BestMove(move ?: "(none)"))
         }

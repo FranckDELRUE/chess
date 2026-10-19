@@ -6,11 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.InvalidFenException
-import com.chesscompanion.core.engine.ChessEngine
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.EngineInfo
+import com.chesscompanion.core.engine.EnginePriority
+import com.chesscompanion.core.engine.EngineScheduler
 import com.chesscompanion.core.engine.Score
-import com.chesscompanion.core.engine.UciEngine
+import com.chesscompanion.core.engine.SearchLimit
+import com.chesscompanion.core.engine.SearchRequest
+import com.chesscompanion.core.engine.StockfishEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -27,7 +30,7 @@ enum class DebugStatus { IDLE, STARTING, ANALYZING, BATCH, THERMAL, MAIA, ERROR 
 data class EngineDebugState(
     val fen: String = Fen.START,
     val depth: Int = 16,
-    val threads: Int = EngineProvider.DEFAULT_THREADS,
+    val threads: Int = StockfishEngine.DEFAULT_THREADS,
     val status: DebugStatus = DebugStatus.IDLE,
     val info: EngineInfo? = null,
     val bestMove: String? = null,
@@ -42,7 +45,7 @@ data class EngineDebugState(
 class EngineDebugViewModel
     @Inject
     constructor(
-        private val provider: EngineProvider,
+        private val scheduler: EngineScheduler,
         @param:ApplicationContext private val context: Context,
     ) : ViewModel() {
         private val _state = MutableStateFlow(EngineDebugState())
@@ -55,7 +58,7 @@ class EngineDebugViewModel
 
         fun setThreads(threads: Int) {
             _state.update { it.copy(threads = threads) }
-            viewModelScope.launch { runCatching { provider.get().setOption("Threads", threads.toString()) } }
+            viewModelScope.launch { runCatching { scheduler.setOption("Threads", threads.toString()) } }
         }
 
         fun analyze() {
@@ -66,8 +69,8 @@ class EngineDebugViewModel
                 _state.update { it.copy(status = DebugStatus.ERROR, error = e.message) }
                 return
             }
-            launchJob(DebugStatus.ANALYZING) { engine ->
-                val result = runSearch(engine, fen, _state.value.depth)
+            launchJob(DebugStatus.ANALYZING) {
+                val result = runSearch(fen, _state.value.depth, newGame = false)
                 _state.update { it.copy(info = result.info, bestMove = result.bestMove, elapsedMs = result.timeMs) }
             }
         }
@@ -77,14 +80,13 @@ class EngineDebugViewModel
             job?.cancel()
         }
 
-        /** 10 positions x depths 16/18/20, one log line per cell (also in Logcat, tag SF_BENCH). */
+        /** 20 positions x depths 16/18/20, one log line per cell (also in Logcat, tag SF_BENCH). */
         fun runBatch() =
-            launchJob(DebugStatus.BATCH) { engine ->
+            launchJob(DebugStatus.BATCH) {
                 log("threads=${_state.value.threads} temp=${DeviceProbe.batteryTempC(context)}C")
                 BenchmarkPositions.FENS.forEachIndexed { index, fen ->
                     BenchmarkPositions.DEPTHS.forEach { depth ->
-                        engine.newGame()
-                        val r = runSearch(engine, fen, depth)
+                        val r = runSearch(fen, depth)
                         log("pos=${index + 1} depth=$depth ${r.summary()} pss=${DeviceProbe.pssMb()}MB")
                     }
                 }
@@ -93,14 +95,13 @@ class EngineDebugViewModel
 
         /** Back-to-back depth-20 searches for 5 minutes: heat and sustained speed. */
         fun runThermal() =
-            launchJob(DebugStatus.THERMAL) { engine ->
+            launchJob(DebugStatus.THERMAL) {
                 val start = System.nanoTime()
                 log("thermal start threads=${_state.value.threads} temp=${DeviceProbe.batteryTempC(context)}C")
                 var round = 0
                 while (System.nanoTime() - start < THERMAL_DURATION_NS) {
                     val fen = BenchmarkPositions.FENS[round % BenchmarkPositions.FENS.size]
-                    engine.newGame()
-                    val r = runSearch(engine, fen, THERMAL_DEPTH)
+                    val r = runSearch(fen, THERMAL_DEPTH)
                     round++
                     val seconds = (System.nanoTime() - start) / NS_PER_S
                     log("round=$round t=${seconds}s ${r.summary()} temp=${DeviceProbe.batteryTempC(context)}C")
@@ -114,16 +115,16 @@ class EngineDebugViewModel
 
         /** Maia 1100/1500/1900 on 20 positions: timings, memory, legality, cp loss (Logcat tag MAIA_BENCH). */
         fun runMaiaBatch() =
-            launchJob(DebugStatus.MAIA) { engine ->
+            launchJob(DebugStatus.MAIA) {
                 MaiaBenchmark(context) { line ->
                     Log.i(MaiaBenchmark.TAG, line)
                     _state.update { it.copy(log = it.log + line) }
-                }.run(engine)
+                }.run(scheduler)
             }
 
         private fun launchJob(
             status: DebugStatus,
-            block: suspend (UciEngine) -> Unit,
+            block: suspend () -> Unit,
         ) {
             if (_state.value.busy) return
             _state.update {
@@ -143,9 +144,8 @@ class EngineDebugViewModel
             job =
                 viewModelScope.launch {
                     try {
-                        val engine = provider.get()
                         _state.update { it.copy(status = status) }
-                        block(engine)
+                        block()
                         _state.update { it.copy(status = DebugStatus.IDLE) }
                     } catch (e: CancellationException) {
                         _state.update { it.copy(status = DebugStatus.IDLE) }
@@ -174,15 +174,17 @@ class EngineDebugViewModel
             }
         }
 
+        /** Background priority: any real use of the engine pre-empts the measurements. */
         private suspend fun runSearch(
-            engine: ChessEngine,
             fen: String,
             depth: Int,
+            newGame: Boolean = true,
         ): SearchResult {
             val start = System.nanoTime()
             var last: EngineInfo? = null
             var best: String? = null
-            engine.analyze(fen, depth).collect { event ->
+            val request = SearchRequest(fen, SearchLimit.Depth(depth), newGame = newGame)
+            scheduler.search(EnginePriority.BACKGROUND, request).collect { event ->
                 when (event) {
                     is EngineEvent.Info -> {
                         last = event.info
@@ -194,6 +196,7 @@ class EngineDebugViewModel
                         }
                     }
                     is EngineEvent.BestMove -> best = event.move
+                    EngineEvent.Restarted -> log("search pre-empted and restarted, timing is not valid")
                 }
             }
             return SearchResult(last, best, (System.nanoTime() - start) / NS_PER_MS)

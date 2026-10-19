@@ -7,8 +7,8 @@ import java.io.File
 
 class BenchmarkPositionsTest {
     @Test
-    fun `ten distinct valid positions`() {
-        assertEquals(10, BenchmarkPositions.FENS.toSet().size)
+    fun `twenty distinct valid positions`() {
+        assertEquals(20, BenchmarkPositions.FENS.toSet().size)
         BenchmarkPositions.FENS.forEach { Fen.parse(it) }
         BenchmarkPositions.MAIA_FENS.forEach { Fen.parse(it) }
     }

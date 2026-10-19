@@ -17,14 +17,16 @@ interface ChessEngine {
     suspend fun newGame()
 
     /**
-     * Analyse [fen] jusqu'à la profondeur [depth]. Émet les [EngineEvent.Info] puis un
-     * [EngineEvent.BestMove] final. Annuler la collecte arrête la recherche.
-     * Les analyses sont sérialisées : une seule recherche à la fois.
+     * Lance [request]. Émet les [EngineEvent.Info] puis un [EngineEvent.BestMove] final. Annuler la
+     * collecte arrête la recherche. Les analyses sont sérialisées : une seule recherche à la fois.
      */
+    fun analyze(request: SearchRequest): Flow<EngineEvent>
+
+    /** Raccourci : analyse [fen] jusqu'à la profondeur [depth], à pleine force. */
     fun analyze(
         fen: String,
         depth: Int,
-    ): Flow<EngineEvent>
+    ): Flow<EngineEvent> = analyze(SearchRequest(fen, SearchLimit.Depth(depth)))
 
     /** Arrête le moteur. Un moteur fermé ne peut pas être redémarré. */
     suspend fun close()
@@ -40,6 +42,12 @@ sealed interface EngineEvent {
         val move: String,
         val ponder: String? = null,
     ) : EngineEvent
+
+    /**
+     * La recherche a été interrompue par une tâche plus prioritaire puis relancée depuis le début
+     * ([EngineScheduler]) : les profondeurs repartent de 1.
+     */
+    data object Restarted : EngineEvent
 }
 
 data class EngineInfo(
