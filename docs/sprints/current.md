@@ -49,10 +49,10 @@ rejetées avec un message clair ; tests unitaires.
 fin de partie.
 
 ### S1-3 · Notation SAN et UCI
-- [ ] SAN : écriture avec levée d'ambiguïté (colonne, rangée, case), `+` et `#`, `O-O`/`O-O-O`,
+- [x] SAN : écriture avec levée d'ambiguïté (colonne, rangée, case), `+` et `#`, `O-O`/`O-O-O`,
   promotion `=Q`.
-- [ ] SAN : lecture tolérante (`0-0`, `+` ou `#` absents ou faux, `e8Q`, annotations `!?`).
-- [ ] UCI : lecture et écriture, coup validé contre la liste des coups légaux.
+- [x] SAN : lecture tolérante (`0-0`, `+` ou `#` absents ou faux, `e8Q`, annotations `!?`).
+- [x] UCI : lecture et écriture, coup validé contre la liste des coups légaux.
 
 **Acceptation** : aller-retour SAN sur des positions pièges (deux cavaliers, trois dames, prise
 en passant avec échec, promotion avec mat) ; tests unitaires.
@@ -116,3 +116,6 @@ Dette : « le camp sans le trait n'est pas en échec » reporté à S1-2 (détec
 **S1-2** — Fait : `Attacks` (cases attaquées et échec en 0x88), `MoveGenerator` (pseudo-légaux puis filtre « roi non attaqué après le coup », roque avec cases traversées), `Position.play` (immuable, lève `IllegalMoveException`, clé Zobrist incrémentale), `Position.legalMoves` mis en cache, `GameRules.status` (mat, pat, matériel insuffisant, 50 coups, triple répétition depuis le dernier coup irréversible ; le mat au 100e demi-coup gagne), `Perft` (`count`, `divide`). Nouveau contrôle FEN : le camp sans le trait n'est pas en échec. `Position` n'est plus une `data class` (constructeur privé, `Position.of` valide, `copy()` disparaît). Perft exact sur les 6 positions de chessprogramming.org et les 14 cas de Martin Sedlak à leur profondeur de référence : en CI (≈ 20 M nœuds, quelques secondes) et en test `slow` (`gradlew :core:chess:test -PslowTests`, 750 M nœuds en 73 s, 8 à 17 M nœuds/s sur le PC). Clé incrémentale vérifiée contre le recalcul complet sur 5 arbres de profondeur 3. 136 tests dans `:core:chess` ; `ktlintCheck detekt test assembleDebug` passent.
 Décision : la case en passant est **toujours** écrite dans la FEN après une poussée de deux cases (norme FEN/PGN) ; Lichess et Stockfish ne l'écrivent que si la prise est possible, à normaliser lors des comparaisons (S1-4, S1-5).
 Dette : une copie du plateau (64 cases) par coup essayé, assez rapide pour l'interface et Maia, vitesse sur la tablette non mesurée (S1-5) ; l'historique des clés est fourni par l'appelant (l'objet `Game` arrive en S1-4) ; pas de changement visible, APK non réinstallé.
+
+**S1-3** — Fait : `San.write` (désambiguïsation calculée sur les seuls coups légaux, donc pas pour une pièce clouée ; `x`, `=Q`, `O-O`/`O-O-O`, `+`/`#`) avec `PieceLetters` anglais par défaut et français (R, D, T, F, C) pour l'affichage ; `San.parse` tolérant (`0-0`, `+`/`#` absents ou faux, annotations, `e.p.`, `e8Q`/`e8=q`/`e8(N)`, `Ng1f3`/`Ng1-f3`/`e2e4`, `x` absent ou `:`), lettres anglaises sensibles à la casse ; `Uci.parse` validé contre les coups légaux ; raccourcis `Position.toSan`, `playSan`, `playUci`. Erreurs distinctes : `InvalidMoveNotationException` (mal formé, ambigu, avec les coups candidats et la FEN) et `IllegalMoveException` (aucun coup légal). 64 tests, dont l'aller-retour SAN de tous les coups légaux sur 7 arbres de profondeur 2 (unicité vérifiée). 200 tests dans `:core:chess` ; `ktlintCheck detekt test assembleDebug` passent.
+Dette : la lecture française n'existe pas (choix validé : affichage seulement) ; notation figurine (♘) non prévue ; pas de changement visible, APK non réinstallé.
