@@ -80,4 +80,44 @@ class GameSessionTest {
         assertEquals(start.toFen(), game.tag("FEN"))
         assertEquals(game, PgnReader.read(PgnWriter.write(game)))
     }
+
+    @Test
+    fun `navigation moves along the current line`() {
+        val end = GameSession.new().play("e2e4", "e7e5", "g1f3")
+        val start = end.toStart()
+        assertEquals(Position.START, start.position)
+        assertEquals(false, start.canGoBack)
+        assertEquals(listOf(0), start.forward().path)
+        assertEquals(end, start.toEnd())
+        assertEquals(listOf(0, 0), end.back().path)
+        assertEquals(end, end.forward())
+        assertEquals(start, start.back())
+        assertEquals(false, end.canGoForward)
+    }
+
+    @Test
+    fun `go to a variation and continue to its end`() {
+        val main = GameSession.new().play("e2e4", "e7e5", "g1f3")
+        val withVariation = main.goTo(listOf(0)).play("c7c5", "g1f3")
+        assertEquals(listOf(0, 1, 0), withVariation.path)
+        val inVariation = withVariation.goTo(listOf(0, 1))
+        assertEquals(Move.parseUci("c7c5"), inVariation.lastMove)
+        assertEquals(listOf(0, 1, 0), inVariation.toEnd().path)
+        assertEquals(listOf("Nf3"), inVariation.nextMoves.map { it.san })
+        assertThrows<IllegalArgumentException> { main.goTo(listOf(0, 3)) }
+    }
+
+    @Test
+    fun `an unfinished position keeps the result read from pgn`() {
+        val resigned = PgnReader.read("[Result \"0-1\"]\n\n1. e4 e5 0-1")
+        assertEquals(GameResult.BLACK_WINS, GameSession(resigned).toGame().result)
+        assertEquals(
+            GameResult.UNKNOWN,
+            GameSession
+                .new()
+                .play("e2e4")
+                .toGame()
+                .result,
+        )
+    }
 }

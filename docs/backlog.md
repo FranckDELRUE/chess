@@ -38,3 +38,10 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
   DataStore ; aujourd'hui en mémoire et dans le `SavedStateHandle`.
 - Animation du déplacement des pièces et retour animé de la pièce après un dépôt illégal.
 - Préférence « promotion automatique en dame ».
+
+## Issu de S1-7
+- Éditer les variantes : supprimer, promouvoir en ligne principale, ajouter un commentaire ou un NAG
+  (en respectant la limite de S1-4 sur les commentaires placés avant un coup).
+- Navigation par balayage sur l'échiquier et par les flèches d'un clavier physique.
+- Faire défiler automatiquement la liste des coups jusqu'au coup courant (longues parties).
+- Messages d'erreur PGN en français (aujourd'hui le détail vient de `:core:chess`, en anglais).

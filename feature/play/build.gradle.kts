@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":core:ui"))
 
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
@@ -49,6 +50,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     // Compose UI tests on the JVM (JUnit 4 rule, run by the Vintage engine). Test only, never in the APK.
     testImplementation(libs.junit4)

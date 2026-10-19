@@ -26,6 +26,41 @@ data class GameSession(
 
     val lastMove: Move? get() = line.lastOrNull()?.move
 
+    /** Moves that may follow the current one: the continuation first, then its variations. */
+    val nextMoves: List<MoveNode> get() = line.lastOrNull()?.children ?: game.moves
+
+    val canGoBack: Boolean get() = path.isNotEmpty()
+
+    val canGoForward: Boolean get() = nextMoves.isNotEmpty()
+
+    fun toStart(): GameSession = copy(path = emptyList())
+
+    fun back(): GameSession = if (canGoBack) copy(path = path.dropLast(1)) else this
+
+    /** One move forward along the continuation of the current line. */
+    fun forward(): GameSession = if (canGoForward) copy(path = path + 0) else this
+
+    /** End of the current line, following continuations. */
+    fun toEnd(): GameSession {
+        var end = path
+        var nodes = nextMoves
+        while (nodes.isNotEmpty()) {
+            end = end + 0
+            nodes = nodes.first().children
+        }
+        return copy(path = end)
+    }
+
+    /** Goes to the move at [target]; throws `IllegalArgumentException` if no move is there. */
+    fun goTo(target: List<Int>): GameSession {
+        var nodes = game.moves
+        target.forEach { index ->
+            require(index in nodes.indices) { "No move at path $target" }
+            nodes = nodes[index].children
+        }
+        return copy(path = target)
+    }
+
     /** Rules status of the current position, repetition counted along [line]. */
     fun status(): GameStatus {
         val earlier = listOf(game.startPosition) + line.dropLast(1).map { it.position }
@@ -38,7 +73,7 @@ data class GameSession(
      * `IllegalMoveException` if the move is not legal.
      */
     fun play(move: Move): GameSession {
-        val children = line.lastOrNull()?.children ?: game.moves
+        val children = nextMoves
         val existing = children.indexOfFirst { it.move == move }
         if (existing >= 0) return copy(path = path + existing)
         val before = position
@@ -46,9 +81,13 @@ data class GameSession(
         return GameSession(game.copy(moves = insert(game.moves, path, node)), path + children.size)
     }
 
-    /** The game with its result set from the end of the main line, ready for PGN export. */
+    /**
+     * The game ready for PGN export: when the main line ends in mate or a draw, the result comes from
+     * the rules; otherwise the game keeps its own (a resignation or a time loss read from a PGN).
+     */
     fun toGame(): Game {
-        val result = resultOf(GameSession(game, game.mainline.map { 0 }).status())
+        val status = GameSession(game, game.mainline.map { 0 }).status()
+        val result = if (status.isOver) resultOf(status) else game.result
         return game.copy(
             result = result,
             tags = game.tags.map { if (it.name == "Result") it.copy(value = result.token) else it },

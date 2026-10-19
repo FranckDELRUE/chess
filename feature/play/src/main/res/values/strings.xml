@@ -13,4 +13,37 @@
     <string name="play_new_game">Nouvelle partie</string>
     <string name="play_flip_board">Retourner l\'échiquier</string>
     <string name="play_show_legal_moves">Montrer les coups légaux</string>
+
+    <string name="play_nav_start">Début de la partie</string>
+    <string name="play_nav_back">Coup précédent</string>
+    <string name="play_nav_forward">Coup suivant</string>
+    <string name="play_nav_end">Fin de la ligne</string>
+
+    <string name="play_paste">Coller (PGN ou FEN)</string>
+    <string name="play_open">Ouvrir…</string>
+    <string name="play_copy_pgn">Copier le PGN</string>
+    <string name="play_copy_fen">Copier la FEN</string>
+    <string name="play_save">Enregistrer…</string>
+    <string name="play_save_file_name">partie.pgn</string>
+    <string name="play_copied_pgn">PGN copié</string>
+    <string name="play_copied_fen">FEN copiée</string>
+
+    <plurals name="play_msg_imported">
+        <item quantity="one">%d partie importée</item>
+        <item quantity="many">%d parties importées</item>
+        <item quantity="other">%d parties importées</item>
+    </plurals>
+    <plurals name="play_msg_import_errors">
+        <item quantity="one">%1$s, %2$d en erreur</item>
+        <item quantity="many">%1$s, %2$d en erreur</item>
+        <item quantity="other">%1$s, %2$d en erreur</item>
+    </plurals>
+    <string name="play_msg_import_failed">Import impossible (partie %1$d, ligne %2$d) : %3$s</string>
+    <string name="play_msg_nothing_to_import">Rien à importer : ni PGN ni FEN valide</string>
+    <string name="play_msg_position_loaded">Position chargée</string>
+    <string name="play_msg_saved">Partie enregistrée</string>
+    <string name="play_msg_file_error">Fichier inaccessible : %1$s</string>
+    <string name="play_choose_game">Choisir une partie</string>
+    <string name="play_game_summary">%1$s – %2$s · %3$s · %4$s</string>
+    <string name="play_cancel">Annuler</string>
 </resources>
