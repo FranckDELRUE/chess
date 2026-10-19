@@ -38,11 +38,11 @@ Sprint précédent : `docs/sprints/s0.md`.
 rejetées avec un message clair ; tests unitaires.
 
 ### S1-2 · Coups légaux et fins de partie
-- [ ] Générateur de coups légaux : promotions, roque (cases traversées non attaquées), prise en
+- [x] Générateur de coups légaux : promotions, roque (cases traversées non attaquées), prise en
   passant (y compris le clouage horizontal), échec et parade.
-- [ ] Jouer un coup → nouvelle `Position` (compteurs, droits de roque, clé Zobrist incrémentale).
-- [ ] Mat, pat, triple répétition, règle des 50 coups, matériel insuffisant.
-- [ ] Validation FEN complétée : le camp qui n'a pas le trait n'est pas en échec.
+- [x] Jouer un coup → nouvelle `Position` (compteurs, droits de roque, clé Zobrist incrémentale).
+- [x] Mat, pat, triple répétition, règle des 50 coups, matériel insuffisant.
+- [x] Validation FEN complétée : le camp qui n'a pas le trait n'est pas en échec.
 
 **Acceptation** : perft exact sur les 6 positions de référence de chessprogramming.org
 (profondeurs rapides en CI, profondeurs longues dans un test marqué « lent ») ; tests de chaque
@@ -112,3 +112,7 @@ _(à compléter en fin de story : fait, dette, ajustements)_
 
 **S1-1** — Fait : `Square` (classe valeur 0..63), `Move` (UCI), `CastlingRights` (4 bits, FEN canonique `KQkq`), `Position` immuable validée à la construction, `Zobrist` (SplitMix64 à graine fixe, case en passant comptée seulement si la prise est possible), objet `Fen` (lecture stricte 6 ou 4 champs, écriture canonique) qui remplace `FenParser` ; appelants migrés (`:core:ui`, `:core:engine`, `:app`), l'écran « Debug moteur » et le test des positions de benchmark valident maintenant la FEN complète. ADR 0006. 72 tests dans `:core:chess` (aller-retour FEN dont les 6 positions perft, 27 FEN invalides, Zobrist). `ktlintCheck detekt test assembleDebug` passent.
 Dette : « le camp sans le trait n'est pas en échec » reporté à S1-2 (détection d'attaque) ; `Board` reste une liste de 64 cases (le 0x88 arrive avec le générateur) ; `FenFields` de `:core:engine` lit encore trait et roques lui-même (S1-5) ; clé Zobrist recalculée en entier (incrémentale en S1-2) ; pas de changement visible, APK non réinstallé sur la tablette.
+
+**S1-2** — Fait : `Attacks` (cases attaquées et échec en 0x88), `MoveGenerator` (pseudo-légaux puis filtre « roi non attaqué après le coup », roque avec cases traversées), `Position.play` (immuable, lève `IllegalMoveException`, clé Zobrist incrémentale), `Position.legalMoves` mis en cache, `GameRules.status` (mat, pat, matériel insuffisant, 50 coups, triple répétition depuis le dernier coup irréversible ; le mat au 100e demi-coup gagne), `Perft` (`count`, `divide`). Nouveau contrôle FEN : le camp sans le trait n'est pas en échec. `Position` n'est plus une `data class` (constructeur privé, `Position.of` valide, `copy()` disparaît). Perft exact sur les 6 positions de chessprogramming.org et les 14 cas de Martin Sedlak à leur profondeur de référence : en CI (≈ 20 M nœuds, quelques secondes) et en test `slow` (`gradlew :core:chess:test -PslowTests`, 750 M nœuds en 73 s, 8 à 17 M nœuds/s sur le PC). Clé incrémentale vérifiée contre le recalcul complet sur 5 arbres de profondeur 3. 136 tests dans `:core:chess` ; `ktlintCheck detekt test assembleDebug` passent.
+Décision : la case en passant est **toujours** écrite dans la FEN après une poussée de deux cases (norme FEN/PGN) ; Lichess et Stockfish ne l'écrivent que si la prise est possible, à normaliser lors des comparaisons (S1-4, S1-5).
+Dette : une copie du plateau (64 cases) par coup essayé, assez rapide pour l'interface et Maia, vitesse sur la tablette non mesurée (S1-5) ; l'historique des clés est fourni par l'appelant (l'objet `Game` arrive en S1-4) ; pas de changement visible, APK non réinstallé.

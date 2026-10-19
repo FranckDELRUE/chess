@@ -28,7 +28,7 @@ object Fen {
         val halfmove = if (fields.size == FIELDS) parseCounter(fields[4], "halfmove clock") else 0
         val fullmove = if (fields.size == FIELDS) parseCounter(fields[5], "fullmove number") else 1
         return try {
-            Position(board, side, castling, enPassant, halfmove, fullmove)
+            Position.of(board, side, castling, enPassant, halfmove, fullmove)
         } catch (e: InvalidPositionException) {
             throw InvalidFenException(e.message ?: "Invalid position: '$fen'", e)
         }

@@ -5,44 +5,98 @@ open class InvalidPositionException(
     cause: Throwable? = null,
 ) : IllegalArgumentException(message, cause)
 
+class IllegalMoveException(
+    message: String,
+) : IllegalArgumentException(message)
+
 /**
- * A complete, immutable chess position: what a FEN describes. The constructor rejects
- * inconsistent positions (see [PositionValidator]).
- *
- * Not yet checked (S1-2, needs attack detection): the side not to move must not be in check.
+ * A complete, immutable chess position: what a FEN describes. [of] rejects inconsistent
+ * positions (see [PositionValidator]); [play] only ever produces legal successors.
  */
-data class Position(
+class Position private constructor(
     val board: Board,
     val sideToMove: Side,
     val castling: CastlingRights,
+    /** Set after every two-square pawn advance, even when no capture is possible (FEN standard). */
     val enPassant: Square?,
     val halfmoveClock: Int,
     val fullmoveNumber: Int,
+    key: Long?,
 ) {
-    init {
-        PositionValidator.firstError(this)?.let { throw InvalidPositionException(it) }
-    }
-
     /** Zobrist key: equal for positions that are the same for the repetition rule. */
-    val zobristKey: Long by lazy { Zobrist.key(this) }
+    val zobristKey: Long = key ?: Zobrist.key(this)
+
+    /** Legal moves, computed once on first use. */
+    val legalMoves: List<Move> by lazy(LazyThreadSafetyMode.PUBLICATION) { MoveGenerator.legalMoves(this) }
+
+    /** True if the side to move is in check. */
+    val isCheck: Boolean get() = Attacks.isInCheck(board, sideToMove)
 
     /** True if a pawn of the side to move stands next to the pawn that just advanced two squares. */
-    val isEnPassantCapturable: Boolean
-        get() {
-            val target = enPassant ?: return false
-            val pawnRank = if (sideToMove == Side.WHITE) target.rank - 1 else target.rank + 1
-            val ownPawn = Piece(PieceType.PAWN, sideToMove)
-            return listOf(target.file - 1, target.file + 1)
-                .filter { it in 0 until Board.SIZE }
-                .any { board.pieceAt(it, pawnRank) == ownPawn }
-        }
+    val isEnPassantCapturable: Boolean get() = isEnPassantCapturable(board, sideToMove, enPassant)
+
+    fun isLegal(move: Move): Boolean = move in legalMoves
+
+    /** Plays a legal move; throws [IllegalMoveException] otherwise. */
+    fun play(move: Move): Position {
+        if (move !in legalMoves) throw IllegalMoveException("Illegal move $move in ${toFen()}")
+        return MoveGenerator.play(this, move)
+    }
 
     fun toFen(): String = Fen.write(this)
+
+    override fun equals(other: Any?): Boolean =
+        other is Position &&
+            other.board == board &&
+            other.sideToMove == sideToMove &&
+            other.castling == castling &&
+            other.enPassant == enPassant &&
+            other.halfmoveClock == halfmoveClock &&
+            other.fullmoveNumber == fullmoveNumber
+
+    override fun hashCode(): Int = zobristKey.hashCode() * 31 + halfmoveClock * 7 + fullmoveNumber
 
     override fun toString(): String = toFen()
 
     companion object {
         val START: Position by lazy { Fen.parse(Fen.START) }
+
+        /** Builds a position; throws [InvalidPositionException] if it is inconsistent. */
+        fun of(
+            board: Board,
+            sideToMove: Side,
+            castling: CastlingRights,
+            enPassant: Square?,
+            halfmoveClock: Int,
+            fullmoveNumber: Int,
+        ): Position {
+            val position = Position(board, sideToMove, castling, enPassant, halfmoveClock, fullmoveNumber, key = null)
+            PositionValidator.firstError(position)?.let { throw InvalidPositionException(it) }
+            return position
+        }
+
+        /** Successor built by [MoveGenerator.play]: already consistent, key computed incrementally. */
+        internal fun trusted(
+            board: Board,
+            sideToMove: Side,
+            castling: CastlingRights,
+            enPassant: Square?,
+            halfmoveClock: Int,
+            fullmoveNumber: Int,
+            zobristKey: Long,
+        ): Position = Position(board, sideToMove, castling, enPassant, halfmoveClock, fullmoveNumber, zobristKey)
+
+        internal fun isEnPassantCapturable(
+            board: Board,
+            sideToMove: Side,
+            enPassant: Square?,
+        ): Boolean {
+            val target = enPassant ?: return false
+            val pawnRank = if (sideToMove == Side.WHITE) target.rank - 1 else target.rank + 1
+            val ownPawn = Piece(PieceType.PAWN, sideToMove)
+            return (target.file > 0 && board.pieceAt(target.file - 1, pawnRank) == ownPawn) ||
+                (target.file < Board.SIZE - 1 && board.pieceAt(target.file + 1, pawnRank) == ownPawn)
+        }
     }
 }
 
@@ -55,6 +109,7 @@ internal object PositionValidator {
             ?: piecesError(position.board)
             ?: castlingError(position)
             ?: enPassantError(position)
+            ?: checkError(position)
 
     private fun countersError(position: Position): String? =
         when {
@@ -120,6 +175,15 @@ internal object PositionValidator {
             board.pieceAt(target.file, target.rank + step) != Piece(PieceType.PAWN, mover) ->
                 "En passant square $target without the pawn that just advanced"
             else -> null
+        }
+    }
+
+    private fun checkError(position: Position): String? {
+        val waiting = position.sideToMove.opposite
+        return if (Attacks.isInCheck(position.board, waiting)) {
+            "The ${waiting.name.lowercase()} king is in check but it is not ${waiting.name.lowercase()}'s move"
+        } else {
+            null
         }
     }
 
