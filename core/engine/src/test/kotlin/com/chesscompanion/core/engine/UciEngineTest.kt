@@ -26,9 +26,6 @@ class UciEngineTest {
                             "bestmove e2e4 ponder e7e5",
                         )
                 line == "stop" -> pending += "bestmove e2e4"
-                line == "go perft 1" ->
-                    pending +=
-                        listOf("info string NNUE", "e2e4: 1", "e7e8q: 1", "", "Nodes searched: 2")
                 line == "quit" -> Unit
             }
         }
@@ -84,15 +81,6 @@ class UciEngineTest {
                 listOf("uci", "setoption name EvalFile value /net.nnue", "setoption name Threads value 4", "isready"),
                 transport.sent,
             )
-        }
-
-    @Test
-    fun `legalMoves reads perft 1 output`() =
-        runTest {
-            val transport = FakeTransport()
-            val moves = UciEngine(transport).legalMoves("4k3/4P3/8/8/8/8/8/4K3 w - - 0 1")
-            assertEquals(setOf("e2e4", "e7e8q"), moves)
-            assertEquals(listOf("position fen 4k3/4P3/8/8/8/8/8/4K3 w - - 0 1", "go perft 1"), transport.sent)
         }
 
     @Test

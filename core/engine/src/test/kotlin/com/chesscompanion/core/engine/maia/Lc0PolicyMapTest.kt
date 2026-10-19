@@ -1,5 +1,6 @@
 package com.chesscompanion.core.engine.maia
 
+import com.chesscompanion.core.chess.Fen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -16,7 +17,7 @@ class Lc0PolicyMapTest {
         val rows = MaiaReference.rows.filter { it.net == "1100" }
         assertEquals(20, rows.map { it.fen }.distinct().size)
         rows.groupBy { it.fen }.forEach { (fen, moves) ->
-            val indices = PolicyDecoder.policyIndices(fen, moves.map { it.move })
+            val indices = PolicyDecoder.policyIndices(Fen.parse(fen), moves.map { it.move })
             moves.forEach { assertEquals(it.index, indices[it.move], "${it.move} in $fen") }
         }
     }
