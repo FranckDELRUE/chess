@@ -70,5 +70,10 @@ Sous Windows, `JAVA_HOME` doit pointer vers un JDK 17+ (par exemple
 - **ktlint** (plugin Gradle) : règles de `.editorconfig`.
 - **detekt** 2.x : configuration par défaut complétée par `config/detekt/detekt.yml`.
 - **JUnit 5** sur tous les modules ; un test d'exemple par module.
+- **Tests UI Compose sur la JVM** (à partir de S1-6) : Robolectric, règle JUnit 4 exécutée par
+  JUnit Vintage. Sous Windows, si le dossier personnel contient une espace (`C:\Users\Prénom Nom`),
+  Robolectric ne charge pas sa bibliothèque native : ajouter dans `local.properties` la ligne
+  `robolectric.userHome=C\:/Users/Public/robolectric-home` (dossier sans espace ; le premier lancement
+  y télécharge le jar Android de Robolectric).
 - **GitHub Actions** (`.github/workflows/ci.yml`) : qualité, tests et `assembleDebug`
   à chaque push sur `main` et chaque pull request.

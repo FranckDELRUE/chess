@@ -75,19 +75,19 @@ import → export → import donne une partie identique ; tests de PGN avec vari
 **Acceptation** : tests Maia et moteur verts ; mesure consignée dans la note de story.
 
 ### S1-6 · Jouer sur l'échiquier
-- [ ] Module `:feature:play` : écran « Partie » à deux joueurs, `GameViewModel` en `StateFlow`.
-- [ ] Échiquier interactif dans `:core:ui` : toucher-toucher et glisser-déposer, coups légaux en
+- [x] Module `:feature:play` : écran « Partie » à deux joueurs, `GameViewModel` en `StateFlow`.
+- [x] Échiquier interactif dans `:core:ui` : toucher-toucher et glisser-déposer, coups légaux en
   surbrillance (désactivable), dernier coup, roi en échec.
-- [ ] Choix de la pièce de promotion ; fin de partie affichée (mat, pat, nulles).
+- [x] Choix de la pièce de promotion ; fin de partie affichée (mat, pat, nulles).
 
 **Acceptation** : tests du ViewModel ; test Compose UI (mat du berger joué au toucher) ; vérifié
 sur la tablette en paysage et en portrait, clair et sombre.
 
 ### S1-7 · Navigation, SAN et import/export dans l'application
-- [ ] Liste des coups en SAN (coup courant surligné, toucher pour y aller), boutons début,
+- [x] Liste des coups en SAN (coup courant surligné, toucher pour y aller), boutons début,
   précédent, suivant, fin ; jouer un coup depuis une position passée crée une variante.
-- [ ] Retourner l'échiquier.
-- [ ] Import et export PGN et FEN par le presse-papiers et par fichier (Storage Access Framework).
+- [x] Retourner l'échiquier.
+- [x] Import et export PGN et FEN par le presse-papiers et par fichier (Storage Access Framework).
 
 **Acceptation** : tests UI du parcours (importer une partie de Heidoji, naviguer, exporter) ;
 vérifié sur la tablette.
@@ -125,3 +125,11 @@ Dette : un commentaire placé avant un coup au milieu d'une ligne ne peut venir 
 
 **S1-5** — Fait (sauf la mesure sur la tablette) : `RulesLegalMoveProvider` (coups légaux de `:core:chess` en UCI, FEN invalide refusée), valeur par défaut de `MaiaEngine` ; `Lc0Encoder.encode(Position)` (surcharge `encode(fen)` qui passe par `Fen.parse`) et `PolicyDecoder` sur `Position` : `FenFields` supprimé (roques via `CastlingRights`, case en passant, `halfmoveClock`) ; `go perft 1` retiré de `UciEngine` et `UciParser` (décision validée) ; `MaiaBenchmark` contrôle la légalité par les règles et affiche `legal_median`. Contrôle croisé : sur les 20 positions de `maia-reference.tsv`, nos coups légaux sont exactement ceux de lc0 ; `MaiaPipelineTest` (réseaux présents en local) retrouve les priors de lc0. Coups légaux ≈ 9 µs par position sur le PC (FEN lue comprise), contre ≈ 30 ms avec Stockfish. `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
 Dette : **mesure du coût d'un coup Maia complet sur la tablette non faite** (tablette verrouillée) : lancer « Lot Maia 20×3 » dans « Debug moteur », lire `adb logcat -s MAIA_BENCH` (`legal_median`, temps d'inférence), consigner ici et dans `docs/spikes/rapport-s0.md`, puis cocher la case — prévue le 2026-10-19 au soir. La FEN est lue deux fois par coup Maia (moteur puis fournisseur), négligeable.
+
+**S1-6** — Fait : `GameSession` dans `:core:chess` (partie + chemin du coup courant ; `play` suit un coup existant ou l'ajoute en variante, `status()` avec répétition, `toGame()` qui fixe le résultat pour le PGN). `:core:ui` : `ChessBoard` interactif sans état métier (toucher, glisser-déposer avec la pièce sous le doigt, case sélectionnée, cibles en point ou en anneau, dernier coup, roi en échec, description accessible « e4, cavalier blanc » et `testTag` par case) et `PromotionDialog` ; l'ancien `ChessBoard(fen)` reste pour l'accueil. Nouveau module `:feature:play` (décision validée) : `MoveInput` (machine à états immuable : sélection, coup, promotion en attente, plus rien après la fin), `PlayViewModel` (Hilt, `StateFlow<PlayUiState>`, partie gardée en PGN dans le `SavedStateHandle`), `PlayScreen` paysage/portrait (statut : trait, échec, mat, pat, trois nulles ; « Nouvelle partie », « Retourner », interrupteur « Montrer les coups légaux ») ; bouton « Partie à deux joueurs » sur l'accueil. Tests : 7 `GameSession`, 11 ViewModel, 1 test UI Compose sous Robolectric (mat du berger joué au toucher, message de mat vérifié), `squareAtOffset`. Dépendances de test ajoutées (choix validé) : Robolectric 4.16 (MIT), `compose-ui-test-junit4` (Apache 2.0), JUnit 4.13.2 (EPL 1.0, tests seulement, jamais dans l'APK) et JUnit Vintage. `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
+Contournement : Robolectric ne charge pas sa bibliothèque native depuis un chemin contenant une espace (`C:\Users\Franck DELRUE`) ; `robolectric.userHome` dans `local.properties` (propre à la machine, non versionné) déplace son cache, voir README. Robolectric tourne en SDK 35 (`@Config`), le SDK 37 n'étant pas garanti.
+Dette : **vérification sur la tablette non faite** (tablette verrouillée) : paysage, portrait, mode sombre, glisser-déposer, promotion — à faire ce soir avec la mesure de S1-5 ; préférences non persistées et pas d'animation (backlog).
+
+**S1-7** — Fait : `GameSession` navigue (`toStart`, `back`, `forward`, `toEnd`, `goTo`, `nextMoves`) ; `toGame()` garde le résultat lu dans le PGN quand la ligne ne finit ni par un mat ni par une nulle (abandon, temps). `:feature:play` : `MoveListBuilder` (arbre → liste affichable, **notation française** validée, numéros « 12... » après une variante ou un commentaire, variantes imbriquées, NAG en `!?`, commandes `[%clk]` masquées) ; liste des coups cliquable avec coup courant surligné et variantes en plus petit ; boutons ⏮ ◀ ▶ ⏭ ; jouer depuis une position passée crée une variante. Import : « Coller (PGN ou FEN) » (une FEN démarre une partie depuis la position, sinon lecture PGN), « Ouvrir… » par le Storage Access Framework ; fichier multi-parties → choix de la partie, message « n parties importées, e en erreur ». Export : « Copier le PGN », « Copier la FEN », « Enregistrer… » (SAF). `PlayViewModel` passe à un point d'entrée unique `onAction(PlayAction)` (UDF, actions groupées échiquier / navigation / documents) ; fichiers via `GameDocuments` (Hilt, `ContentResolver`, à déplacer dans `:core:data` en S6). Tests : `GameSession` (10), `MoveListBuilder` (5), ViewModel (19, dont navigation, variante, import simple / multiple / FEN / texte illisible, fichiers ouverts et enregistrés), 2 tests UI Robolectric dont le parcours d'acceptation (coller une partie de Heidoji, naviguer, « Copier le PGN » → partie identique). `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
+Choix validés : notation française dans la liste ; édition des variantes, balayage et clavier au backlog.
+Dette : **vérification sur la tablette non faite** (à faire avec S1-5 et S1-6 : ouvrir et enregistrer un vrai `.pgn`) ; détail des erreurs PGN en anglais ; pas de défilement automatique vers le coup courant (backlog).
