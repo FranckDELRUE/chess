@@ -13,6 +13,9 @@
     <string name="play_new_game">Nouvelle partie</string>
     <string name="play_flip_board">Retourner l\'échiquier</string>
     <string name="play_show_legal_moves">Montrer les coups légaux</string>
+    <string name="play_annotate">Annoter</string>
+    <string name="play_annotation_color">Couleur %1$s</string>
+    <string name="play_annotation_clear">Effacer les annotations</string>
 
     <string name="play_nav_start">Début de la partie</string>
     <string name="play_nav_back">Coup précédent</string>

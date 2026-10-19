@@ -11,6 +11,8 @@ import com.chesscompanion.core.chess.pgn.Game
 import com.chesscompanion.core.chess.pgn.GameSession
 import com.chesscompanion.core.chess.pgn.PgnReader
 import com.chesscompanion.core.chess.pgn.PgnWriter
+import com.chesscompanion.core.ui.board.AnnotationColor
+import com.chesscompanion.core.ui.board.BoardAnnotations
 import com.chesscompanion.core.ui.board.BoardHighlights
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +38,10 @@ data class PlayUiState(
     /** Games to choose from after importing a PGN that holds several; null otherwise. */
     val gameChoice: List<GameSummary>? = null,
     val message: PlayMessage? = null,
+    /** "Annoter" mode: taps and drags mark the board instead of playing. */
+    val annotating: Boolean = false,
+    val annotationColor: AnnotationColor = AnnotationColor.GREEN,
+    val annotations: BoardAnnotations = BoardAnnotations.EMPTY,
 )
 
 /**
@@ -55,6 +61,7 @@ class PlayViewModel
         private var showLegalMoves: Boolean = savedState[KEY_SHOW_LEGAL_MOVES] ?: true
         private var choice: List<Game>? = null
         private var message: PlayMessage? = null
+        private var annotation = AnnotationInput()
 
         private val _state = MutableStateFlow(buildState())
         val state: StateFlow<PlayUiState> = _state.asStateFlow()
@@ -63,6 +70,7 @@ class PlayViewModel
             when (action) {
                 is PlayAction.Board -> onBoard(action)
                 is PlayAction.Navigation -> onNavigation(action)
+                is PlayAction.Annotation -> onAnnotation(action)
                 is PlayAction.Document -> onDocument(action)
             }
         }
@@ -71,6 +79,11 @@ class PlayViewModel
         fun exportPgn(): String = PgnWriter.write(input.session.toGame())
 
         private fun onBoard(action: PlayAction.Board) {
+            annotation.consume(action)?.let {
+                annotation = it
+                update(input)
+                return
+            }
             when (action) {
                 is PlayAction.SquareTap -> update(input.tap(action.square))
                 is PlayAction.DragStart -> update(input.dragStart(action.square))
@@ -102,6 +115,12 @@ class PlayViewModel
                     is PlayAction.GoTo -> runCatching { session.goTo(action.path) }.getOrDefault(session)
                 }
             update(MoveInput(target))
+        }
+
+        private fun onAnnotation(action: PlayAction.Annotation) {
+            annotation = annotation.on(action)
+            // Entering the mode drops the piece selection: taps now mark the board.
+            update(if (annotation.enabled) input.copy(selected = null) else input)
         }
 
         private fun onDocument(action: PlayAction.Document) {
@@ -167,6 +186,8 @@ class PlayViewModel
         /** Applies the new input state, saves the game when it changed and publishes the UI state. */
         private fun update(next: MoveInput) {
             if (next.session.game !== input.session.game) savedState[KEY_PGN] = PgnWriter.write(next.session.game)
+            // Marks belong to the position shown: a move, a navigation or an import clears them.
+            if (next.session.position != input.session.position) annotation = annotation.cleared()
             input = next
             _state.value = buildState()
         }
@@ -203,6 +224,9 @@ class PlayViewModel
                         )
                     },
                 message = message,
+                annotating = annotation.enabled,
+                annotationColor = annotation.color,
+                annotations = annotation.annotations,
             )
         }
 

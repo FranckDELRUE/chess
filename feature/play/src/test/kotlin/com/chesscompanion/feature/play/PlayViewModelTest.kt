@@ -11,6 +11,8 @@ import com.chesscompanion.core.chess.Side
 import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.chess.pgn.GameResult
 import com.chesscompanion.core.chess.pgn.PgnReader
+import com.chesscompanion.core.ui.board.AnnotationColor
+import com.chesscompanion.core.ui.board.Arrow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -277,5 +279,64 @@ class PlayViewModelTest {
         assertTrue(vm.ui.message is PlayMessage.FileError)
         vm.onAction(PlayAction.SaveFile("readonly:x"))
         assertTrue(vm.ui.message is PlayMessage.FileError)
+    }
+
+    // --- Annotations (S1-8) ---
+
+    @Test
+    fun `in annotate mode a tap colours a square instead of selecting`() {
+        val vm = newViewModel()
+        vm.tap("e2")
+        vm.onAction(PlayAction.PickAnnotationColor(AnnotationColor.RED))
+        assertTrue(vm.ui.annotating)
+        assertNull(vm.ui.highlights.selected)
+        vm.tap("e4")
+        assertEquals(mapOf(sq("e4") to AnnotationColor.RED), vm.ui.annotations.squares)
+        assertEquals(Position.START.board, vm.ui.board)
+        vm.tap("e4")
+        assertTrue(vm.ui.annotations.isEmpty)
+    }
+
+    @Test
+    fun `in annotate mode a drag draws an arrow and plays nothing`() {
+        val vm = newViewModel()
+        vm.onAction(PlayAction.ToggleAnnotate)
+        vm.onAction(PlayAction.DragStart(sq("e2")))
+        vm.onAction(PlayAction.Drop(sq("e2"), sq("e4")))
+        assertEquals(mapOf(Arrow(sq("e2"), sq("e4")) to AnnotationColor.GREEN), vm.ui.annotations.arrows)
+        assertEquals(Position.START.board, vm.ui.board)
+        assertNull(vm.ui.highlights.selected)
+    }
+
+    @Test
+    fun `leaving annotate mode plays again and keeps the marks of the position`() {
+        val vm = newViewModel()
+        vm.onAction(PlayAction.ToggleAnnotate)
+        vm.tap("d4")
+        vm.onAction(PlayAction.ToggleAnnotate)
+        assertFalse(vm.ui.annotating)
+        assertEquals(setOf(sq("d4")), vm.ui.annotations.squares.keys)
+        vm.tap("e2")
+        assertEquals(sq("e2"), vm.ui.highlights.selected)
+    }
+
+    @Test
+    fun `marks are cleared when the position changes, or on request`() {
+        val vm = newViewModel()
+        vm.tap("e2", "e4")
+        vm.onAction(PlayAction.ToggleAnnotate)
+        vm.tap("e5")
+        vm.onAction(PlayAction.Back)
+        assertTrue(vm.ui.annotations.isEmpty)
+        vm.tap("e2")
+        vm.onAction(PlayAction.ClearAnnotations)
+        assertTrue(vm.ui.annotations.isEmpty)
+        vm.onAction(PlayAction.ToggleAnnotate)
+        vm.tap("e2", "e4")
+        vm.onAction(PlayAction.ToggleAnnotate)
+        vm.tap("d4")
+        vm.onAction(PlayAction.ToggleAnnotate)
+        vm.tap("e7", "e5")
+        assertTrue(vm.ui.annotations.isEmpty)
     }
 }

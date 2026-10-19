@@ -4,6 +4,7 @@ import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.ui.board.isLightSquare
 import com.chesscompanion.core.ui.board.squareAt
 import com.chesscompanion.core.ui.board.squareAtOffset
+import com.chesscompanion.core.ui.board.squareCenter
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -47,5 +48,14 @@ class BoardOrientationTest {
         assertNull(squareAtOffset(-1f, 50f, 100f, flipped = false))
         assertNull(squareAtOffset(50f, 800f, 100f, flipped = false))
         assertNull(squareAtOffset(50f, 50f, 0f, flipped = false))
+    }
+
+    @Test
+    fun `arrows start and end at square centres in both orientations`() {
+        val e2 = Square.parse("e2")!!
+        assertEquals(450f, squareCenter(e2, 100f, flipped = false).x)
+        assertEquals(650f, squareCenter(e2, 100f, flipped = false).y)
+        assertEquals(350f, squareCenter(e2, 100f, flipped = true).x)
+        assertEquals(150f, squareCenter(e2, 100f, flipped = true).y)
     }
 }

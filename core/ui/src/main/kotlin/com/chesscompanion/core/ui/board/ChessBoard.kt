@@ -3,8 +3,6 @@ package com.chesscompanion.core.ui.board
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -15,17 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -46,6 +38,7 @@ private const val FILE_LETTERS = "abcdefgh"
 private const val LABEL_RATIO = 0.2f
 private const val DOT_RATIO = 0.16f
 private const val RING_RATIO = 0.08f
+private const val MARK_ALPHA = 0.75f
 
 /** Test tag of the cell showing [square], e.g. `square-e4`. */
 fun squareTestTag(square: Square): String = "square-${square.name}"
@@ -62,7 +55,7 @@ fun ChessBoard(
     colors: BoardColors = BoardColors(),
 ) {
     val board = remember(fen) { runCatching { Fen.parseBoard(fen) }.getOrNull() }
-    BoardView(board, flipped, BoardHighlights(), null, modifier, colors)
+    BoardView(board, flipped, BoardLook(BoardHighlights(), BoardAnnotations.EMPTY, colors), null, modifier)
 }
 
 /**
@@ -70,8 +63,10 @@ fun ChessBoard(
  * ViewModel) decides what they mean. Only the finger position of a drag is kept here.
  *
  * @param onSquareTap a square was tapped.
- * @param onDragStart a piece started to be dragged from this square.
- * @param onMove a dragged piece was dropped on another square.
+ * @param onDragStart a piece started to be dragged from this square ([DragMode.PIECE] only).
+ * @param onMove a drag ended on another square: a piece dropped, or an arrow drawn in [DragMode.ARROW].
+ * @param annotations coloured squares and arrows drawn by the player.
+ * @param arrowColor colour of the arrow being drawn in [DragMode.ARROW].
  */
 @Composable
 fun ChessBoard(
@@ -82,72 +77,45 @@ fun ChessBoard(
     onMove: (from: Square, to: Square) -> Unit,
     modifier: Modifier = Modifier,
     highlights: BoardHighlights = BoardHighlights(),
+    annotations: BoardAnnotations = BoardAnnotations.EMPTY,
+    dragMode: DragMode = DragMode.PIECE,
+    arrowColor: AnnotationColor = AnnotationColor.GREEN,
     colors: BoardColors = BoardColors(),
 ) {
-    BoardView(board, flipped, highlights, BoardInput(onSquareTap, onDragStart, onMove), modifier, colors)
+    BoardView(
+        board = board,
+        flipped = flipped,
+        look = BoardLook(highlights, annotations, colors),
+        input = BoardInput(onSquareTap, onDragStart, onMove, dragMode, colors.of(arrowColor)),
+        modifier = modifier,
+    )
 }
 
-private class BoardInput(
-    val onTap: (Square) -> Unit,
-    val onDragStart: (Square) -> Unit,
-    val onMove: (Square, Square) -> Unit,
-)
-
-private data class Drag(
-    val from: Square,
-    val position: Offset,
+/** What is drawn on top of the squares and pieces. */
+private class BoardLook(
+    val highlights: BoardHighlights,
+    val annotations: BoardAnnotations,
+    val colors: BoardColors,
 )
 
 @Composable
 private fun BoardView(
     board: Board?,
     flipped: Boolean,
-    highlights: BoardHighlights,
+    look: BoardLook,
     input: BoardInput?,
     modifier: Modifier,
-    colors: BoardColors,
 ) {
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
         val cell = side / Board.SIZE
         val cellPx = with(LocalDensity.current) { cell.toPx() }
-        var drag by remember { mutableStateOf<Drag?>(null) }
-        val currentInput by rememberUpdatedState(input)
-        val currentBoard by rememberUpdatedState(board)
-        val gestures =
-            if (input == null) {
-                Modifier
-            } else {
-                Modifier
-                    .pointerInput(flipped, cellPx) {
-                        detectTapGestures { offset ->
-                            squareAtOffset(offset.x, offset.y, cellPx, flipped)?.let { currentInput?.onTap(it) }
-                        }
-                    }.pointerInput(flipped, cellPx) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                val from = squareAtOffset(offset.x, offset.y, cellPx, flipped)
-                                if (from != null && currentBoard?.get(from) != null) {
-                                    drag = Drag(from, offset)
-                                    currentInput?.onDragStart(from)
-                                }
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                drag = drag?.let { it.copy(position = it.position + amount) }
-                            },
-                            onDragEnd = {
-                                drag?.let { d ->
-                                    val to = squareAtOffset(d.position.x, d.position.y, cellPx, flipped)
-                                    if (to != null && to != d.from) currentInput?.onMove(d.from, to)
-                                }
-                                drag = null
-                            },
-                            onDragCancel = { drag = null },
-                        )
-                    }
-            }
-        Box(Modifier.size(side).then(gestures)) {
+        val gestures = remember(flipped, cellPx) { BoardGestures(flipped, cellPx) }
+        gestures.input = input
+        gestures.board = board
+        val drag = gestures.drag
+        val pieceDrag = input?.dragMode != DragMode.ARROW
+        Box(Modifier.size(side).then(if (input == null) Modifier else Modifier.boardGestures(gestures))) {
             Column {
                 repeat(Board.SIZE) { row ->
                     Row {
@@ -156,15 +124,22 @@ private fun BoardView(
                             BoardCell(
                                 cell = CellSpec(square, row, column, cell),
                                 board = board,
-                                highlights = highlights,
-                                hidePiece = drag?.from == square.toSquare(),
-                                colors = colors,
+                                look = look,
+                                hidePiece = pieceDrag && drag?.from == square.toSquare(),
                             )
                         }
                     }
                 }
             }
-            drag?.let { d ->
+            AnnotationLayer(
+                annotations = look.annotations,
+                preview = drag?.takeIf { !pieceDrag }?.let { it.from to it.position },
+                previewColor = input?.arrowColor ?: Color.Transparent,
+                cellPx = cellPx,
+                flipped = flipped,
+                colors = look.colors,
+            )
+            drag?.takeIf { pieceDrag }?.let { d ->
                 board?.get(d.from)?.let { piece ->
                     Image(
                         painter = painterResource(piece.drawableRes()),
@@ -194,19 +169,22 @@ private class CellSpec(
 private fun BoardCell(
     cell: CellSpec,
     board: Board?,
-    highlights: BoardHighlights,
+    look: BoardLook,
     hidePiece: Boolean,
-    colors: BoardColors,
 ) {
+    val colors = look.colors
+    val highlights = look.highlights
     val square = cell.square.toSquare()
     val light = isLightSquare(cell.square)
     val piece = board?.get(square)
-    val label =
+    val mark = look.annotations.squares[square]
+    val base =
         if (piece == null) {
             stringResource(R.string.board_square_empty, square.name)
         } else {
             stringResource(R.string.board_square_piece, square.name, stringResource(piece.nameRes()))
         }
+    val label = mark?.let { stringResource(R.string.board_square_marked, base, stringResource(it.nameRes())) } ?: base
     Box(
         Modifier
             .size(cell.size)
@@ -215,6 +193,7 @@ private fun BoardCell(
             .semantics { contentDescription = label },
     ) {
         SquareMarks(square, piece != null, highlights, colors)
+        mark?.let { AnnotationMark(colors.of(it)) }
         if (piece != null && !hidePiece) {
             Image(
                 painter = painterResource(piece.drawableRes()),
@@ -256,6 +235,12 @@ private fun SquareMarks(
         if (selected) drawRect(colors.selected)
         if (check) drawCircle(colors.check, radius = size.minDimension / 2)
     }
+}
+
+/** A square coloured by the player, drawn under the piece. */
+@Composable
+private fun AnnotationMark(color: Color) {
+    Canvas(Modifier.fillMaxSize()) { drawRect(color.copy(alpha = color.alpha * MARK_ALPHA)) }
 }
 
 /** A dot on an empty target square, a ring around a piece that can be captured. */
