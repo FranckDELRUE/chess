@@ -30,7 +30,8 @@ Kotlin, Jetpack Compose, Material 3. Usage personnel (pas de publication pour l'
 ## Architecture
 - Clean Architecture multi-modules, MVVM + UDF, Hilt, Room, Coroutines/Flow, WorkManager.
 - `:core:chess` et `:core:pedagogy` sont en **Kotlin pur** (aucune dépendance Android).
-- Les moteurs (Stockfish via NDK, Maia via ONNX Runtime) passent par l'interface `ChessEngine`.
+- Les moteurs (Stockfish via NDK, Maia via ONNX Runtime) passent par l'interface `ChessEngine` ;
+  Stockfish, unique, ne s'utilise que via `EngineScheduler` (priorités, ADR 0008).
 - La station PC est un projet séparé dans `station-pc/` (Python, FastAPI).
 
 Modules : `:app`, `:core:chess`, `:core:engine`, `:core:data`, `:core:ui`, `:core:srs`,

@@ -32,12 +32,12 @@ Sprint précédent : `docs/sprints/s1.md`.
 ## Stories
 
 ### S2-1 · API moteur et partage du moteur unique
-- [ ] `ChessEngine` : MultiPV, `go movetime`, `go nodes`, `searchmoves` ; options de force
+- [x] `ChessEngine` : MultiPV, `go movetime`, `go nodes`, `searchmoves` ; options de force
   (`Skill Level`, `UCI_LimitStrength`, `UCI_Elo`).
-- [ ] Score ramené au point de vue des blancs ; conversion en probabilité de gain pour la barre.
-- [ ] `EngineScheduler` : tâches à priorité ; une tâche plus prioritaire interrompt (`stop`) une
+- [x] Score ramené au point de vue des blancs ; conversion en probabilité de gain pour la barre.
+- [x] `EngineScheduler` : tâches à priorité ; une tâche plus prioritaire interrompt (`stop`) une
   recherche moins prioritaire, qui reprend ensuite ; chaque tâche applique ses propres options.
-- [ ] ADR 0008.
+- [x] ADR 0008.
 
 **Acceptation** : tests JVM avec le faux transport (MultiPV, préemption, reprise, options
 rétablies entre deux tâches, annulation) ; test instrumenté de MultiPV 3 sur la tablette.
@@ -96,3 +96,7 @@ une partie de Heidoji analysée sur la tablette, annulation vérifiée.
 
 ## Notes de sprint
 _(à compléter en fin de story : fait, dette, ajustements)_
+
+**S2-1** — Fait : `SearchRequest` (FEN + coups UCI, limite `Depth`/`MoveTime`/`Nodes`, `searchmoves`, MultiPV, force, `newGame`) remplace la surcharge `analyze(fen, depth, searchMoves)` ; `EngineStrength` (`Full`, `Skill` 0–20, `Elo` 1320–3190, bornes relues dans `engine.cpp` et `search.h` de Stockfish 19). `Score.forWhite`, `winningChances`, `winProbability` : formule de Lichess relue dans `ui/lib/src/ceval/winningChances.ts` (lila) et `eval.scala` (scalachess). `UciEngine` envoie `position fen … moves …`, n'envoie que les options qui changent et ne coupe plus jamais un échange au milieu : lectures non annulables, `stop` envoyé dès l'annulation par un observateur, sortie lue jusqu'au `bestmove`. `EngineScheduler` (priorités `OPPONENT > LIVE > BACKGROUND`, préemption par relance avec `EngineEvent.Restarted`, démarrage paresseux) fourni par Hilt (`EngineModule`, Hilt ajouté à `:core:engine`) ; `EngineProvider` supprimé, écran de debug et benchmark Maia migrés en priorité `BACKGROUND`. `MaiaEngine` accepte une `SearchRequest` (coups joués par `:core:chess`). ADR 0008, `CLAUDE.md` mis à jour. Tests : `:core:engine` passe de 31 à 56 tests JVM (faux moteur à recherches longues, préemption, ordre, annulations, options rétablies ; une mutation qui désactive la préemption fait échouer 2 tests) ; premier `androidTest` de `:core:engine`, vert sur la tablette : MultiPV 3 à profondeur 12 en 2,0 s (3 premiers coups distincts à chaque profondeur), coup adverse de 500 ms (`UCI_Elo` 1500) rendu en 0,69 s en interrompant une recherche de fond de 30 s. Dépendances de test : `androidx.test:runner` 1.6.2 et `androidx.test.ext:junit` 1.2.1 (Apache 2.0). `ktlintCheck detekt test assembleDebug` passent.
+Hors story : `PlayScreenTest` (S1-7) échouait sur ce poste parce que git y extrait le corpus PGN en CRLF (`core.autocrlf=true`) ; le test normalise maintenant les fins de ligne.
+Dette : une préemption juste après l'attribution du moteur, avant le lancement de la recherche, émet un `Restarted` sans recherche réellement interrompue (sans effet visible) ; `.gitattributes` pour fixer les fins de ligne de `testdata/` à voir ; pas de changement visible dans l'app, écran de debug non revérifié à la main sur la tablette (couvert par le test instrumenté du planificateur).

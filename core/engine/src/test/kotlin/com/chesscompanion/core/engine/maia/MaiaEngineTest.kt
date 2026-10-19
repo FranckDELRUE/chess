@@ -1,8 +1,11 @@
 package com.chesscompanion.core.engine.maia
 
+import com.chesscompanion.core.chess.IllegalMoveException
 import com.chesscompanion.core.chess.InvalidFenException
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.LegalMoveProvider
+import com.chesscompanion.core.engine.SearchLimit
+import com.chesscompanion.core.engine.SearchRequest
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -67,5 +70,26 @@ class MaiaEngineTest {
         runTest {
             val event = MaiaEngine(network, { emptySet() }).analyze(fen, 1).single()
             assertEquals(EngineEvent.BestMove("(none)"), event)
+        }
+
+    @Test
+    fun `moves of the request are played before the evaluation`() =
+        runTest {
+            var seen: String? = null
+            val recorder =
+                LegalMoveProvider { fen ->
+                    seen = fen
+                    setOf("e2e3")
+                }
+            val request = SearchRequest(fen, SearchLimit.Depth(1), moves = listOf("e1d1", "e8d8"))
+            MaiaEngine(network, recorder).analyze(request).single()
+            assertEquals("3k4/8/8/8/8/8/4P3/3K4 w - - 2 2", seen)
+        }
+
+    @Test
+    fun `illegal moves of the request are rejected`() =
+        runTest {
+            val request = SearchRequest(fen, SearchLimit.Depth(1), moves = listOf("e1e3"))
+            assertThrows<IllegalMoveException> { MaiaEngine(network, legal).analyze(request).single() }
         }
 }
