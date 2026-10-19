@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Square descriptions for accessibility, e.g. "e4, cavalier blanc". -->
+    <string name="board_square_empty">%1$s</string>
+    <string name="board_square_piece">%1$s, %2$s</string>
+    <string name="piece_white_king">roi blanc</string>
+    <string name="piece_white_queen">dame blanche</string>
+    <string name="piece_white_rook">tour blanche</string>
+    <string name="piece_white_bishop">fou blanc</string>
+    <string name="piece_white_knight">cavalier blanc</string>
+    <string name="piece_white_pawn">pion blanc</string>
+    <string name="piece_black_king">roi noir</string>
+    <string name="piece_black_queen">dame noire</string>
+    <string name="piece_black_rook">tour noire</string>
+    <string name="piece_black_bishop">fou noir</string>
+    <string name="piece_black_knight">cavalier noir</string>
+    <string name="piece_black_pawn">pion noir</string>
+    <string name="promotion_title">Promotion</string>
+    <string name="promotion_cancel">Annuler</string>
+</resources>

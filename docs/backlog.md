@@ -32,3 +32,9 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - S2 : remplacer les 10 positions de test Stockfish de S0-4 (plusieurs déséquilibrées) par des
   positions de milieu de partie tirées du corpus Heidoji, puis refaire les mesures tablette et PC.
 - Supprimer `spike/llm/` du dépôt si le LLM embarqué n'est pas réévalué d'ici S13.
+
+## Issu de S1-6
+- Sauvegarde durable des préférences d'échiquier (« Montrer les coups légaux », orientation) avec
+  DataStore ; aujourd'hui en mémoire et dans le `SavedStateHandle`.
+- Animation du déplacement des pièces et retour animé de la pièce après un dépôt illégal.
+- Préférence « promotion automatique en dame ».

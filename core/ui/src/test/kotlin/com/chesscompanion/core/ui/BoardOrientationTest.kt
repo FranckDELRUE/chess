@@ -1,9 +1,12 @@
 package com.chesscompanion.core.ui
 
+import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.ui.board.isLightSquare
 import com.chesscompanion.core.ui.board.squareAt
+import com.chesscompanion.core.ui.board.squareAtOffset
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -32,5 +35,17 @@ class BoardOrientationTest {
     fun `a1 is dark and h1 is light`() {
         assertFalse(isLightSquare(squareAt(7, 0, flipped = false)))
         assertTrue(isLightSquare(squareAt(7, 7, flipped = false)))
+    }
+
+    @Test
+    fun `touch point maps to the square under it, null outside the board`() {
+        // 100 px cells: (50, 750) is the bottom-left cell, (750, 50) the top-right one.
+        assertEquals(Square.A1, squareAtOffset(50f, 750f, 100f, flipped = false))
+        assertEquals(Square.H8, squareAtOffset(750f, 50f, 100f, flipped = false))
+        assertEquals(Square.H8, squareAtOffset(50f, 750f, 100f, flipped = true))
+        assertEquals(Square.parse("e4"), squareAtOffset(450f, 450f, 100f, flipped = false))
+        assertNull(squareAtOffset(-1f, 50f, 100f, flipped = false))
+        assertNull(squareAtOffset(50f, 800f, 100f, flipped = false))
+        assertNull(squareAtOffset(50f, 50f, 0f, flipped = false))
     }
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="play_status_white_to_move">Aux Blancs de jouer</string>
+    <string name="play_status_black_to_move">Aux Noirs de jouer</string>
+    <string name="play_status_white_in_check">Échec ! Aux Blancs de jouer</string>
+    <string name="play_status_black_in_check">Échec ! Aux Noirs de jouer</string>
+    <string name="play_status_checkmate_white">Échec et mat : les Blancs gagnent</string>
+    <string name="play_status_checkmate_black">Échec et mat : les Noirs gagnent</string>
+    <string name="play_status_stalemate">Pat : partie nulle</string>
+    <string name="play_status_draw_repetition">Partie nulle par triple répétition</string>
+    <string name="play_status_draw_fifty_moves">Partie nulle par la règle des 50 coups</string>
+    <string name="play_status_draw_material">Partie nulle : matériel insuffisant</string>
+    <string name="play_new_game">Nouvelle partie</string>
+    <string name="play_flip_board">Retourner l\'échiquier</string>
+    <string name="play_show_legal_moves">Montrer les coups légaux</string>
+</resources>
