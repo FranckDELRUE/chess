@@ -1,7 +1,6 @@
 package com.chesscompanion.core.engine
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.Move
 import kotlinx.coroutines.Dispatchers
@@ -78,9 +77,6 @@ class StockfishSchedulerTest {
         const val NS_PER_MS = 1_000_000L
         const val MIDDLEGAME = "r1bq1rk1/pp2bppp/2n1pn2/3p4/2PP4/2NBPN2/PP3PPP/R1BQK2R w KQ - 0 8"
 
-        val scheduler by lazy {
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
-            EngineScheduler { StockfishEngine.start(context) }
-        }
+        val scheduler get() = TestEngine.scheduler
     }
 }

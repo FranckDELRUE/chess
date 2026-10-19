@@ -80,7 +80,7 @@ class EngineDebugViewModel
             job?.cancel()
         }
 
-        /** 10 positions x depths 16/18/20, one log line per cell (also in Logcat, tag SF_BENCH). */
+        /** 20 positions x depths 16/18/20, one log line per cell (also in Logcat, tag SF_BENCH). */
         fun runBatch() =
             launchJob(DebugStatus.BATCH) {
                 log("threads=${_state.value.threads} temp=${DeviceProbe.batteryTempC(context)}C")
