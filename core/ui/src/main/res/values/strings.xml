@@ -3,6 +3,11 @@
     <!-- Square descriptions for accessibility, e.g. "e4, cavalier blanc". -->
     <string name="board_square_empty">%1$s</string>
     <string name="board_square_piece">%1$s, %2$s</string>
+    <!-- Square coloured by the player, e.g. "e4, cavalier blanc, marquée en vert". -->
+    <string name="board_square_marked">%1$s, marquée en %2$s</string>
+    <string name="annotation_green">vert</string>
+    <string name="annotation_red">rouge</string>
+    <string name="annotation_blue">bleu</string>
     <string name="piece_white_king">roi blanc</string>
     <string name="piece_white_queen">dame blanche</string>
     <string name="piece_white_rook">tour blanche</string>

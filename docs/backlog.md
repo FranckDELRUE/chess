@@ -45,3 +45,8 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Navigation par balayage sur l'échiquier et par les flèches d'un clavier physique.
 - Faire défiler automatiquement la liste des coups jusqu'au coup courant (longues parties).
 - Messages d'erreur PGN en français (aujourd'hui le détail vient de `:core:chess`, en anglais).
+
+## Issu de S1-8
+- Écrire et relire les annotations dans le PGN (`[%csl Gd4]`, `[%cal Re2e4]`, format Lichess et
+  Chess.com) pour les garder par coup et les exporter ; utile aux cours tirés des livres (S10).
+- Flèches de cavalier en L (aujourd'hui droites) ; plus de couleurs (jaune).

@@ -42,6 +42,7 @@ import com.chesscompanion.core.chess.Side
 import com.chesscompanion.core.chess.pgn.GameSession
 import com.chesscompanion.core.ui.board.BoardHighlights
 import com.chesscompanion.core.ui.board.ChessBoard
+import com.chesscompanion.core.ui.board.DragMode
 import com.chesscompanion.core.ui.board.PromotionDialog
 import com.chesscompanion.core.ui.theme.ChessTheme
 import kotlinx.coroutines.launch
@@ -146,6 +147,9 @@ fun PlayContent(
                     onMove = { from, to -> onAction(PlayAction.Drop(from, to)) },
                     modifier = modifier,
                     highlights = state.highlights,
+                    annotations = state.annotations,
+                    dragMode = if (state.annotating) DragMode.ARROW else DragMode.PIECE,
+                    arrowColor = state.annotationColor,
                 )
             }
             if (maxWidth > maxHeight) {
@@ -192,6 +196,7 @@ private fun SidePanel(
                 modifier = Modifier.testTag(PLAY_STATUS_TAG),
             )
             NavigationBar(state, onAction)
+            AnnotationBar(state, onAction)
             MoveList(state.moveList, onGoTo = { onAction(PlayAction.GoTo(it)) }, modifier = Modifier.weight(1f))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -3,6 +3,7 @@ package com.chesscompanion.feature.play
 import com.chesscompanion.core.chess.PieceType
 import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.chess.pgn.PgnIssue
+import com.chesscompanion.core.ui.board.AnnotationColor
 
 /** Everything the game screen can ask its ViewModel (unidirectional data flow). */
 sealed interface PlayAction {
@@ -50,6 +51,17 @@ sealed interface PlayAction {
     data class GoTo(
         val path: List<Int>,
     ) : Navigation
+
+    /** Coloured squares and arrows (S1-8). */
+    sealed interface Annotation : PlayAction
+
+    data object ToggleAnnotate : Annotation
+
+    data class PickAnnotationColor(
+        val color: AnnotationColor,
+    ) : Annotation
+
+    data object ClearAnnotations : Annotation
 
     /** Import, export and messages. */
     sealed interface Document : PlayAction

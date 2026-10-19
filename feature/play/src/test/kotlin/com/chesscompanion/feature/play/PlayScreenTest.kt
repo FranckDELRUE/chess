@@ -3,6 +3,7 @@ package com.chesscompanion.feature.play
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -14,6 +15,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.chess.pgn.PgnReader
+import com.chesscompanion.core.ui.board.AnnotationColor
 import com.chesscompanion.core.ui.board.squareTestTag
 import com.chesscompanion.core.ui.theme.ChessTheme
 import org.junit.Assert.assertEquals
@@ -85,6 +87,19 @@ class PlayScreenTest {
                 .text
                 .toString()
         assertEquals(game, PgnReader.read(copied))
+    }
+
+    /** S1-8: mark a square in red, then erase it with a second tap. */
+    @Test
+    fun annotateASquare() {
+        showScreen()
+        val e4 = compose.onNodeWithTag(squareTestTag(Square.parse("e4")!!))
+        compose.onNodeWithTag(annotationColorTestTag(AnnotationColor.RED)).performClick()
+        e4.performClick()
+        e4.assertContentDescriptionEquals("e4, marquée en rouge")
+        e4.performClick()
+        e4.assertContentDescriptionEquals("e4")
+        status().assertTextEquals("Aux Blancs de jouer")
     }
 }
 
