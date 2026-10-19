@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.chesscompanion.core.chess.Board
-import com.chesscompanion.core.chess.FenParser
+import com.chesscompanion.core.chess.Fen
 
 private const val FILE_LETTERS = "abcdefgh"
 
@@ -36,7 +36,7 @@ fun ChessBoard(
     modifier: Modifier = Modifier,
     colors: BoardColors = BoardColors(),
 ) {
-    val board = remember(fen) { runCatching { FenParser.parseBoard(fen) }.getOrNull() }
+    val board = remember(fen) { runCatching { Fen.parseBoard(fen) }.getOrNull() }
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
         val cell = side / Board.SIZE

@@ -1,15 +1,16 @@
 package com.chesscompanion.enginedebug
 
-import com.chesscompanion.core.chess.FenParser
+import com.chesscompanion.core.chess.Fen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
 
 class BenchmarkPositionsTest {
     @Test
-    fun `ten distinct positions that parse`() {
+    fun `ten distinct valid positions`() {
         assertEquals(10, BenchmarkPositions.FENS.toSet().size)
-        BenchmarkPositions.FENS.forEach { FenParser.parseBoard(it) }
+        BenchmarkPositions.FENS.forEach { Fen.parse(it) }
+        BenchmarkPositions.MAIA_FENS.forEach { Fen.parse(it) }
     }
 
     @Test

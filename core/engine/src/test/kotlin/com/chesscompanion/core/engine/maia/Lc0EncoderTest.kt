@@ -1,6 +1,6 @@
 package com.chesscompanion.core.engine.maia
 
-import com.chesscompanion.core.chess.FenParser
+import com.chesscompanion.core.chess.Fen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -22,7 +22,7 @@ class Lc0EncoderTest {
 
     @Test
     fun `start position has only the current board and no history`() {
-        val planes = Lc0Encoder.encode(FenParser.START_POSITION)
+        val planes = Lc0Encoder.encode(Fen.START)
         assertEquals(Lc0Encoder.PLANES * 64, planes.size)
         assertEquals((8..15).toSet(), planes.squares(0)) // our pawns on rank 2
         assertEquals(setOf(4), planes.squares(5)) // our king e1

@@ -26,13 +26,13 @@ Sprint précédent : `docs/sprints/s0.md`.
 ## Stories
 
 ### S1-1 · Modèle de position et FEN complète
-- [ ] `Square`, `Move` (UCI), `CastlingRights`, `Position` immuable (plateau, trait, roques,
+- [x] `Square`, `Move` (UCI), `CastlingRights`, `Position` immuable (plateau, trait, roques,
   case en passant, compteurs) dans `:core:chess`.
-- [ ] Lecture et écriture de la FEN complète (6 champs ; 4 champs acceptés, compteurs par défaut).
-- [ ] Validation : un roi par camp, pas de pion en 1re ou 8e rangée, droits de roque cohérents
+- [x] Lecture et écriture de la FEN complète (6 champs ; 4 champs acceptés, compteurs par défaut).
+- [x] Validation : un roi par camp, pas de pion en 1re ou 8e rangée, droits de roque cohérents
   avec le roi et la tour, case en passant cohérente avec le trait et le pion qui vient d'avancer.
-- [ ] Clé Zobrist de la position (base de la triple répétition).
-- [ ] ADR 0006.
+- [x] Clé Zobrist de la position (base de la triple répétition).
+- [x] ADR 0006.
 
 **Acceptation** : FEN → `Position` → FEN identique sur un jeu de positions ; FEN invalides
 rejetées avec un message clair ; tests unitaires.
@@ -109,3 +109,6 @@ vérifié sur la tablette.
 
 ## Notes de sprint
 _(à compléter en fin de story : fait, dette, ajustements)_
+
+**S1-1** — Fait : `Square` (classe valeur 0..63), `Move` (UCI), `CastlingRights` (4 bits, FEN canonique `KQkq`), `Position` immuable validée à la construction, `Zobrist` (SplitMix64 à graine fixe, case en passant comptée seulement si la prise est possible), objet `Fen` (lecture stricte 6 ou 4 champs, écriture canonique) qui remplace `FenParser` ; appelants migrés (`:core:ui`, `:core:engine`, `:app`), l'écran « Debug moteur » et le test des positions de benchmark valident maintenant la FEN complète. ADR 0006. 72 tests dans `:core:chess` (aller-retour FEN dont les 6 positions perft, 27 FEN invalides, Zobrist). `ktlintCheck detekt test assembleDebug` passent.
+Dette : « le camp sans le trait n'est pas en échec » reporté à S1-2 (détection d'attaque) ; `Board` reste une liste de 64 cases (le 0x88 arrive avec le générateur) ; `FenFields` de `:core:engine` lit encore trait et roques lui-même (S1-5) ; clé Zobrist recalculée en entier (incrémentale en S1-2) ; pas de changement visible, APK non réinstallé sur la tablette.

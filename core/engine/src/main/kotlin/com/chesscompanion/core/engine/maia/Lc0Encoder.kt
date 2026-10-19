@@ -1,7 +1,7 @@
 package com.chesscompanion.core.engine.maia
 
 import com.chesscompanion.core.chess.Board
-import com.chesscompanion.core.chess.FenParser
+import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.PieceType
 import com.chesscompanion.core.chess.Side
 
@@ -39,7 +39,7 @@ object Lc0Encoder {
     private const val ALL = -1L
     private val pieceOrder =
         listOf(PieceType.PAWN, PieceType.KNIGHT, PieceType.BISHOP, PieceType.ROOK, PieceType.QUEEN, PieceType.KING)
-    private val startBoard = FenParser.parseBoard(FenParser.START_POSITION)
+    private val startBoard = Fen.parseBoard(Fen.START)
 
     fun encode(fen: String): FloatArray {
         val position = FenFields.parse(fen)
@@ -125,7 +125,7 @@ internal class FenFields(
             val side = if (fields.getOrNull(SIDE) == "b") Side.BLACK else Side.WHITE
             val enPassant = fields.getOrNull(EN_PASSANT)?.takeIf { it.length == 2 && it[0] in 'a'..'h' }
             return FenFields(
-                board = FenParser.parseBoard(fen),
+                board = Fen.parseBoard(fen),
                 sideToMove = side,
                 castling = fields.getOrNull(CASTLING)?.takeIf { it != "-" }.orEmpty(),
                 enPassantFile = enPassant?.let { it[0] - 'a' },

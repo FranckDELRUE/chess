@@ -1,7 +1,7 @@
 package com.chesscompanion.home
 
 import androidx.lifecycle.ViewModel
-import com.chesscompanion.core.chess.FenParser
+import com.chesscompanion.core.chess.Fen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 data class HomeUiState(
-    val fen: String = FenParser.START_POSITION,
+    val fen: String = Fen.START,
     val flipped: Boolean = false,
 )
 
