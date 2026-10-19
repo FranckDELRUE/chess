@@ -70,7 +70,7 @@ import → export → import donne une partie identique ; tests de PGN avec vari
 ### S1-5 · Moteurs branchés sur les règles
 - [x] `LegalMoveProvider` implémenté par `:core:chess` au lieu de `go perft 1` (dette S0-5).
 - [x] `Lc0Encoder` lit la position par `:core:chess` (fin de `FenFields`, règle 2).
-- [ ] Mesure du coût d'un coup Maia complet sur la tablette (≈ 35 ms aujourd'hui, ≈ 4 ms visés).
+- [x] Mesure du coût d'un coup Maia complet sur la tablette (≈ 35 ms aujourd'hui, ≈ 4 ms visés).
 
 **Acceptation** : tests Maia et moteur verts ; mesure consignée dans la note de story.
 
@@ -124,7 +124,8 @@ Dette : la lecture française n'existe pas (choix validé : affichage seulement)
 Dette : un commentaire placé avant un coup au milieu d'une ligne ne peut venir que d'un début de partie ou d'après une variante (sinon il serait relu comme commentaire du coup précédent) : à respecter dans les éditions de S1-7 ; `}` dans un commentaire est remplacé par `)` à l'export ; un commentaire de plus de 80 caractères dépasse la limite de ligne ; horloges non structurées (S6) ; chaque nœud garde sa `Position` (mémoire à surveiller sur de très gros fichiers) ; pas de changement visible, APK non réinstallé.
 
 **S1-5** — Fait (sauf la mesure sur la tablette) : `RulesLegalMoveProvider` (coups légaux de `:core:chess` en UCI, FEN invalide refusée), valeur par défaut de `MaiaEngine` ; `Lc0Encoder.encode(Position)` (surcharge `encode(fen)` qui passe par `Fen.parse`) et `PolicyDecoder` sur `Position` : `FenFields` supprimé (roques via `CastlingRights`, case en passant, `halfmoveClock`) ; `go perft 1` retiré de `UciEngine` et `UciParser` (décision validée) ; `MaiaBenchmark` contrôle la légalité par les règles et affiche `legal_median`. Contrôle croisé : sur les 20 positions de `maia-reference.tsv`, nos coups légaux sont exactement ceux de lc0 ; `MaiaPipelineTest` (réseaux présents en local) retrouve les priors de lc0. Coups légaux ≈ 9 µs par position sur le PC (FEN lue comprise), contre ≈ 30 ms avec Stockfish. `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
-Dette : **mesure du coût d'un coup Maia complet sur la tablette non faite** (tablette verrouillée) : lancer « Lot Maia 20×3 » dans « Debug moteur », lire `adb logcat -s MAIA_BENCH` (`legal_median`, temps d'inférence), consigner ici et dans `docs/spikes/rapport-s0.md`, puis cocher la case — prévue le 2026-10-19 au soir. La FEN est lue deux fois par coup Maia (moteur puis fournisseur), négligeable.
+**Mesure sur la tablette (2026-10-19, Honor HEY2-W09, « Lot Maia 20×3 » ×3 passes)** : un coup Maia complet coûte **≈ 2,3 ms en régime établi** (coups légaux par les règles 0,5–0,6 ms + encodage 0,22 ms + inférence 1,5 ms à 4 threads), et jusqu'à ≈ 4,6 ms au premier lot après lancement (JIT : 1,0–2,2 ms + 0,43–0,85 ms + 1,5 ms) ; **objectif ≈ 4 ms atteint, ≈ 15 fois plus rapide que les ≈ 35 ms de S0** (`go perft 1` : 28–38 ms). Détail et réserves dans `docs/spikes/rapport-s0.md`.
+Dette : la FEN est lue deux fois par coup Maia (moteur puis fournisseur) ; le décodage (softmax sur les coups légaux) n'est pas mesuré à part, négligeable.
 
 **S1-6** — Fait : `GameSession` dans `:core:chess` (partie + chemin du coup courant ; `play` suit un coup existant ou l'ajoute en variante, `status()` avec répétition, `toGame()` qui fixe le résultat pour le PGN). `:core:ui` : `ChessBoard` interactif sans état métier (toucher, glisser-déposer avec la pièce sous le doigt, case sélectionnée, cibles en point ou en anneau, dernier coup, roi en échec, description accessible « e4, cavalier blanc » et `testTag` par case) et `PromotionDialog` ; l'ancien `ChessBoard(fen)` reste pour l'accueil. Nouveau module `:feature:play` (décision validée) : `MoveInput` (machine à états immuable : sélection, coup, promotion en attente, plus rien après la fin), `PlayViewModel` (Hilt, `StateFlow<PlayUiState>`, partie gardée en PGN dans le `SavedStateHandle`), `PlayScreen` paysage/portrait (statut : trait, échec, mat, pat, trois nulles ; « Nouvelle partie », « Retourner », interrupteur « Montrer les coups légaux ») ; bouton « Partie à deux joueurs » sur l'accueil. Tests : 7 `GameSession`, 11 ViewModel, 1 test UI Compose sous Robolectric (mat du berger joué au toucher, message de mat vérifié), `squareAtOffset`. Dépendances de test ajoutées (choix validé) : Robolectric 4.16 (MIT), `compose-ui-test-junit4` (Apache 2.0), JUnit 4.13.2 (EPL 1.0, tests seulement, jamais dans l'APK) et JUnit Vintage. `ktlintCheck detekt test assembleDebug` passent ; APK installé sur la tablette.
 Contournement : Robolectric ne charge pas sa bibliothèque native depuis un chemin contenant une espace (`C:\Users\Franck DELRUE`) ; `robolectric.userHome` dans `local.properties` (propre à la machine, non versionné) déplace son cache, voir README. Robolectric tourne en SDK 35 (`@Config`), le SDK 37 n'étant pas garanti.
@@ -143,7 +144,7 @@ Dette : **tracé des flèches au doigt non vérifié sur la tablette** (verrouil
 
 ### Résultat
 - **Critères du sprint tenus** : perft exact sur les 6 positions de chessprogramming.org et les cas de Martin Sedlak (≈ 20 M nœuds en CI, 750 M nœuds en test lent : 70 s, 9 à 17 M nœuds/s sur le PC) ; les 100 parties de Heidoji sont légales, finissent sur la position de leur en-tête `CurrentPosition` et sont réimportées à l'identique.
-- Stories 1 à 8 faites, mergées via les PR #10, #11, #13, #14, #15, #16 et #17 ; CI verte sur `main`. **Reste** : mesure Maia sur la tablette (S1-5), démo (S1-9) et vérifications visuelles (S1-6 à S1-8).
+- Stories 1 à 8 faites, mergées via les PR #10, #11, #13, #14, #15, #16 et #17 ; CI verte sur `main`. **Reste** : démo (S1-9) et vérifications visuelles (S1-6 à S1-8).
 - Tests : 307 par défaut (`:core:chess` 233, `:feature:play` 31, `:core:engine` 31, `:core:ui` 9, `:app` 3), plus 10 de perft profond avec `-PslowTests`.
 - Modules : `:feature:play` ajouté (ADR 0007), `:core:chess`, `:core:ui` et `:core:engine` étoffés. ADR 0006 et 0007 écrits.
 
@@ -161,7 +162,7 @@ Dette : **tracé des flèches au doigt non vérifié sur la tablette** (verrouil
 ### Dette ouverte (à solder)
 | Dette | Où | Quand |
 | --- | --- | --- |
-| Mesure du coût d'un coup Maia sur la tablette (≈ 35 ms → ≈ 4 ms visés) | S1-5 | ce soir |
+| ~~Mesure du coût d'un coup Maia sur la tablette~~ : faite, ≈ 2,3 ms en régime établi | S1-5 | fait le 2026-10-19 |
 | Paysage, portrait, sombre, glisser-déposer, promotion | S1-6 | ce soir |
 | Ouvrir et enregistrer un vrai `.pgn` | S1-7 | ce soir |
 | Flèches tracées au doigt | S1-8 | ce soir |
