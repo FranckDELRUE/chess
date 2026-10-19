@@ -319,7 +319,7 @@ Quatorze sprints de deux semaines (environ sept mois en solo avec Claude Code) l
 
 ### S0 — Fondations
 
-Détaillé story par story dans `docs/sprints/current.md`.
+Détaillé story par story dans `docs/sprints/s0.md`.
 
 - [ ] Créer le projet Android multi-modules (structure de la section 3), version catalog Gradle.
 - [ ] Configurer Hilt, Room, Compose, navigation, thème clair/sombre.
