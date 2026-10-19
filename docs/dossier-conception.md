@@ -331,7 +331,7 @@ Critères d'acceptation : `./gradlew build` et les tests passent en CI ; le spik
 
 ### S1 — Échiquier et règles
 
-Détaillé story par story dans `docs/sprints/current.md` (archivé en `s1.md` à la clôture du sprint).
+Détaillé story par story dans `docs/sprints/s1.md`.
 
 - [x] En tant que joueur, je déplace les pièces par glisser ou par toucher, avec coups légaux en surbrillance (désactivable).
 - [x] Promotion, roque, prise en passant, mat, pat, répétition, règle des 50 coups (et matériel insuffisant).

@@ -29,8 +29,8 @@ README.md                          Ce fichier
 docs/
   dossier-conception.md            Référence : vision, architecture, sprints, risques
   backlog.md                       Idées hors sprint
-  sprints/current.md               Sprint en cours, stories et critères
-  sprints/s0.md                    Sprint terminé (S1 le rejoint à sa clôture)
+  sprints/current.md               Sprint en cours, stories et critères (vide entre deux sprints)
+  sprints/s0.md, s1.md             Sprints terminés (notes, dette, rétrospective)
   adr/                             Décisions d'architecture (0001 à 0007)
   spikes/rapport-s0.md             Mesures des spikes de S0
   prompts/                         Instructions du projet Claude, prompts du S0

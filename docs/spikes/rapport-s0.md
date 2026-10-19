@@ -131,6 +131,34 @@ sous-promotions (la promotion en cavalier partage l'indice du coup simple), posi
   C'est le poste dominant (aller-retour UCI par tubes JNI) ; il disparaît avec le générateur de S1.
 - Un coup Maia complet coûte donc ≈ 35 ms aujourd'hui, ≈ 4 ms après S1.
 
+#### Suivi S1-5 : mesure avec les règles de `:core:chess` (2026-10-19)
+
+Même lot « Maia 20×3 » (20 positions × 3 réseaux), mêmes réglages, après le remplacement de
+`go perft 1` par `RulesLegalMoveProvider` et de `FenFields` par `Position`. Tablette Honor
+(HEY2-W09), trois passes consécutives (la première juste après le lancement de l'application).
+
+| Étape (médiane, 3 réseaux) | S0-5 (Stockfish `perft 1`) | S1-5, régime établi | S1-5, 1re passe (JIT) |
+|---------------------------|---------------------------:|--------------------:|----------------------:|
+| Coups légaux (FEN lue comprise) | 28 à 38 ms | **0,5 à 0,6 ms** | 1,0 à 2,2 ms |
+| Encodage du tenseur (FEN lue et validée comprise) | 0,2 à 0,3 ms | 0,21 à 0,22 ms | 0,43 à 0,85 ms |
+| Inférence, CPU 4 threads | 1,53 à 1,57 ms | 1,51 à 1,52 ms (p90 1,60 à 1,68) | 1,57 ms |
+| **Coup complet** | **≈ 35 ms** | **≈ 2,3 ms** | **≈ 3 à 4,6 ms** |
+
+- Le coût des coups légaux est divisé par ≈ 50 ; le coup complet par ≈ 15. L'objectif de ≈ 4 ms est
+  atteint, même à la première passe. L'inférence ne change pas (1 thread : 3,6 ms ; XNNPACK : 2,9 ms).
+- Le décodage (softmax sur la trentaine de coups légaux) n'est pas mesuré à part ; il est négligeable
+  devant le reste.
+- Mémoire : +20 à +24 Mo pour les trois réseaux (461 → 484, 479 → 491, 468 → 488 Mo de PSS selon la
+  passe) ; batterie 21 → 24 °C. Pas de changement par rapport à S0-5.
+- **Légalité : 60/60** (20 positions × 3 réseaux), arg-max brut légal 60/60. Les **60 coups sont
+  identiques d'une passe à l'autre** (Maia est déterministe à `Temperature` 0) et `MaiaPipelineTest`
+  retrouve les priors de lc0 sur les mêmes positions.
+- Réserve : l'accord avec Stockfish (7 à 11 sur 20) et la perte moyenne (8 à 23 cp) **varient d'une
+  passe à l'autre** parce que la référence Stockfish multi-thread n'est pas reproductible. Exemple :
+  position 18, réseau 1900, même coup (promotion en dame) : perte de 346 cp à la 1re passe, 38 cp à la
+  3e. Ces deux colonnes ne servent donc plus à comparer S0-5 et S1-5 ; la légalité, l'identité des coups
+  et l'accord avec lc0 sont les critères fiables.
+
 ### Mémoire et taille
 
 - Trois réseaux chargés en même temps : **+21 Mo de PSS** (466 → 487 Mo, Stockfish déjà chargé).
