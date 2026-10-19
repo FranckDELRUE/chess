@@ -18,3 +18,10 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
+
+// Perft profond (plusieurs minutes) : exclu par défaut, lancé avec `gradlew :core:chess:test -PslowTests`.
+tasks.test {
+    useJUnitPlatform {
+        if (!project.hasProperty("slowTests")) excludeTags("slow")
+    }
+}
