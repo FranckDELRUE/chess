@@ -58,11 +58,11 @@ fin de partie.
 en passant avec échec, promotion avec mat) ; tests unitaires.
 
 ### S1-4 · Import et export PGN
-- [ ] Modèle de partie : en-têtes ordonnés, position de départ (`SetUp`/`FEN`), arbre de coups
+- [x] Modèle de partie : en-têtes ordonnés, position de départ (`SetUp`/`FEN`), arbre de coups
   avec commentaires, NAG et variantes, résultat.
-- [ ] Lecteur PGN multi-parties (commentaires `{}` et `;`, `[%clk]` conservés, variantes
+- [x] Lecteur PGN multi-parties (commentaires `{}` et `;`, `[%clk]` conservés, variantes
   imbriquées, échappements) ; chaque coup validé par les règles (règle 2), erreur localisée sinon.
-- [ ] Écriture PGN canonique (Seven Tag Roster en tête, lignes de 80 caractères au plus).
+- [x] Écriture PGN canonique (Seven Tag Roster en tête, lignes de 80 caractères au plus).
 
 **Acceptation** : les 100 parties de Heidoji sont toutes légales et
 import → export → import donne une partie identique ; tests de PGN avec variantes et erreurs.
@@ -119,3 +119,6 @@ Dette : une copie du plateau (64 cases) par coup essayé, assez rapide pour l'in
 
 **S1-3** — Fait : `San.write` (désambiguïsation calculée sur les seuls coups légaux, donc pas pour une pièce clouée ; `x`, `=Q`, `O-O`/`O-O-O`, `+`/`#`) avec `PieceLetters` anglais par défaut et français (R, D, T, F, C) pour l'affichage ; `San.parse` tolérant (`0-0`, `+`/`#` absents ou faux, annotations, `e.p.`, `e8Q`/`e8=q`/`e8(N)`, `Ng1f3`/`Ng1-f3`/`e2e4`, `x` absent ou `:`), lettres anglaises sensibles à la casse ; `Uci.parse` validé contre les coups légaux ; raccourcis `Position.toSan`, `playSan`, `playUci`. Erreurs distinctes : `InvalidMoveNotationException` (mal formé, ambigu, avec les coups candidats et la FEN) et `IllegalMoveException` (aucun coup légal). 64 tests, dont l'aller-retour SAN de tous les coups légaux sur 7 arbres de profondeur 2 (unicité vérifiée). 200 tests dans `:core:chess` ; `ktlintCheck detekt test assembleDebug` passent.
 Dette : la lecture française n'existe pas (choix validé : affichage seulement) ; notation figurine (♘) non prévue ; pas de changement visible, APK non réinstallé.
+
+**S1-4** — Fait : paquet `core.chess.pgn` : `Game` (en-têtes ordonnés, position de départ, arbre immuable de `MoveNode` dont le premier enfant est la ligne principale, résultat, `mainline`, `finalPosition`, `status()`), `PgnReader` (BOM, CRLF, échappements, commentaires `{}` et `;`, lignes `%`, numéros collés `1.e4`, NAG et suffixes `!?` → $1–$6, variantes imbriquées ; chaque coup validé par `San.parse`), `PgnWriter` (Seven Tag Roster en tête, `$n`, `N...` après commentaire ou variante, lignes ≤ 80 caractères). Fichier multi-parties : une partie fautive est écartée (`PgnImport.errors` : n° de partie, ligne, coup, motif) et la lecture continue ; avertissements pour résultat absent ou contradictoire et en-tête en double. Choix validés : en-têtes obligatoires complétés à la lecture, marqueur de fin qui l'emporte sur `Result`, `[%clk]` gardés en texte brut. **Critère du sprint tenu** : les 100 parties de Heidoji (4 495 demi-coups, lus en ≈ 75 ms sur le PC) sont légales, leur position finale égale l'en-tête `CurrentPosition` de Chess.com (4 premiers champs, case en passant comprise) et import → export → import redonne des parties identiques avec un texte stable. 223 tests dans `:core:chess` ; `ktlintCheck detekt test assembleDebug` passent.
+Dette : un commentaire placé avant un coup au milieu d'une ligne ne peut venir que d'un début de partie ou d'après une variante (sinon il serait relu comme commentaire du coup précédent) : à respecter dans les éditions de S1-7 ; `}` dans un commentaire est remplacé par `)` à l'export ; un commentaire de plus de 80 caractères dépasse la limite de ligne ; horloges non structurées (S6) ; chaque nœud garde sa `Position` (mémoire à surveiller sur de très gros fichiers) ; pas de changement visible, APK non réinstallé.

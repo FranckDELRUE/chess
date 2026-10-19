@@ -20,4 +20,5 @@ horloges en commentaires `{[%clk …]}`. Contenu : 1 à 167 demi-coups (médiane
 avec les Blancs, 39 mats, 33 au temps, 22 abandons, 2 nulles par répétition ; cadences
 quotidiennes (52), 10 min (21), 15+10 (17), 60 min (4).
 
-La légalité des coups n'est pas encore vérifiée : c'est le test d'import de S1 (`:core:chess`).
+Légalité vérifiée en S1-4 (`HeidojiCorpusTest`) : les 100 parties sont légales, leur position finale
+est celle de l'en-tête `CurrentPosition`, et import → export → import les redonne à l'identique.
