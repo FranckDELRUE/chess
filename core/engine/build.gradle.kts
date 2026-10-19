@@ -12,6 +12,13 @@ android {
     defaultConfig {
         minSdk = 26
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // S2-2 benchmark (several minutes): only with `-PengineBenchmark`, and then alone.
+        val benchmark = "com.chesscompanion.core.engine.StockfishBenchmark"
+        if (project.hasProperty("engineBenchmark")) {
+            testInstrumentationRunnerArguments["class"] = benchmark
+        } else {
+            testInstrumentationRunnerArguments["notClass"] = benchmark
+        }
         ndk {
             abiFilters += "arm64-v8a"
         }
@@ -31,6 +38,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// S2-2 benchmark positions, shared with the PC bench (`station-pc/bench/common.py`).
+androidComponents {
+    onVariants { variant ->
+        variant.deviceTests.values.forEach { it.sources.assets?.addStaticSourceDirectory("../../testdata/positions") }
     }
 }
 
