@@ -17,6 +17,14 @@
     <string name="play_annotation_color">Couleur %1$s</string>
     <string name="play_annotation_clear">Effacer les annotations</string>
 
+    <string name="play_analysis">Analyse</string>
+    <string name="play_analysis_waiting">Analyse en cours…</string>
+    <string name="play_analysis_game_over">Partie terminée : pas d\'analyse</string>
+    <string name="play_analysis_failed">Le moteur n\'a pas pu démarrer</string>
+    <string name="play_analysis_depth">prof. %1$d</string>
+    <string name="play_analysis_eval_bar">Évaluation : %1$s</string>
+    <string name="play_analysis_eval_bar_waiting">Évaluation en cours de calcul</string>
+
     <string name="play_nav_start">Début de la partie</string>
     <string name="play_nav_back">Coup précédent</string>
     <string name="play_nav_forward">Coup suivant</string>

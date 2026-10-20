@@ -31,6 +31,7 @@ android {
 
 dependencies {
     implementation(project(":core:chess"))
+    implementation(project(":core:engine"))
     implementation(project(":core:ui"))
 
     implementation(libs.androidx.lifecycle.runtime.compose)
