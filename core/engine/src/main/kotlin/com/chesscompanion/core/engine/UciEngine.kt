@@ -5,6 +5,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -81,7 +82,8 @@ class UciEngine(
     /**
      * Relaie les `info` jusqu'au `bestmove`. Les lectures sont non annulables (une ligne lue n'est
      * jamais perdue) ; un observateur envoie `stop` dès l'annulation pour ne pas attendre la
-     * prochaine ligne du moteur.
+     * prochaine ligne du moteur. Une annulation arrivée pendant l'envoi de `go` (non annulable)
+     * est vue ici : l'observateur n'a pas démarré, la boucle ne commence pas et `stop` part.
      */
     private suspend fun ProducerScope<EngineEvent>.readSearch() {
         val finished = AtomicBoolean(false)
@@ -100,7 +102,7 @@ class UciEngine(
                 }
             }
         try {
-            while (!finished.get()) {
+            while (!finished.get() && isActive) {
                 val line = withContext(NonCancellable) { transport.readLine() } ?: break
                 val best = UciParser.parseBestMove(line)
                 if (best != null) {

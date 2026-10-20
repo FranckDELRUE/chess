@@ -3,6 +3,7 @@
     <string name="app_name">Chess Companion</string>
     <string name="home_flip_board">Retourner l\'échiquier</string>
     <string name="home_play">Partie à deux joueurs</string>
+    <string name="home_play_engine">Partie contre Stockfish</string>
     <string name="home_engine_debug">Debug moteur</string>
     <string name="engine_debug_title">Debug moteurs (spikes S0-4, S0-5)</string>
     <string name="engine_debug_fen">FEN</string>
