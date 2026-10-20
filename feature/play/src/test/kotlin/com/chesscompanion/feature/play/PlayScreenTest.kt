@@ -43,7 +43,11 @@ class PlayScreenTest {
 
     private fun showScreen() =
         compose.setContent {
-            ChessTheme { PlayScreen(PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer())) }
+            ChessTheme {
+                PlayScreen(
+                    PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer(), FakeOpponent()),
+                )
+            }
         }
 
     private fun tap(vararg squares: String) =
@@ -124,6 +128,32 @@ class PlayScreenTest {
 
         compose.onNodeWithTag(analysisLineTestTag(1)).performClick()
         status().assertTextEquals("Aux Noirs de jouer")
+    }
+
+    /** S2-4: set up a game against Stockfish, play e4, see its answer, take back, resign. */
+    @Test
+    fun gameAgainstStockfish() {
+        compose.setContent {
+            val saved = SavedStateHandle(mapOf("vs" to "engine"))
+            ChessTheme { PlayScreen(PlayViewModel(saved, FakeDocuments(), FakeAnalyzer(), FakeOpponent("e7e5"))) }
+        }
+        compose.onNodeWithTag(setupTimeTestTag(500)).performClick()
+        compose.onNodeWithTag(SETUP_SKILL_TAG).performClick()
+        compose.onNodeWithTag(SETUP_START_TAG).performClick()
+        compose.onNodeWithTag(ANALYSIS_SWITCH_TAG).assertDoesNotExist()
+
+        tap("e2", "e4")
+        compose.waitUntil(ANALYSIS_TIMEOUT_MS) {
+            compose.onAllNodesWithTag(moveTestTag(listOf(0, 0))).fetchSemanticsNodes().isNotEmpty()
+        }
+        status().assertTextEquals("Aux Blancs de jouer")
+
+        compose.onNodeWithTag(VS_TAKE_BACK_TAG).performClick()
+        compose.onNodeWithTag(NAV_START_TAG).assertIsNotEnabled()
+
+        compose.onNodeWithTag(VS_RESIGN_TAG).performClick()
+        status().assertTextEquals("Vous avez abandonné : Stockfish gagne")
+        compose.onNodeWithTag(ANALYSIS_SWITCH_TAG).assertExists()
     }
 }
 

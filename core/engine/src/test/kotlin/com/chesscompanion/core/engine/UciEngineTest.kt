@@ -1,5 +1,6 @@
 package com.chesscompanion.core.engine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -8,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.time.Duration.Companion.seconds
 
 class UciEngineTest {
     private val fen = "8/8/8/8/8/8/8/K6k w - - 0 1"
@@ -62,6 +64,25 @@ class UciEngineTest {
             job.join()
             assertEquals(1, transport.sent.count { it == "stop" })
             assertEquals(1, events.size)
+        }
+
+    /** The race found on the tablet in S2-4: cancelled while `go` is being sent, the search ran on to its end. */
+    @Test
+    fun `cancelling while go is being sent still stops the search`() =
+        runTest(timeout = 5.seconds) {
+            val transport = FakeUciTransport()
+            transport.goGate = CompletableDeferred()
+            val engine = UciEngine(transport)
+            val job = launch { engine.analyze(SearchRequest(fen, SearchLimit.MoveTime(60_000))).collect {} }
+            runCurrent()
+            assertTrue(transport.sent.any { it.startsWith("go") })
+            job.cancel()
+            transport.goGate!!.complete(Unit)
+            job.join()
+            assertEquals("stop", transport.sent.last())
+            assertEquals(0, transport.readsWhileSearching, "the search kept reading after being cancelled")
+            // The engine is left clean: the next search reads its own bestmove.
+            assertEquals(EngineEvent.BestMove("e2e4", "e7e5"), engine.analyze(fen, 1).toList().last())
         }
 
     @Test
