@@ -56,7 +56,10 @@ data class RepertoireArrow(
     val from: Square,
     val to: Square,
     val color: MarkColor,
-)
+) {
+    /** True when [other] joins the same two squares, whatever its colour. */
+    fun sameSquares(other: RepertoireArrow): Boolean = from == other.from && to == other.to
+}
 
 data class RepertoireSquareMark(
     val square: Square,
@@ -93,6 +96,8 @@ data class MergeResult(
     val addedMoves: Int,
     val existingMoves: Int,
     val addedPositions: Int,
+    /** Positions whose notes (comment, marks) changed because the game commented them. */
+    val notedPositions: Int = 0,
 )
 
 /** The start position of a game is not the repertoire's. */
@@ -168,9 +173,42 @@ class Repertoire private constructor(
             val (fromId, moveNode) = pending.removeLast()
             val source = builder.nodes.getValue(fromId)
             val (target, _) = builder.addMove(source, moveNode.move, moveNode.position)
+            builder.addNotes(target, moveNode.commentsAfter)
             moveNode.children.asReversed().forEach { pending.addLast(target to it) }
         }
-        return MergeResult(builder.build(), builder.addedMoves, builder.existingMoves, builder.addedPositions)
+        return MergeResult(
+            builder.build(),
+            builder.addedMoves,
+            builder.existingMoves,
+            builder.addedPositions,
+            builder.notedPositions,
+        )
+    }
+
+    /**
+     * Removes the move [move] played from [from], then every position that can no longer be reached
+     * from the root (with its moves and notes). A position still reached by another move stays.
+     */
+    fun removeMove(
+        from: PositionId,
+        move: Move,
+    ): Repertoire {
+        val moves = outgoing[from].orEmpty()
+        if (moves.none { it.move == move }) return this
+        val remaining = outgoing + (from to moves.filterNot { it.move == move })
+        val reachable = HashSet<PositionId>().apply { add(root) }
+        val pending = ArrayDeque(listOf(root))
+        while (pending.isNotEmpty()) {
+            remaining[pending.removeLast()].orEmpty().forEach { if (reachable.add(it.to)) pending.addLast(it.to) }
+        }
+        return Repertoire(
+            side,
+            root,
+            nodes.filterKeys { it in reachable },
+            remaining.filter { (id, list) -> id in reachable && list.isNotEmpty() },
+            notes.filterKeys { it in reachable },
+            idOf,
+        )
     }
 
     private class Builder(
@@ -178,6 +216,8 @@ class Repertoire private constructor(
     ) {
         val nodes = LinkedHashMap(origin.nodes)
         private val outgoing = LinkedHashMap(origin.outgoing)
+        private val notes = LinkedHashMap(origin.notes)
+        var notedPositions = 0
         var addedMoves = 0
         var existingMoves = 0
         var addedPositions = 0
@@ -205,7 +245,41 @@ class Repertoire private constructor(
             return targetId to true
         }
 
-        fun build(): Repertoire = Repertoire(origin.side, origin.root, nodes, outgoing, origin.notes, origin.idOf)
+        /**
+         * Writes what the PGN [comments] say on the position [id]. A text already there is not repeated,
+         * a different one is added on a new line; a mark already on the same squares keeps its colour.
+         */
+        fun addNotes(
+            id: PositionId,
+            comments: List<String>,
+        ) {
+            for (raw in comments) {
+                val parsed = PgnMarks.parse(raw)
+                val current = notes[id] ?: NodeNotes()
+                val text =
+                    when {
+                        parsed.text.isEmpty() -> current.comment
+                        current.comment.isEmpty() -> parsed.text
+                        parsed.text in current.comment -> current.comment
+                        else -> current.comment + "\n" + parsed.text
+                    }
+                val merged =
+                    current.copy(
+                        comment = text,
+                        arrows =
+                            current.arrows + parsed.arrows.filter { a -> current.arrows.none { it.sameSquares(a) } },
+                        squares =
+                            current.squares +
+                                parsed.squares.filter { a -> current.squares.none { it.square == a.square } },
+                    )
+                if (merged != current) {
+                    notes[id] = merged
+                    notedPositions++
+                }
+            }
+        }
+
+        fun build(): Repertoire = Repertoire(origin.side, origin.root, nodes, outgoing, notes, origin.idOf)
     }
 
     companion object {

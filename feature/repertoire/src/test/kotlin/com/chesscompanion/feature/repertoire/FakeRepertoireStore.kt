@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
 
 /** [RepertoireStore] in memory: repertoires in creation order. */
 class FakeRepertoireStore : RepertoireStore {
-    private class Entry(
+    private data class Entry(
         val id: String,
         val name: String,
         val repertoire: Repertoire,
@@ -21,7 +21,13 @@ class FakeRepertoireStore : RepertoireStore {
     private val entries = MutableStateFlow<List<Entry>>(emptyList())
     private var counter = 0
 
+    /** Number of calls to [save]. */
+    var saves = 0
+        private set
+
     fun names(): List<String> = entries.value.map { it.name }
+
+    fun repertoireOf(id: String): Repertoire = entries.value.first { it.id == id }.repertoire
 
     override fun repertoires(): Flow<List<RepertoireSummary>> =
         entries.map { list ->
@@ -44,13 +50,16 @@ class FakeRepertoireStore : RepertoireStore {
     override suspend fun save(
         id: String,
         repertoire: Repertoire,
-    ) = Unit
+    ) {
+        saves++
+        entries.value = entries.value.map { if (it.id == id) it.copy(repertoire = repertoire) else it }
+    }
 
     override suspend fun rename(
         id: String,
         name: String,
     ) {
-        entries.value = entries.value.map { if (it.id == id) Entry(it.id, name, it.repertoire) else it }
+        entries.value = entries.value.map { if (it.id == id) it.copy(name = name) else it }
     }
 
     override suspend fun delete(id: String) {

@@ -23,4 +23,22 @@
     <string name="repertoire_delete_message">Toutes ses lignes seront supprimées. Cette action est définitive.</string>
     <string name="repertoire_delete_confirm">Supprimer</string>
     <string name="repertoire_cancel">Annuler</string>
+    <string name="editor_not_found">Répertoire introuvable.</string>
+    <string name="editor_start_position">Position de départ</string>
+    <string name="editor_to_start">Début</string>
+    <string name="editor_back">Reculer</string>
+    <string name="editor_flip">Retourner</string>
+    <string name="editor_continuations">Suites du répertoire :</string>
+    <string name="editor_no_continuation">Aucune suite dans le répertoire : joue un coup pour en ajouter une.</string>
+    <string name="editor_annotate">Annoter</string>
+    <string name="editor_color">Couleur %1$s</string>
+    <string name="editor_clear_marks">Effacer les marques</string>
+    <string name="editor_comment">Commentaire</string>
+    <string name="editor_source">Source</string>
+    <string name="editor_source_book">Livre</string>
+    <string name="editor_source_chapter">Chapitre</string>
+    <string name="editor_source_page">Page</string>
+    <string name="editor_delete">Supprimer ce coup</string>
+    <string name="editor_delete_title">Supprimer ce coup ?</string>
+    <string name="editor_delete_message">Ce coup et les lignes qui n\'existent que par lui seront supprimés. Cette action est définitive.</string>
 </resources>

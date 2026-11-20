@@ -78,3 +78,7 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 
 ## Issu de S2-6
 - Déplacer l'écran « Debug moteur » et le benchmark Maia dans le source set `debug/` pour les exclure de l'APK release (aujourd'hui compilés mais inatteignables).
+
+- Marques jaunes (`Y`) dans l'éditeur de répertoire : ignorées en S7-4 (PGN `[%cal]`/`[%csl]` ne gardent que G/R/B).
+- Mutualiser la machine de saisie des coups (`EditorInput` dans `:feature:repertoire` duplique `MoveInput` de `:feature:play`).
+- Export PGN : conserver aussi les notes de la position de départ du répertoire.
