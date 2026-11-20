@@ -117,6 +117,9 @@ class RoomRepertoireStoreTest {
                     arrows = listOf(RepertoireArrow(Square.parse("c7")!!, Square.parse("c5")!!, MarkColor.GREEN)),
                     squares = listOf(RepertoireSquareMark(Square.parse("d5")!!, MarkColor.RED)),
                     source = Source("Les Échecs", chapter = "3", page = "42"),
+                    idea = "Prendre le centre.",
+                    plan = "Roquer puis jouer c3.",
+                    trap = "Attention à ...Dh4.",
                 )
             val graph = afterE4.repertoire.withNotes(afterE4.target, notes)
             store.save(id, graph)

@@ -36,7 +36,12 @@
   sur tablette non vu.
 
 ### S8b-3 · Idée, plan, piège
-- Invites dans l'éditeur pour écrire l'idée du coup, le plan et le piège d'une position ; affichage dans l'écran Apprendre.
+- [x] Trois champs « Idée du coup », « Plan », « Piège » dans l'éditeur (`NodeNotes.idea/plan/trap`, `InsightField`),
+  sauvegardés par position ; base Room v5 (migration `V4_TO_V5`, colonnes ajoutées vides).
+- [x] Affichés dans l'écran Apprendre (un bloc par champ rempli).
+- [x] Tests : stockage, migration 4→5, éditeur, leçon. Installé sur la tablette.
+- *Notes* : l'idée, le plan et le piège ne sont pas inclus dans l'export PGN (seul le commentaire l'est) ; pas de test
+  d'écran Compose dédié ; parcours réel non vu sur la tablette.
 
 ### S8b-4 · Démo et clôture
 - Démo sur la tablette, rétrospective courte, archive `docs/sprints/s8b.md`.

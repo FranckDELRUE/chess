@@ -73,14 +73,28 @@ data class Source(
     val page: String? = null,
 )
 
-/** What the player or an author wrote on a position (ADR 0012): comment, marks drawn on the board, source. */
+/**
+ * What the player or an author wrote on a position (ADR 0012): comment, marks drawn on the board, source, and the
+ * three questions that explain a move (S8b-3): its [idea], the [plan] that follows, the [trap] to watch for.
+ */
 data class NodeNotes(
     val comment: String = "",
     val arrows: List<RepertoireArrow> = emptyList(),
     val squares: List<RepertoireSquareMark> = emptyList(),
     val source: Source? = null,
+    val idea: String = "",
+    val plan: String = "",
+    val trap: String = "",
 ) {
-    val isEmpty: Boolean get() = comment.isEmpty() && arrows.isEmpty() && squares.isEmpty() && source == null
+    val isEmpty: Boolean
+        get() =
+            comment.isEmpty() &&
+                arrows.isEmpty() &&
+                squares.isEmpty() &&
+                source == null &&
+                idea.isEmpty() &&
+                plan.isEmpty() &&
+                trap.isEmpty()
 }
 
 /** Outcome of [Repertoire.add]: [target] is where the move leads, [created] tells if the move was new. */

@@ -42,6 +42,16 @@ object Migrations {
             }
         }
 
+    /** S8b-3: adds the idea, plan and trap notes to the repertoire positions; everything else is untouched. */
+    val V4_TO_V5: Migration =
+        object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                listOf("idea", "plan", "trap").forEach { column ->
+                    db.execSQL("ALTER TABLE `repertoire_node` ADD COLUMN `$column` TEXT NOT NULL DEFAULT ''")
+                }
+            }
+        }
+
     // Copied from core/data/schemas/.../2.json (createSql of the three new entities).
     private val MIGRATION_1_2_SQL: List<String> =
         listOf(

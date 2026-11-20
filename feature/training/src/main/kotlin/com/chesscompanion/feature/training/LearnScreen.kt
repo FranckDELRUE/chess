@@ -38,6 +38,9 @@ const val LEARN_LEARNED_TAG = "learn-learned"
 const val LEARN_NEXT_TAG = "learn-next"
 const val LEARN_PREVIOUS_TAG = "learn-previous"
 const val LEARN_QUIT_TAG = "learn-quit"
+const val LEARN_IDEA_TAG = "learn-idea"
+const val LEARN_PLAN_TAG = "learn-plan"
+const val LEARN_TRAP_TAG = "learn-trap"
 
 fun learnFactTag(index: Int) = "learn-fact-$index"
 
@@ -146,6 +149,7 @@ private fun LearnPanel(
         )
         LearnTask(state)
         LearnFacts(state)
+        LearnInsights(state)
         if (state.comment.isNotEmpty()) Text(state.comment)
         state.source?.let {
             Text(stringResource(R.string.drill_learn_source, it), style = MaterialTheme.typography.bodySmall)
@@ -164,6 +168,23 @@ private fun LearnPanel(
         }
         OutlinedButton(onClick = onClose, modifier = Modifier.testTag(LEARN_QUIT_TAG)) {
             Text(stringResource(R.string.learn_quit))
+        }
+    }
+}
+
+/** The idea, plan and trap the author wrote for the position; nothing is shown for an empty one. */
+@Composable
+private fun LearnInsights(state: LearnUiState) {
+    val items =
+        listOf(
+            Triple(LEARN_IDEA_TAG, R.string.learn_idea, state.idea),
+            Triple(LEARN_PLAN_TAG, R.string.learn_plan, state.plan),
+            Triple(LEARN_TRAP_TAG, R.string.learn_trap, state.trap),
+        ).filter { it.third.isNotEmpty() }
+    items.forEach { (tag, label, text) ->
+        Column(Modifier.fillMaxWidth().testTag(tag)) {
+            Text(stringResource(label), style = MaterialTheme.typography.titleSmall)
+            Text(text)
         }
     }
 }

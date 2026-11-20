@@ -20,6 +20,9 @@ data class Continuation(
 /** The three fields of the source of a position (book, chapter, page). */
 enum class SourceField { BOOK, CHAPTER, PAGE }
 
+/** The three questions that explain a move (S8b-3): what it is for, what comes next, what to watch out for. */
+enum class InsightField { IDEA, PLAN, TRAP }
+
 data class RepertoireEditorUiState(
     val status: EditorStatus = EditorStatus.LOADING,
     val name: String = "",
@@ -34,6 +37,9 @@ data class RepertoireEditorUiState(
     val canGoBack: Boolean = false,
     val continuations: List<Continuation> = emptyList(),
     val comment: String = "",
+    val idea: String = "",
+    val plan: String = "",
+    val trap: String = "",
     val sourceBook: String = "",
     val sourceChapter: String = "",
     val sourcePage: String = "",
@@ -100,6 +106,11 @@ sealed interface EditorAction {
     data object ClearAnnotations : EditorAction
 
     data class EditComment(
+        val text: String,
+    ) : EditorAction
+
+    data class EditInsight(
+        val field: InsightField,
         val text: String,
     ) : EditorAction
 

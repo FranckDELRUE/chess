@@ -1,5 +1,6 @@
 package com.chesscompanion.core.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -49,6 +50,12 @@ data class RepertoireNodeEntity(
     val sourceBook: String?,
     val sourceChapter: String?,
     val sourcePage: String?,
+    @ColumnInfo(defaultValue = "")
+    val idea: String = "",
+    @ColumnInfo(defaultValue = "")
+    val plan: String = "",
+    @ColumnInfo(defaultValue = "")
+    val trap: String = "",
 )
 
 /** A move between two nodes of a repertoire; [ordinal] keeps the order in which moves were added. */

@@ -23,6 +23,17 @@ internal fun NodeNotes.toAnnotations(): BoardAnnotations =
         arrows = arrows.associate { Arrow(it.from, it.to) to it.color.toUi() },
     )
 
+/** These notes with the idea, plan or trap (as [field] says) set to [text]. */
+internal fun NodeNotes.withInsight(
+    field: InsightField,
+    text: String,
+): NodeNotes =
+    when (field) {
+        InsightField.IDEA -> copy(idea = text)
+        InsightField.PLAN -> copy(plan = text)
+        InsightField.TRAP -> copy(trap = text)
+    }
+
 /** These notes with the marks replaced by [marks]; comment and source are kept. */
 internal fun NodeNotes.withMarks(marks: BoardAnnotations): NodeNotes =
     copy(
@@ -55,6 +66,9 @@ internal fun EditorModel.toUiState(name: String): RepertoireEditorUiState {
                     current,
                 ).map { Continuation(it.move.uci, position.toSan(it.move, PieceLetters.FRENCH)) },
         comment = notes.comment,
+        idea = notes.idea,
+        plan = notes.plan,
+        trap = notes.trap,
         sourceBook = sourceDraft.book,
         sourceChapter = sourceDraft.chapter,
         sourcePage = sourceDraft.page,

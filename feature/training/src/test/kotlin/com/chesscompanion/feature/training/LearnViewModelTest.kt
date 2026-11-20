@@ -219,4 +219,17 @@ class LearnViewModelTest {
         assertEquals("Plan : c4", state.comment)
         assertEquals("Mon livre · 2 · p. 14", state.source)
     }
+
+    @Test
+    fun theIdeaPlanAndTrapOfThePositionAreShown() {
+        val noted =
+            repertoire.withNotes(
+                repertoire.root,
+                NodeNotes(idea = "Prendre le centre", plan = "Jouer c4", trap = "Éviter ...Fg4 trop tôt"),
+            )
+        val state = learn(graph = noted).state.value
+        assertEquals("Prendre le centre", state.idea)
+        assertEquals("Jouer c4", state.plan)
+        assertEquals("Éviter ...Fg4 trop tôt", state.trap)
+    }
 }

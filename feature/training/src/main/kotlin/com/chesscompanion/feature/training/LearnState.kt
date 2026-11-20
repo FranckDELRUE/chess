@@ -47,6 +47,10 @@ data class LearnUiState(
     /** What the author wrote on the position (comment and source), empty if nothing. */
     val comment: String = "",
     val source: String? = null,
+    /** The author's idea, plan and trap for the position (S8b-3), empty if not written. */
+    val idea: String = "",
+    val plan: String = "",
+    val trap: String = "",
     /** The position is learned (before this visit, or by the move just played). */
     val stepLearned: Boolean = false,
     /** The move just played learned it. */

@@ -46,7 +46,7 @@ object DataModule {
     ): ChessDatabase =
         Room
             .databaseBuilder(context, ChessDatabase::class.java, ChessDatabase.NAME)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4, Migrations.V4_TO_V5)
             .build()
 
     @Provides

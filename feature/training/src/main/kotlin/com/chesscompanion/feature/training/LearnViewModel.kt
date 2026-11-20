@@ -124,6 +124,9 @@ class LearnViewModel
                     toMove = position.sideToMove,
                     facts = step.expected.map { MoveFact(position.toSan(it.move, PieceLetters.FRENCH)) },
                     comment = notes.comment,
+                    idea = notes.idea,
+                    plan = notes.plan,
+                    trap = notes.trap,
                     source = notes.source?.toText(),
                     stepLearned = step.learned,
                 )
