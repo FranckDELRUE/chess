@@ -413,11 +413,11 @@ Critères d'acceptation : import d'un PGN de 500 variantes sans perte ; les tran
 ### S8 — Entraînement d'ouvertures
 
 - [x] Implémenter FSRS dans `:core:srs` avec tests.
-- [ ] Modes apprentissage, drill et déviation ; retour factuel sur une déviation (coup attendu, coup joué, ligne du répertoire, évaluation Stockfish).
-- [ ] File de révisions quotidienne, notifications optionnelles.
-- [ ] Détection des trous du répertoire (réponses fréquentes non couvertes).
+- [x] Modes apprentissage, drill et déviation ; retour factuel sur une déviation (coup attendu, coup joué, ligne du répertoire, évaluation Stockfish).
+- [x] File de révisions quotidienne, notifications optionnelles.
+- [x] Détection des trous du répertoire (réponses fréquentes non couvertes).
 
-Exécuté juste après S7 (ADR 0011). La partie d'entraînement contre Maia passe en S3, l'explication des déviations par le professeur en S4.
+Terminé le 2026-11-20 (`docs/sprints/s8.md`, ADR 0014 pour la révision par lignes). Exécuté juste après S7 (ADR 0011). La partie d'entraînement contre Maia passe en S3, l'explication des déviations par le professeur en S4.
 
 Critères d'acceptation : une ligne ratée revient le lendemain, une ligne réussie trois fois s'espace de plusieurs jours.
 

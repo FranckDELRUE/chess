@@ -91,10 +91,22 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Explorateur : mémoriser le niveau choisi, afficher les parties les plus jouées / l'ouverture nommée, évaluer chaque coup proposé (MultiPV) et ajouter un réglage de durée de l'évaluation (2 s fixes).
 
 ## Issu de S7-8
-- Export PGN d'un répertoire depuis l'interface (écart constaté à la démo ; `toGame` existe, ADR 0012). **Repris en S8** (décidé à la relecture de S7).
+- Export PGN d'un répertoire depuis l'interface (écart constaté à la démo ; `toGame` existe, ADR 0012). **Fait en S8-7** (bouton « Exporter » de la liste).
 - Ouverture d'un très gros répertoire (~10 000 coups après import d'une étude de 56 parties) : ~5 s de « Chargement… » ; chargement progressif ou en tâche de fond.
 
 ## Refonte de l'éditeur de répertoire (demandée le 2026-11-20, à planifier après S8)
 - **Panneau unique mieux ordonné** (pas d'onglets, décision de l'utilisateur) : navigation complète (⏮ ◀ ▶ ⏭) et ligne de coups cliquable avec variantes indentées ; suites en grosses puces avec confirmation « ajouté » / « déjà connu » ; notes (commentaire, flèches nommées, source) ; explorateur en section repliable ; actions rares (importer, supprimer un coup, exporter) dans un menu « ⋮ ».
 - **Nommer les suites** : donner un nom à une ligne ou à une suite du répertoire (ex. « Italienne, Giuoco Piano »), le voir dans la ligne et dans la liste des répertoires. À trancher au plan : nom porté par le nœud ou par un chemin ; un nom doit survivre à `save` et aux transpositions (ADR 0012 à annoter ; S8 pourra réutiliser ces noms pour le drill).
 - Constat de départ : la démo S7-8 montre un long défilement mélangeant actions courantes et rares, sans bouton « Avancer » ni ligne cliquable.
+
+## Issu de S8
+- Écran de réglages : jeton Lichess, niveau de l'explorateur, limite de nouvelles positions du drill (10), pause avant
+  le coup adverse (700 ms), heure du rappel quotidien (18 h).
+- Extraire `DrillInput`, `formatEvaluation` et `lineText` (dupliqués entre `:feature:repertoire` et
+  `:feature:training`) dans un module partagé.
+- Montrer pendant l'apprentissage les flèches et marques dessinées par l'auteur de la position.
+- Options de drill : sauter l'apprentissage, arrêter la ligne à la position visée.
+- Tester le worker du rappel (`ReviewReminderWorker`, `DueCounter`) avec un faux store non vide ; bouton de sortie
+  explicite sur l'écran « Trous ».
+- Exporter aussi les notes de la position de départ (limite de `Repertoire.toGame`).
+- Réentraîner les poids FSRS sur l'historique de révisions du joueur.
