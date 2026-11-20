@@ -30,7 +30,7 @@ docs/
   dossier-conception.md            Référence : vision, architecture, sprints, risques
   backlog.md                       Idées hors sprint
   sprints/current.md               Sprint en cours, stories et critères (vide entre deux sprints)
-  sprints/s0.md, s1.md             Sprints terminés (notes, dette, rétrospective)
+  sprints/s0.md, s1.md, s2.md      Sprints terminés (notes, dette, rétrospective)
   adr/                             Décisions d'architecture (0001 à 0010)
   spikes/rapport-s0.md             Mesures des spikes de S0
   spikes/rapport-s2.md             Mesures de Stockfish sur les positions de Heidoji (S2-2)
