@@ -2,6 +2,7 @@ package com.chesscompanion.core.srs
 
 import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.repertoire.RepertoireEdge
+import java.time.Duration
 import java.time.Instant
 
 /** How the played move compares with the repertoire. */
@@ -59,6 +60,12 @@ class DrillSession(
     /** True when the current position is a practice retry after a miss (its answer is not graded). */
     val isRetry: Boolean get() = pending.firstOrNull()?.graded == false
 
+    /**
+     * True when the current position is new: it is learned (the answer is shown, [learn]) before it is ever
+     * asked. A retry is never a learning step.
+     */
+    val isLearning: Boolean get() = pending.firstOrNull()?.let { it.graded && it.item.isNew } == true
+
     /** The move to show as a hint for the current position: the first repertoire move. */
     val hint: RepertoireEdge? get() = current?.expected?.firstOrNull()
 
@@ -82,4 +89,37 @@ class DrillSession(
             }
         return DrillResult(item, outcome, rating, fsrs.review(item.card ?: FsrsCard(), rating, now))
     }
+
+    /**
+     * Learning step of a new position: the player plays the repertoire move that was shown. A right move ends the
+     * step and creates the card, rated [Rating.Good] but due the next day, so that the first real recall comes
+     * soon; any other move changes nothing (nothing is graded while learning).
+     */
+    fun learn(
+        played: Move,
+        now: Instant,
+    ): LearnResult {
+        val entry = checkNotNull(pending.firstOrNull()) { "The drill is finished" }
+        check(entry.graded && entry.item.isNew) { "The current position is not being learned" }
+        val edge =
+            entry.item.expected.firstOrNull { it.move == played } ?: return LearnResult.NotTheMove(entry.item.expected)
+        pending.removeFirst()
+        val card = fsrs.review(FsrsCard(), Rating.Good, now).copy(due = now.plus(Duration.ofDays(1)))
+        return LearnResult.Learned(entry.item, edge, card)
+    }
+}
+
+/** Outcome of [DrillSession.learn]. */
+sealed interface LearnResult {
+    /** The move was a repertoire move: [card] is the new memory state to store. */
+    data class Learned(
+        val item: ReviewItem,
+        val edge: RepertoireEdge,
+        val card: FsrsCard,
+    ) : LearnResult
+
+    /** The move is not one to learn; [expected] are the repertoire moves. */
+    data class NotTheMove(
+        val expected: List<RepertoireEdge>,
+    ) : LearnResult
 }

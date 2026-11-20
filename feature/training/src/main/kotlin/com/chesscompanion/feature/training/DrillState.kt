@@ -8,7 +8,8 @@ import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.ui.board.BoardAnnotations
 import com.chesscompanion.core.ui.board.BoardHighlights
 
-enum class DrillStatus { LOADING, NOT_FOUND, ASKING, FEEDBACK, FINISHED }
+/** [LEARNING]: a new position, the repertoire move is shown and the player plays it; [ASKING]: a review question. */
+enum class DrillStatus { LOADING, NOT_FOUND, LEARNING, ASKING, FEEDBACK, FINISHED }
 
 /**
  * What the player is told after an answer (facts only: the explanation by the teacher comes in S4).
@@ -18,6 +19,8 @@ data class DrillFeedback(
     val correct: Boolean,
     /** An ungraded practice retry after a miss: the schedule was not changed. */
     val retry: Boolean,
+    /** The answer completed the learning of a new position (it comes back tomorrow). */
+    val learned: Boolean = false,
     val playedSan: String,
     val expectedSans: List<String>,
     /** The repertoire line up to the expected move, e.g. `1. d4 d5 2. c4`. */
@@ -32,6 +35,7 @@ data class DrillSummary(
     val graded: Int = 0,
     val correct: Int = 0,
     val missed: Int = 0,
+    val learned: Int = 0,
 )
 
 data class DrillUiState(
@@ -49,6 +53,11 @@ data class DrillUiState(
     val isRetry: Boolean = false,
     val remaining: Int = 0,
     val hint: String? = null,
+    /** Learning a new position: the repertoire moves to play (SAN), what the author wrote, and the last try missed. */
+    val learnMoves: List<String> = emptyList(),
+    val learnComment: String = "",
+    val learnSource: String? = null,
+    val learnMiss: Boolean = false,
     val feedback: DrillFeedback? = null,
     val summary: DrillSummary = DrillSummary(),
     /** Positions waiting beyond today's limits (only meaningful once finished). */

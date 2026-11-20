@@ -14,6 +14,7 @@ import com.chesscompanion.core.engine.EngineScheduler
 import com.chesscompanion.core.srs.DrillOutcome
 import com.chesscompanion.core.srs.DrillResult
 import com.chesscompanion.core.srs.DrillSession
+import com.chesscompanion.core.srs.LearnResult
 import com.chesscompanion.core.srs.ReviewItem
 import com.chesscompanion.core.srs.ReviewQueueBuilder
 import com.chesscompanion.core.ui.board.BoardAnnotations
@@ -87,7 +88,7 @@ class DrillViewModel
             when (action) {
                 DrillAction.Continue -> next()
                 DrillAction.ShowHint -> showHint()
-                else -> if (_state.value.status == DrillStatus.ASKING) gesture(action)
+                else -> if (_state.value.status.takesMoves()) gesture(action)
             }
         }
 
@@ -104,7 +105,11 @@ class DrillViewModel
                 }
             input = step.input
             val played = step.played
-            if (played != null) answer(played) else showInput()
+            when {
+                played == null -> showInput()
+                _state.value.status == DrillStatus.LEARNING -> learn(played)
+                else -> answer(played)
+            }
         }
 
         private fun showHint() {
@@ -121,13 +126,26 @@ class DrillViewModel
             input = DrillInput(position)
             hintUsed = false
             val repertoire = checkNotNull(repertoire)
+            val learning = session?.isLearning == true
+            val notes = repertoire.notes(shown.id)
             _state.update {
                 it.copy(
-                    status = DrillStatus.ASKING,
+                    status = if (learning) DrillStatus.LEARNING else DrillStatus.ASKING,
+                    learnMoves =
+                        if (learning) {
+                            shown.expected.map { e ->
+                                position.toSan(e.move, PieceLetters.FRENCH)
+                            }
+                        } else {
+                            emptyList()
+                        },
+                    learnComment = if (learning) notes.comment else "",
+                    learnSource = if (learning) notes.source?.toText() else null,
+                    learnMiss = false,
                     board = position.board,
                     flipped = repertoire.side == Side.BLACK,
                     highlights = BoardHighlights(check = position.checkSquare()),
-                    annotations = BoardAnnotations.EMPTY,
+                    annotations = if (learning) expectedArrows(shown) else BoardAnnotations.EMPTY,
                     promotionSide = null,
                     lineText = lineText(repertoire, shown.path),
                     toMove = position.sideToMove,
@@ -154,6 +172,30 @@ class DrillViewModel
                         ),
                     promotionSide = if (current.pendingPromotion != null) position.sideToMove else null,
                 )
+            }
+        }
+
+        /** The player plays the repertoire move shown for a new position: the card is created, due tomorrow. */
+        private fun learn(played: Move) {
+            val shown = session ?: return
+            val item = shown.current ?: return
+            when (val result = shown.learn(played, Instant.now(clock))) {
+                is LearnResult.NotTheMove -> {
+                    _state.update { it.copy(learnMiss = true) }
+                    showInput()
+                }
+                is LearnResult.Learned -> {
+                    viewModelScope.launch { cards.put(id, item.id, result.card) }
+                    summary = summary.learnedOne()
+                    _state.update {
+                        it.copy(
+                            status = DrillStatus.FEEDBACK,
+                            highlights = BoardHighlights(lastMove = played),
+                            promotionSide = null,
+                            feedback = learnedFeedback(item, result, checkNotNull(repertoire)),
+                        )
+                    }
+                }
             }
         }
 
@@ -188,14 +230,11 @@ class DrillViewModel
             evalJob =
                 viewModelScope.launch {
                     val afterPlayed = probe.after(position, played)
-                    updateFeedback { it.copy(playedEvaluation = afterPlayed) }
+                    _state.updateFeedback { it.copy(playedEvaluation = afterPlayed) }
                     val afterExpected = probe.after(position, expected)
-                    updateFeedback { it.copy(expectedEvaluation = afterExpected, evaluationDone = true) }
+                    _state.updateFeedback { it.copy(expectedEvaluation = afterExpected, evaluationDone = true) }
                 }
         }
-
-        private fun updateFeedback(change: (DrillFeedback) -> DrillFeedback) =
-            _state.update { state -> state.feedback?.let { state.copy(feedback = change(it)) } ?: state }
 
         private fun next() {
             if (_state.value.status != DrillStatus.FEEDBACK) return

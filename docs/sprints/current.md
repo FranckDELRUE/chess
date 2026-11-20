@@ -1,4 +1,4 @@
-# Sprint S8 — Entraînement d'ouvertures
+﻿# Sprint S8 — Entraînement d'ouvertures
 
 **Statut** : en cours (plan validé le 2026-11-20).
 
@@ -72,8 +72,21 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   tablette (à faire par le joueur) ; l'ordre des nouvelles positions est celui du graphe, sans regroupement par ligne ;
   `RepertoireListScreen` : le bouton « Réviser » n'a pas de test d'écran dédié.
 
-### S8-5 à S8-8
-Voir le plan validé : apprentissage (5), trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
+### S8-5 · Mode apprentissage
+- [x] `DrillSession.isLearning` / `learn` / `LearnResult` (`:core:srs`) : une position nouvelle n'est jamais interrogée à
+  froid ; on la **découvre** (coup du répertoire et flèche affichés, commentaire et source de la position) puis on
+  joue le coup montré. Un autre coup ne change rien et n'est pas noté. La carte est créée avec la mémoire d'un premier
+  succès (Good) mais échéance **le lendemain** : le premier vrai rappel arrive vite.
+- [x] `DrillStatus.LEARNING` dans `:feature:training` : panneau « Nouvelle position à apprendre », message si mauvais
+  coup, confirmation « Appris », bilan « n nouvelles positions apprises » (`DrillSummary.learned`).
+- [x] Tests : 2 de plus dans `DrillSessionTest`, 5 de plus dans `DrillViewModelTest` (réécrit : les révisions partent de
+  cartes déjà vues), 1 de plus dans `DrillScreenTest`. Installé sur la tablette.
+- *Notes* : le mode « déviation » du plan est le retour factuel de S8-4 (pas de mode distinct). Pas d'option « sauter
+  l'apprentissage » ni de réglage de la limite de nouvelles positions (10 par séance, `QueueLimits`) : à ajouter avec
+  les réglages si le besoin se confirme. Les flèches et marques dessinées par l'auteur sur la position ne sont pas
+  encore montrées pendant l'apprentissage (seuls commentaire et source le sont).
+### S8-6 à S8-8
+Voir le plan validé : trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
 
 ---
 

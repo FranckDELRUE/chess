@@ -29,6 +29,10 @@ import com.chesscompanion.core.ui.board.PromotionDialog
 
 const val DRILL_NOT_FOUND_TAG = "drill-not-found"
 const val DRILL_QUESTION_TAG = "drill-question"
+const val DRILL_LEARN_TAG = "drill-learn"
+const val DRILL_LEARN_MOVES_TAG = "drill-learn-moves"
+const val DRILL_LEARN_MISS_TAG = "drill-learn-miss"
+const val DRILL_LEARNED_TAG = "drill-learned"
 const val DRILL_HINT_BUTTON_TAG = "drill-hint-button"
 const val DRILL_HINT_TAG = "drill-hint"
 const val DRILL_FEEDBACK_TAG = "drill-feedback"
@@ -38,6 +42,7 @@ const val DRILL_EVAL_EXPECTED_TAG = "drill-eval-expected"
 const val DRILL_CONTINUE_TAG = "drill-continue"
 const val DRILL_FINISHED_TAG = "drill-finished"
 const val DRILL_SUMMARY_TAG = "drill-summary"
+const val DRILL_LEARNED_SUMMARY_TAG = "drill-learned-summary"
 
 /** The drill of one repertoire: the board on one side, the question and the feedback on the other. */
 @Composable
@@ -115,6 +120,7 @@ private fun DrillPanel(
     ) {
         Text(stringResource(R.string.drill_title, state.name), style = MaterialTheme.typography.headlineSmall)
         when (state.status) {
+            DrillStatus.LEARNING -> LearningPanel(state)
             DrillStatus.ASKING -> AskingPanel(state, onAction)
             DrillStatus.FEEDBACK -> FeedbackPanel(state, onAction)
             else -> FinishedPanel(state)
@@ -134,6 +140,31 @@ private fun LineHeader(state: DrillUiState) {
         ),
         Modifier.testTag(DRILL_LINE_TAG),
     )
+}
+
+@Composable
+private fun LearningPanel(state: DrillUiState) {
+    Text(stringResource(R.string.drill_remaining, state.remaining), style = MaterialTheme.typography.labelLarge)
+    Text(
+        stringResource(R.string.drill_line, state.lineText.ifEmpty { stringResource(R.string.drill_line_start) }),
+        Modifier.testTag(DRILL_LINE_TAG),
+    )
+    Text(
+        stringResource(R.string.drill_learn_title),
+        Modifier.testTag(DRILL_LEARN_TAG),
+        style = MaterialTheme.typography.titleMedium,
+    )
+    Text(
+        stringResource(R.string.drill_learn_moves, state.learnMoves.joinToString(" / ")),
+        Modifier.testTag(DRILL_LEARN_MOVES_TAG),
+    )
+    if (state.learnComment.isNotEmpty()) Text(state.learnComment)
+    state.learnSource?.let {
+        Text(stringResource(R.string.drill_learn_source, it), style = MaterialTheme.typography.bodySmall)
+    }
+    if (state.learnMiss) {
+        Text(stringResource(R.string.drill_learn_miss), Modifier.testTag(DRILL_LEARN_MISS_TAG))
+    }
 }
 
 @Composable
@@ -165,7 +196,14 @@ private fun FeedbackPanel(
 ) {
     val feedback = state.feedback ?: return
     Column(Modifier.fillMaxWidth().testTag(DRILL_FEEDBACK_TAG), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (feedback.correct) {
+        if (feedback.learned) {
+            Text(
+                stringResource(R.string.drill_learned, feedback.playedSan),
+                Modifier.testTag(DRILL_LEARNED_TAG),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(stringResource(R.string.drill_back_tomorrow))
+        } else if (feedback.correct) {
             Text(
                 stringResource(R.string.drill_correct, feedback.playedSan),
                 style = MaterialTheme.typography.titleMedium,
@@ -209,6 +247,12 @@ private fun EvaluationRows(feedback: DrillFeedback) {
 @Composable
 private fun FinishedPanel(state: DrillUiState) {
     Column(Modifier.testTag(DRILL_FINISHED_TAG), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (state.summary.learned > 0) {
+            Text(
+                stringResource(R.string.drill_summary_learned, state.summary.learned),
+                Modifier.testTag(DRILL_LEARNED_SUMMARY_TAG),
+            )
+        }
         if (state.nothingToReview) {
             Text(stringResource(R.string.drill_nothing_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.drill_nothing_message))

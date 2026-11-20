@@ -103,4 +103,37 @@ class DrillSessionTest {
         assertNull(session.current)
         assertThrows(IllegalStateException::class.java) { session.answer(move("e2e4"), now) }
     }
+
+    @Test
+    fun aNewPositionIsLearnedBeforeItIsAsked() {
+        val session = session()
+        assertTrue(session.isLearning)
+        assertEquals(1, session.remaining)
+
+        val wrong = session.learn(move("e2e4"), now)
+        assertTrue(wrong is LearnResult.NotTheMove)
+        assertTrue(session.isLearning)
+
+        val learned = session.learn(move("c2c4"), now) as LearnResult.Learned
+        assertTrue(session.isFinished)
+        assertEquals(1, learned.card.reps)
+        assertEquals(now + Duration.ofDays(1), learned.card.due)
+        assertEquals(now, learned.card.lastReview)
+        // Rated Good: the memory starts like a first success, only the first recall is brought forward.
+        assertEquals(Fsrs().review(FsrsCard(), Rating.Good, now).stability, learned.card.stability)
+    }
+
+    @Test
+    fun aReviewedPositionIsNotALearningStep() {
+        val stored = Fsrs().review(FsrsCard(), Rating.Good, now - Duration.ofDays(3))
+        val item =
+            ReviewQueueBuilder
+                .build(repertoire, emptyMap(), now, zone)
+                .items
+                .first()
+                .copy(card = stored)
+        val session = DrillSession(listOf(item))
+        assertFalse(session.isLearning)
+        assertThrows(IllegalStateException::class.java) { session.learn(move("d2d4"), now) }
+    }
 }

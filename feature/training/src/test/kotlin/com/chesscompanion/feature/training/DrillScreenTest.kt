@@ -8,15 +8,20 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.SavedStateHandle
 import com.chesscompanion.core.chess.Side
 import com.chesscompanion.core.chess.Square
+import com.chesscompanion.core.srs.Fsrs
+import com.chesscompanion.core.srs.FsrsCard
+import com.chesscompanion.core.srs.Rating
+import com.chesscompanion.core.srs.ReviewQueueBuilder
 import com.chesscompanion.core.ui.board.squareTestTag
 import com.chesscompanion.core.ui.theme.ChessTheme
-import org.junit.Before
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -29,15 +34,23 @@ class DrillScreenTest {
 
     private fun sq(name: String) = checkNotNull(Square.parse(name))
 
-    @Before
-    fun setUp() {
+    private fun launch(reviewed: Boolean) {
+        val repertoire = repertoireOf(Side.WHITE, "1. d4 d5 2. c4 e6 *")
+        val now = Instant.parse("2026-03-10T08:00:00Z")
+        val cards = FakeReviewCardStore()
+        if (reviewed) {
+            val card = Fsrs().review(FsrsCard(), Rating.Good, now - Duration.ofDays(30))
+            ReviewQueueBuilder.build(repertoire, emptyMap(), now, ZoneId.of("Europe/Paris")).items.forEach {
+                runBlocking { cards.put("r", it.id, card) }
+            }
+        }
         val viewModel =
             DrillViewModel(
                 SavedStateHandle(mapOf(DRILL_REPERTOIRE_ID_ARG to "r")),
-                FakeRepertoireStore("r", "Anglaise", repertoireOf(Side.WHITE, "1. d4 d5 2. c4 e6 *")),
-                FakeReviewCardStore(),
+                FakeRepertoireStore("r", "Anglaise", repertoire),
+                cards,
                 scheduler(),
-                Clock.fixed(Instant.parse("2026-03-10T08:00:00Z"), ZoneId.of("Europe/Paris")),
+                Clock.fixed(now, ZoneId.of("Europe/Paris")),
             )
         compose.setContent { ChessTheme { DrillScreen(viewModel) } }
         compose.waitForIdle()
@@ -53,12 +66,14 @@ class DrillScreenTest {
 
     @Test
     fun theQuestionAndTheStartOfTheLineAreShown() {
+        launch(reviewed = true)
         compose.onNodeWithTag(DRILL_QUESTION_TAG).assertTextContains("Les Blancs jouent", substring = true)
         compose.onNodeWithTag(DRILL_LINE_TAG).assertTextContains("Début du répertoire", substring = true)
     }
 
     @Test
     fun aWrongMoveShowsExpectedMoveLineAndEvaluations() {
+        launch(reviewed = true)
         tapMove("e2", "e4")
         compose.waitForIdle()
         compose.onNodeWithTag(DRILL_FEEDBACK_TAG).assertIsDisplayed()
@@ -69,10 +84,26 @@ class DrillScreenTest {
 
     @Test
     fun theHintThenARightMoveThenContinue() {
+        launch(reviewed = true)
         compose.onNodeWithTag(DRILL_HINT_BUTTON_TAG).performClick()
         compose.onNodeWithTag(DRILL_HINT_TAG).assertTextContains("d4", substring = true)
         tapMove("d2", "d4")
         compose.onNodeWithTag(DRILL_CONTINUE_TAG).performClick()
         compose.onNodeWithTag(DRILL_LINE_TAG).assertTextContains("1. d4 d5", substring = true)
+    }
+
+    @Test
+    fun aNewPositionShowsTheMoveToLearnThenIsLearned() {
+        launch(reviewed = false)
+        compose.onNodeWithTag(DRILL_LEARN_TAG).assertIsDisplayed()
+        compose.onNodeWithTag(DRILL_LEARN_MOVES_TAG).assertTextContains("d4", substring = true)
+
+        tapMove("e2", "e4")
+        compose.onNodeWithTag(DRILL_LEARN_MISS_TAG).assertIsDisplayed()
+
+        tapMove("d2", "d4")
+        compose.onNodeWithTag(DRILL_LEARNED_TAG).assertTextContains("Appris", substring = true)
+        compose.onNodeWithTag(DRILL_CONTINUE_TAG).performClick()
+        compose.onNodeWithTag(DRILL_LEARN_MOVES_TAG).assertTextContains("c4", substring = true)
     }
 }
