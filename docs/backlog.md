@@ -91,5 +91,5 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Explorateur : mémoriser le niveau choisi, afficher les parties les plus jouées / l'ouverture nommée, évaluer chaque coup proposé (MultiPV) et ajouter un réglage de durée de l'évaluation (2 s fixes).
 
 ## Issu de S7-8
-- Export PGN d'un répertoire depuis l'interface (écart de périmètre constaté à la démo ; `toGame` existe, ADR 0012).
+- Export PGN d'un répertoire depuis l'interface (écart constaté à la démo ; `toGame` existe, ADR 0012). **Repris en S8** (décidé à la relecture de S7).
 - Ouverture d'un très gros répertoire (~10 000 coups après import d'une étude de 56 parties) : ~5 s de « Chargement… » ; chargement progressif ou en tâche de fond.

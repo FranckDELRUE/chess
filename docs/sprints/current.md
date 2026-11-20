@@ -36,5 +36,8 @@ professeur (S4), lien revue de parties / répertoire (S6).
 - Mesurer le coût de `save` et du chargement d'un gros répertoire (~5 s pour ~10 000 coups) dès les
   premières cartes ; sauvegarde incrémentale à envisager.
 - Démo de bout en bout du livrable avant la story de clôture ; tablette branchée à chaque story d'interface.
-- Dette héritée à trier au plan : export PGN dans l'interface, réglages (jeton, niveau), marques jaunes
-  (`docs/backlog.md`, sections « Issu de S7-x »).
+- **Décidé le 2026-11-20 (relecture de S7)** : l'export PGN d'un répertoire dans l'interface entre dans S8 ;
+  les cartes référencent (répertoire, clé, FEN) sans clé étrangère, et le coût de `save` est mesuré dès les
+  premières cartes.
+- Dette héritée à trier au plan : réglages (jeton, niveau), marques jaunes, ouverture lente d'un gros
+  répertoire (`docs/backlog.md`, sections « Issu de S7-x »).
