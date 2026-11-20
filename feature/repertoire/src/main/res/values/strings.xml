@@ -60,4 +60,14 @@
     <string name="import_rejected_more">… et %1$d autres.</string>
     <string name="import_file_unreadable">Ce fichier n\'a pas pu être lu (illisible ou trop gros).</string>
     <string name="import_close">Fermer</string>
+    <string name="import_study">Étude Lichess (adresse ou identifiant)</string>
+    <string name="import_study_fetch">Récupérer</string>
+    <string name="import_fetching">Récupération de l\'étude sur Lichess…</string>
+    <string name="import_study_invalid">Adresse ou identifiant d\'étude non reconnu. Exemple : lichess.org/study/Y1yXP80U</string>
+    <string name="import_study_not_found">Étude introuvable.</string>
+    <string name="import_study_private">Cette étude n\'est pas publique.</string>
+    <string name="import_study_rate_limited">Lichess limite les requêtes : réessaie dans une minute.</string>
+    <string name="import_study_offline">Pas de réseau, ou Lichess est injoignable. Le reste de l\'application fonctionne hors ligne.</string>
+    <string name="import_study_server">Lichess a répondu par une erreur : réessaie plus tard.</string>
+    <string name="import_study_too_large">Cette étude est trop volumineuse.</string>
 </resources>

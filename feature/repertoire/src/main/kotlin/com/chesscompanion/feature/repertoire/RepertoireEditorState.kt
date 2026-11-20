@@ -115,6 +115,11 @@ sealed interface EditorAction {
         val text: String,
     ) : EditorAction
 
+    /** Gets a public Lichess study ([input]: its identifier or address) and merges it. */
+    data class FetchStudy(
+        val input: String,
+    ) : EditorAction
+
     /** The chosen file could not be read. */
     data object ImportFileUnreadable : EditorAction
 }

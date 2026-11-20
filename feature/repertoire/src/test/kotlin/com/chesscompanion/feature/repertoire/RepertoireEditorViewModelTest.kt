@@ -9,6 +9,8 @@ import com.chesscompanion.core.chess.pgn.PgnReader
 import com.chesscompanion.core.chess.pgn.PgnWriter
 import com.chesscompanion.core.chess.repertoire.Repertoire
 import com.chesscompanion.core.chess.repertoire.toGame
+import com.chesscompanion.core.data.study.StudyRef
+import com.chesscompanion.core.data.study.StudyResult
 import com.chesscompanion.core.ui.board.AnnotationColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,6 +35,7 @@ class RepertoireEditorViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private val store = FakeRepertoireStore()
+    private val studies = FakeStudyFetcher()
 
     private fun sq(name: String) = Square.parse(name)!!
 
@@ -48,7 +51,14 @@ class RepertoireEditorViewModelTest {
     }
 
     private fun open(id: String) =
-        RepertoireEditorViewModel(SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)), store).also { it.saveDelayMs = 0 }
+        RepertoireEditorViewModel(
+            SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)),
+            store,
+            studies,
+        ).also {
+            it.saveDelayMs =
+                0
+        }
 
     private fun RepertoireEditorViewModel.tap(vararg squares: String) =
         squares.forEach { onAction(EditorAction.SquareTap(sq(it))) }
@@ -340,6 +350,46 @@ class RepertoireEditorViewModelTest {
         vm.importing("   ")
         assertEquals(0, (vm.ui.import as ImportUiState.Done).summary.gamesInFile)
         assertEquals(0, store.saves)
+    }
+
+    @Test
+    fun `a fetched study is merged like a pgn`() {
+        val vm = editor()
+        studies.result = StudyResult.Found(pgn)
+        vm.importDispatcher = UnconfinedTestDispatcher()
+        vm.onAction(EditorAction.FetchStudy("https://lichess.org/study/Y1yXP80U/oxgS1aRW"))
+        assertEquals(listOf(StudyRef("Y1yXP80U", "oxgS1aRW")), studies.asked)
+        assertEquals(4, (vm.ui.import as ImportUiState.Done).summary.addedMoves)
+        assertEquals(4, store.repertoireOf("r1").edgeCount)
+    }
+
+    @Test
+    fun `each way a study can fail is reported and changes nothing`() {
+        val expected =
+            mapOf(
+                StudyResult.NotFound to StudyProblem.NOT_FOUND,
+                StudyResult.Private to StudyProblem.PRIVATE,
+                StudyResult.RateLimited to StudyProblem.RATE_LIMITED,
+                StudyResult.Offline to StudyProblem.OFFLINE,
+                StudyResult.ServerError(503) to StudyProblem.SERVER,
+                StudyResult.TooLarge to StudyProblem.TOO_LARGE,
+            )
+        expected.forEach { (result, problem) ->
+            val vm = editor()
+            studies.result = result
+            vm.onAction(EditorAction.FetchStudy("Y1yXP80U"))
+            assertEquals(ImportUiState.StudyFailed(problem), vm.ui.import)
+            assertEquals(0, vm.ui.moveCount)
+        }
+        assertEquals(0, store.saves)
+    }
+
+    @Test
+    fun `an unrecognised study reference is refused without asking Lichess`() {
+        val vm = editor()
+        vm.onAction(EditorAction.FetchStudy("https://example.com/study/Y1yXP80U"))
+        assertEquals(ImportUiState.StudyFailed(StudyProblem.INVALID_REFERENCE), vm.ui.import)
+        assertTrue(studies.asked.isEmpty())
     }
 
     @Test

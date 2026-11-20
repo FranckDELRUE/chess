@@ -78,9 +78,9 @@ d'interface JVM de l'éditeur ; vérifié sur la tablette.
 d'import mesuré sur la tablette.
 
 ### S7-6 · Import d'une étude Lichess (réseau, facultatif)
-- [ ] Saisie de l'identifiant ou de l'adresse d'une étude publique ; récupération du PGN ; même chemin
+- [x] Saisie de l'identifiant ou de l'adresse d'une étude publique ; récupération du PGN ; même chemin
   que S7-5.
-- [ ] Hors ligne ou erreur réseau : message clair, reste de l'application intact.
+- [x] Hors ligne ou erreur réseau : message clair, reste de l'application intact.
 
 **Acceptation** : étude réelle importée avec ses flèches et commentaires ; test hors ligne ; test de
 l'analyse des erreurs HTTP avec un faux transport.
@@ -154,3 +154,16 @@ coup), transpositions, rejets, réimport, progression, écran. **Mesure sur la t
 conservés après arrêt forcé ; répertoire et PGN de test supprimés. Dette : le `save` à remplacement complet
 domine probablement ces 4,5 s (non isolé) ; un fichier de plusieurs milliers de parties demandera un `save`
 incrémental ou par lots ; encodage lu en UTF-8 uniquement.
+
+**S7-6** (2026-11-20) : import d'une étude publique Lichess. `StudyRef.parse` (identifiant ou adresse
+lichess.org/study/…, autres hôtes refusés), `StudyFetcher` / `KtorStudyFetcher` (`GET /api/study/{id}.pgn`, sans
+jeton, 32 Mo maximum) qui classe les réponses (`Found`, `NotFound`, `Private`, `RateLimited`, `Offline`,
+`ServerError`, `TooLarge`) ; le PGN suit le chemin de S7-5 (validation par `:core:chess`, règle 2). Champ
+« Étude Lichess » dans le dialogue d'import, message clair par erreur, rien n'est modifié en cas d'échec.
+Première permission réseau (`INTERNET`) ; Ktor 3.5.2 + OkHttp (Apache 2.0). `PgnMarks` retire désormais les
+commandes `[%clk]`, `[%eval]`… du commentaire. Tests : MockEngine (chemin, absence d'identifiants, toutes les
+erreurs HTTP, hors ligne, taille), ViewModel, écran. **Vérifié sur la tablette** avec l'étude Y1yXP80U :
+56 parties sur 56, 9734 coups ajoutés, 385 déjà présents, 5,6 s réseau et sauvegarde compris ; répertoire de
+test supprimé. Non vérifié sur la tablette : affichage des flèches/commentaires importés, mode avion (couvert
+par les tests JVM). Dette : une étude dont des chapitres partent d'une autre position est rejetée en
+`DIFFERENT_START` ; pas de jeton ni de nouvelle tentative sur 429 ; UTF-8 uniquement.

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import com.chesscompanion.core.chess.Side
 import com.chesscompanion.core.chess.Square
+import com.chesscompanion.core.data.study.StudyResult
 import com.chesscompanion.core.ui.board.AnnotationColor
 import com.chesscompanion.core.ui.board.squareTestTag
 import com.chesscompanion.core.ui.theme.ChessTheme
@@ -35,6 +37,7 @@ class RepertoireEditorScreenTest {
     val compose = createComposeRule()
 
     private val store = FakeRepertoireStore()
+    private val studies = FakeStudyFetcher(StudyResult.Offline)
     private lateinit var id: String
 
     @Before
@@ -43,7 +46,7 @@ class RepertoireEditorScreenTest {
         compose.setContent {
             ChessTheme {
                 RepertoireEditorScreen(
-                    RepertoireEditorViewModel(SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)), store)
+                    RepertoireEditorViewModel(SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)), store, studies)
                         .also {
                             it.saveDelayMs = 0
                             it.importDispatcher = Dispatchers.Main
@@ -132,6 +135,20 @@ class RepertoireEditorScreenTest {
         compose.onNodeWithTag(IMPORT_CLOSE_TAG).performClick()
         compose.onNodeWithTag(EDITOR_IMPORT_TAG).performScrollTo().assertIsEnabled()
         compose.onNodeWithTag(editorContinuationTag("e2e4")).assertTextContains("e4")
+    }
+
+    @Test
+    fun fetchingAStudyWithoutNetworkExplainsAndChangesNothing() {
+        compose.onNodeWithTag(EDITOR_IMPORT_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(IMPORT_STUDY_RUN_TAG).assertIsNotEnabled()
+        compose.onNodeWithTag(IMPORT_STUDY_TAG).performTextInput("lichess.org/study/Y1yXP80U")
+        compose.onNodeWithTag(IMPORT_STUDY_RUN_TAG).assertIsEnabled().performClick()
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText("Pas de réseau", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(0, store.repertoireOf(id).edgeCount)
+        compose.onNodeWithText("Fermer").performClick()
+        compose.onNodeWithTag(EDITOR_IMPORT_TAG).performScrollTo().assertIsEnabled()
     }
 
     @Test
