@@ -51,3 +51,8 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Écrire et relire les annotations dans le PGN (`[%csl Gd4]`, `[%cal Re2e4]`, format Lichess et
   Chess.com) pour les garder par coup et les exporter ; utile aux cours tirés des livres (S10).
 - Flèches de cavalier en L (aujourd'hui droites) ; plus de couleurs (jaune).
+
+## Issu de S2-3
+- Analyse libre : jouer ou prévisualiser toute la variante d'une ligne (aujourd'hui le premier coup seulement), flèche du meilleur coup sur l'échiquier.
+- Garder l'interrupteur d'analyse et envoyer l'historique des coups à Stockfish (répétitions).
+- Fluidité : le glisser d'une pièce coûte ≈ 27 ms par image en build debug (S2-3) et jusqu'à ≈ 34 ms avec l'analyse ; mesurer en release et alléger le redessin de l'échiquier (cases et pièces) avant S13.

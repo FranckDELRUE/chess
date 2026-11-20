@@ -5,8 +5,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -41,7 +43,7 @@ class PlayScreenTest {
 
     private fun showScreen() =
         compose.setContent {
-            ChessTheme { PlayScreen(PlayViewModel(SavedStateHandle(), FakeDocuments())) }
+            ChessTheme { PlayScreen(PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer())) }
         }
 
     private fun tap(vararg squares: String) =
@@ -107,7 +109,25 @@ class PlayScreenTest {
         e4.assertContentDescriptionEquals("e4")
         status().assertTextEquals("Aux Blancs de jouer")
     }
+
+    /** S2-3: switch the analysis on, see the evaluation bar and a line, play the line. */
+    @Test
+    fun liveAnalysisShowsTheBarAndPlaysALine() {
+        showScreen()
+        compose.onNodeWithTag(ANALYSIS_SWITCH_TAG).performClick()
+        compose.onNodeWithTag(EVAL_BAR_TAG).assertExists()
+        compose.waitUntil(ANALYSIS_TIMEOUT_MS) {
+            compose.onAllNodesWithTag(analysisLineTestTag(1)).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag(analysisLineTestTag(1)).assertTextContains("1.Cf3", substring = true)
+        compose.onNodeWithTag(EVAL_BAR_TAG).assertContentDescriptionEquals("Évaluation : +0,3")
+
+        compose.onNodeWithTag(analysisLineTestTag(1)).performClick()
+        status().assertTextEquals("Aux Noirs de jouer")
+    }
 }
+
+private const val ANALYSIS_TIMEOUT_MS = 5_000L
 
 /** Robolectric does not run the newest SDKs right away; the UI under test does not depend on it. */
 private const val ROBOLECTRIC_SDK = 35

@@ -1,5 +1,6 @@
 package com.chesscompanion.feature.play
 
+import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.PieceType
 import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.chess.pgn.PgnIssue
@@ -51,6 +52,16 @@ sealed interface PlayAction {
     data class GoTo(
         val path: List<Int>,
     ) : Navigation
+
+    /** Live engine analysis (S2-3). */
+    sealed interface Analysis : PlayAction
+
+    data object ToggleAnalysis : Analysis
+
+    /** Plays the first move of an analysis line, if it is still legal on the position shown. */
+    data class PlayAnalysisMove(
+        val move: Move,
+    ) : Analysis
 
     /** Coloured squares and arrows (S1-8). */
     sealed interface Annotation : PlayAction

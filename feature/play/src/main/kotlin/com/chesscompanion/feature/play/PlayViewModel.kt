@@ -46,8 +46,8 @@ data class PlayUiState(
 
 /**
  * The game screen (S1-6, S1-7): two players on one board, navigation in the move tree, PGN and
- * FEN import and export. Every request arrives through [onAction]; the rules of `:core:chess`
- * decide. The game survives process death as PGN in the [SavedStateHandle].
+ * FEN import and export, live engine analysis (S2-3). Every request arrives through [onAction]; the
+ * rules of `:core:chess` decide. The game survives process death as PGN in the [SavedStateHandle].
  */
 @HiltViewModel
 class PlayViewModel
@@ -55,7 +55,9 @@ class PlayViewModel
     constructor(
         private val savedState: SavedStateHandle,
         private val documents: GameDocuments,
+        analyzer: PositionAnalyzer,
     ) : ViewModel() {
+        private val analysis = AnalysisController(analyzer, viewModelScope)
         private var input = MoveInput(restoreSession())
         private var flipped: Boolean = savedState[KEY_FLIPPED] ?: false
         private var showLegalMoves: Boolean = savedState[KEY_SHOW_LEGAL_MOVES] ?: true
@@ -66,11 +68,25 @@ class PlayViewModel
         private val _state = MutableStateFlow(buildState())
         val state: StateFlow<PlayUiState> = _state.asStateFlow()
 
+        /**
+         * The live analysis (S2-3), apart from [state]: it changes several times a second while the
+         * engine thinks, and must not rebuild (and redraw) the board and the move list each time.
+         */
+        val analysisState: StateFlow<AnalysisState> = analysis.state
+
+        init {
+            analysis.show(input.session.position, input.session.status().isOver)
+        }
+
         fun onAction(action: PlayAction) {
             when (action) {
                 is PlayAction.Board -> onBoard(action)
                 is PlayAction.Navigation -> onNavigation(action)
                 is PlayAction.Annotation -> onAnnotation(action)
+                is PlayAction.Analysis ->
+                    analysis.accept(action, input.session.position)?.let {
+                        update(MoveInput(input.session.play(it)))
+                    }
                 is PlayAction.Document -> onDocument(action)
             }
         }
@@ -189,6 +205,7 @@ class PlayViewModel
             // Marks belong to the position shown: a move, a navigation or an import clears them.
             if (next.session.position != input.session.position) annotation = annotation.cleared()
             input = next
+            analysis.show(next.session.position, next.session.status().isOver)
             _state.value = buildState()
         }
 

@@ -66,6 +66,7 @@ class DocumentActions(
 @Composable
 fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val analysis by viewModel.analysisState.collectAsStateWithLifecycle()
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -92,6 +93,7 @@ fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
 
     PlayContent(
         state = state,
+        analysis = analysis,
         onAction = viewModel::onAction,
         documents =
             DocumentActions(
@@ -119,6 +121,7 @@ fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
 @Composable
 fun PlayContent(
     state: PlayUiState,
+    analysis: AnalysisState,
     onAction: (PlayAction) -> Unit,
     documents: DocumentActions,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
@@ -152,15 +155,18 @@ fun PlayContent(
                     arrowColor = state.annotationColor,
                 )
             }
+            val boardArea = @Composable { modifier: Modifier ->
+                BoardWithEvalBar(analysis, state.flipped, modifier, board)
+            }
             if (maxWidth > maxHeight) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    board(Modifier.weight(1f).fillMaxSize())
-                    SidePanel(state, onAction, documents, Modifier.weight(1f).fillMaxSize())
+                    boardArea(Modifier.weight(1f).fillMaxSize())
+                    SidePanel(state, analysis, onAction, documents, Modifier.weight(1f).fillMaxSize())
                 }
             } else {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    board(Modifier.fillMaxWidth().weight(1f))
-                    SidePanel(state, onAction, documents, Modifier.fillMaxWidth().weight(1f))
+                    boardArea(Modifier.fillMaxWidth().weight(1f))
+                    SidePanel(state, analysis, onAction, documents, Modifier.fillMaxWidth().weight(1f))
                 }
             }
         }
@@ -184,6 +190,7 @@ fun PlayContent(
 @Composable
 private fun SidePanel(
     state: PlayUiState,
+    analysis: AnalysisState,
     onAction: (PlayAction) -> Unit,
     documents: DocumentActions,
     modifier: Modifier = Modifier,
@@ -197,6 +204,7 @@ private fun SidePanel(
             )
             NavigationBar(state, onAction)
             AnnotationBar(state, onAction)
+            AnalysisPanel(analysis, onAction)
             MoveList(state.moveList, onGoTo = { onAction(PlayAction.GoTo(it)) }, modifier = Modifier.weight(1f))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -236,9 +244,11 @@ private fun previewState(status: GameStatus = GameStatus.Ongoing): PlayUiState {
 
 @Preview(widthDp = 1280, heightDp = 800)
 @Composable
-private fun PlayLandscapePreview() = ChessTheme { PlayContent(previewState(), {}, DocumentActions()) }
+private fun PlayLandscapePreview() = ChessTheme { PlayContent(previewState(), AnalysisState(), {}, DocumentActions()) }
 
 @Preview(widthDp = 800, heightDp = 1280)
 @Composable
 private fun PlayPortraitDarkPreview() =
-    ChessTheme(darkTheme = true) { PlayContent(previewState(GameStatus.Stalemate), {}, DocumentActions()) }
+    ChessTheme(
+        darkTheme = true,
+    ) { PlayContent(previewState(GameStatus.Stalemate), AnalysisState(), {}, DocumentActions()) }
