@@ -10,6 +10,7 @@
     <string name="repertoire_export">Exporter</string>
     <string name="repertoire_exported">Répertoire exporté en PGN.</string>
     <string name="repertoire_export_failed">L’export a échoué : le fichier n’a pas pu être écrit.</string>
+    <string name="repertoire_learn">Apprendre</string>
     <string name="repertoire_gaps">Trous</string>
     <string name="repertoire_rename">Renommer</string>
     <string name="repertoire_delete">Supprimer</string>

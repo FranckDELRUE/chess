@@ -137,7 +137,7 @@ private fun GapsResult(
     }
 }
 
-private fun problemText(problem: ExplorerProblem): Int =
+internal fun problemText(problem: ExplorerProblem): Int =
     when (problem) {
         ExplorerProblem.NO_TOKEN -> R.string.gaps_problem_no_token
         ExplorerProblem.BAD_TOKEN -> R.string.gaps_problem_bad_token

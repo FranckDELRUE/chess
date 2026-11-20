@@ -23,11 +23,17 @@
 - *Notes* : les coups ajoutés sont les plus joués (niveau Club), pas forcément les meilleurs ; vérifier la ligne dans
   l'éditeur. Pas de test d'écran dédié ; parcours réel non vu (jeton Lichess nécessaire).
 
-### S8b-2 · Écran « Apprendre une ouverture » (à planifier avec le joueur)
-- Cours ligne par ligne (ligne principale d'abord), progression (positions apprises sur total), positions apprises
-  envoyées dans la file de révisions (mode apprentissage de S8-5).
-- Explications factuelles : notes, flèches et sources de l'auteur ; évaluation Stockfish du coup et alternatives ;
-  statistiques de l'explorateur (fréquence, résultats, réponses courantes).
+### S8b-2 · Écran « Apprendre une ouverture »
+- [x] Cours position par position (ligne principale d'abord, `LessonPlanner` dans `:core:srs`), progression « position
+  n/total, k apprises », Précédent/Suivant, ouverture sur la première position non apprise. Bouton « Apprendre » dans la
+  liste des répertoires.
+- [x] Jouer le bon coup apprend la position : carte de révision créée, due demain (`learnedCard`, aussi utilisée par
+  le mode apprentissage du drill).
+- [x] Explications factuelles : notes et source de l'auteur, flèche verte, évaluation Stockfish de chaque coup,
+  statistiques Lichess (fréquence, victoires/nulles/défaites). Hors ligne ou sans moteur, la leçon marche quand même.
+- [x] Tests : `LessonPlannerTest` (5), `LearnViewModelTest` (11). Installé sur la tablette.
+- *Notes* : pas de test d'écran Compose dédié ; statistiques non cachées = jeton Lichess nécessaire ; parcours réel
+  sur tablette non vu.
 
 ### S8b-3 · Idée, plan, piège
 - Invites dans l'éditeur pour écrire l'idée du coup, le plan et le piège d'une position ; affichage dans l'écran Apprendre.

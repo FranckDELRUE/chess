@@ -67,4 +67,20 @@
         <item quantity="one">%1$d position à réviser aujourd’hui.</item>
         <item quantity="other">%1$d positions à réviser aujourd’hui.</item>
     </plurals>
+    <string name="learn_title">Apprendre : %1$s</string>
+    <string name="learn_empty">Ce répertoire n’a pas encore de coup à apprendre : ajoute-y des lignes dans l’éditeur.</string>
+    <string name="learn_progress">Position %1$d sur %2$d · %3$d apprises</string>
+    <string name="learn_prompt">À toi : joue le coup du répertoire (flèches vertes) pour l’apprendre : %1$s</string>
+    <string name="learn_learned_now">Appris : %1$s. Cette position reviendra demain dans tes révisions.</string>
+    <string name="learn_already">Déjà appris : %1$s. Tu peux la rejouer pour t’entraîner.</string>
+    <string name="learn_facts_title">Pourquoi ce coup ? Les faits</string>
+    <string name="learn_fact_evaluation">Évaluation de Stockfish : %1$s</string>
+    <string name="learn_stats">Base Lichess (niveau Club) : %1$d %% des parties, %2$s parties. Résultats : Blancs %3$d %%, nulles %4$d %%, Noirs %5$d %%.</string>
+    <string name="learn_stats_never">Base Lichess (niveau Club) : ce coup n’y est presque jamais joué.</string>
+    <string name="learn_stats_pending">Statistiques Lichess : chargement…</string>
+    <string name="learn_stats_unavailable">Statistiques Lichess indisponibles. %1$s</string>
+    <string name="learn_facts_note">Évaluation du point de vue des Blancs ; statistiques de la base Lichess. Les explications en phrases viendront de tes notes.</string>
+    <string name="learn_previous">Précédent</string>
+    <string name="learn_next">Suivant</string>
+    <string name="learn_quit">Quitter la leçon</string>
 </resources>
