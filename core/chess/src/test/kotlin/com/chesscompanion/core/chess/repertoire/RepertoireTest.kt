@@ -176,4 +176,42 @@ class RepertoireTest {
         assertEquals(1, result.addedMoves)
         assertEquals(Side.BLACK, result.repertoire.side)
     }
+
+    @Test
+    fun `notes are written on a position and empty notes erase them`() {
+        val repertoire = empty()
+        val notes = NodeNotes(comment = "Idée", source = Source("Livre", "2", "10"))
+        val written = repertoire.withNotes(repertoire.root, notes)
+        assertEquals(notes, written.notes(repertoire.root))
+        assertTrue(repertoire.notes(repertoire.root).isEmpty)
+        assertTrue(written.withNotes(repertoire.root, NodeNotes()).notes(repertoire.root).isEmpty)
+    }
+
+    @Test
+    fun `notes follow the node through a transposition and survive a merge`() {
+        val first = merge(empty(), "1. d4 Nf6 2. c4 e6 *").repertoire
+        val end = first.allMoves.last().to
+        val noted = first.withNotes(end, NodeNotes(comment = "Même position"))
+        val merged = noted.merge(PgnReader.read("1. c4 e6 2. d4 Nf6 *")).repertoire
+        assertEquals("Même position", merged.notes(end).comment)
+    }
+
+    @Test
+    fun `notes on an unknown position are refused`() {
+        assertThrows<IllegalArgumentException> { empty().withNotes(PositionId(1L, "x"), NodeNotes(comment = "a")) }
+    }
+
+    @Test
+    fun `restore rebuilds what was read and refuses a broken graph`() {
+        val graph = merge(empty(), "1. e4 e5 (1... c5) *").repertoire
+        val back = Repertoire.restore(Side.WHITE, graph.root, graph.allNodes.toList(), graph.allMoves, emptyMap())
+        assertEquals(graph.edgeCount, back.edgeCount)
+        assertEquals(graph.movesFrom(graph.movesFrom(graph.root).single().to).map { it.san }, listOf("e5", "c5"))
+        assertThrows<IllegalArgumentException> {
+            Repertoire.restore(Side.WHITE, graph.root, listOf(graph.node(graph.root)!!), graph.allMoves, emptyMap())
+        }
+        assertThrows<IllegalArgumentException> {
+            Repertoire.restore(Side.WHITE, PositionId(1L, "x"), graph.allNodes.toList(), emptyList(), emptyMap())
+        }
+    }
 }

@@ -18,6 +18,11 @@ android {
         unitTests.isIncludeAndroidResources = true
     }
 
+    // Migration tests read the exported schemas.
+    sourceSets {
+        getByName("test").assets.srcDir("$projectDir/schemas")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -49,4 +54,5 @@ dependencies {
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.room.testing)
 }

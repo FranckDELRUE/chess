@@ -71,12 +71,30 @@ interface AnalysisJobDao {
     fun latest(): Flow<AnalysisJobEntity?>
 }
 
-/** The app's database (S2-5: background analyses). Schemas are exported to `core/data/schemas`. */
-@Database(entities = [PositionAnalysisEntity::class, AnalysisJobEntity::class], version = 1, exportSchema = true)
+/**
+ * The app's database: background analyses (S2-5, version 1) and repertoires (S7-2, version 2).
+ * Schemas are exported to `core/data/schemas`; migrations are in [Migrations].
+ */
+@Database(
+    entities =
+        [
+            PositionAnalysisEntity::class,
+            AnalysisJobEntity::class,
+            RepertoireEntity::class,
+            RepertoireNodeEntity::class,
+            RepertoireEdgeEntity::class,
+        ],
+    version = 2,
+    exportSchema = true,
+)
 abstract class ChessDatabase : RoomDatabase() {
     abstract fun positionAnalysisDao(): PositionAnalysisDao
 
     abstract fun analysisJobDao(): AnalysisJobDao
+
+    abstract fun repertoireDao(): RepertoireDao
+
+    abstract fun repertoireContentDao(): RepertoireContentDao
 
     companion object {
         const val NAME = "chess-companion.db"

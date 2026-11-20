@@ -5,6 +5,7 @@ import com.chesscompanion.core.chess.IllegalMoveException
 import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.chess.pgn.Game
 import com.chesscompanion.core.chess.pgn.MoveNode
 import com.chesscompanion.core.chess.toSan
@@ -49,6 +50,36 @@ data class RepertoireEdge(
     val san: String,
 )
 
+enum class MarkColor { GREEN, RED, BLUE }
+
+data class RepertoireArrow(
+    val from: Square,
+    val to: Square,
+    val color: MarkColor,
+)
+
+data class RepertoireSquareMark(
+    val square: Square,
+    val color: MarkColor,
+)
+
+/** Where a line comes from in a book: the title, and the chapter and page when known. */
+data class Source(
+    val book: String,
+    val chapter: String? = null,
+    val page: String? = null,
+)
+
+/** What the player or an author wrote on a position (ADR 0012): comment, marks drawn on the board, source. */
+data class NodeNotes(
+    val comment: String = "",
+    val arrows: List<RepertoireArrow> = emptyList(),
+    val squares: List<RepertoireSquareMark> = emptyList(),
+    val source: Source? = null,
+) {
+    val isEmpty: Boolean get() = comment.isEmpty() && arrows.isEmpty() && squares.isEmpty() && source == null
+}
+
 /** Outcome of [Repertoire.add]: [target] is where the move leads, [created] tells if the move was new. */
 data class AddResult(
     val repertoire: Repertoire,
@@ -79,6 +110,7 @@ class Repertoire private constructor(
     val root: PositionId,
     private val nodes: Map<PositionId, RepertoireNode>,
     private val outgoing: Map<PositionId, List<RepertoireEdge>>,
+    private val notes: Map<PositionId, NodeNotes>,
     private val idOf: (Position) -> PositionId,
 ) {
     val nodeCount: Int get() = nodes.size
@@ -88,6 +120,22 @@ class Repertoire private constructor(
     val allNodes: Collection<RepertoireNode> get() = nodes.values
 
     fun node(id: PositionId): RepertoireNode? = nodes[id]
+
+    /** Every move of the repertoire, grouped by origin in the order they were added. */
+    val allMoves: List<RepertoireEdge> get() = outgoing.values.flatten()
+
+    /** What is written on the position [id]; empty if nothing. */
+    fun notes(id: PositionId): NodeNotes = notes[id] ?: NodeNotes()
+
+    /** The repertoire with [value] written on the position [id]; empty notes erase the entry. */
+    fun withNotes(
+        id: PositionId,
+        value: NodeNotes,
+    ): Repertoire {
+        require(id in nodes) { "Unknown position $id" }
+        val updated = if (value.isEmpty) notes - id else notes + (id to value)
+        return Repertoire(side, root, nodes, outgoing, updated, idOf)
+    }
 
     /** Moves played from [id], in the order they were added. */
     fun movesFrom(id: PositionId): List<RepertoireEdge> = outgoing[id].orEmpty()
@@ -157,10 +205,34 @@ class Repertoire private constructor(
             return targetId to true
         }
 
-        fun build(): Repertoire = Repertoire(origin.side, origin.root, nodes, outgoing, origin.idOf)
+        fun build(): Repertoire = Repertoire(origin.side, origin.root, nodes, outgoing, origin.notes, origin.idOf)
     }
 
     companion object {
+        /**
+         * Rebuilds a stored repertoire. Throws [IllegalArgumentException] if the root is missing or a move
+         * joins unknown positions; moves are not replayed (they were validated before being stored).
+         */
+        fun restore(
+            side: Side,
+            root: PositionId,
+            nodes: List<RepertoireNode>,
+            moves: List<RepertoireEdge>,
+            notes: Map<PositionId, NodeNotes>,
+        ): Repertoire {
+            val byId = nodes.associateBy { it.id }
+            require(root in byId) { "The root position is missing" }
+            moves.forEach { require(it.from in byId && it.to in byId) { "Move ${it.move} joins an unknown position" } }
+            return Repertoire(
+                side,
+                root,
+                byId,
+                moves.groupBy { it.from },
+                notes.filterValues { !it.isEmpty }.filterKeys { it in byId },
+                PositionId::of,
+            )
+        }
+
         /** An empty repertoire for [side], starting from [start] (the initial position by default). */
         fun empty(
             side: Side,
@@ -173,7 +245,7 @@ class Repertoire private constructor(
             idOf: (Position) -> PositionId,
         ): Repertoire {
             val id = idOf(start)
-            return Repertoire(side, id, mapOf(id to RepertoireNode(id, start)), emptyMap(), idOf)
+            return Repertoire(side, id, mapOf(id to RepertoireNode(id, start)), emptyMap(), emptyMap(), idOf)
         }
     }
 }
