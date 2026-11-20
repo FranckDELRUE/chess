@@ -28,6 +28,7 @@ class NavigationEntriesTest {
             assertTrue(ROUTE_REPERTOIRES in routes)
             assertTrue(ROUTE_REPERTOIRE_PATTERN in routes)
             assertTrue(ROUTE_DRILL_PATTERN in routes)
+            assertTrue(ROUTE_GAPS_PATTERN in routes)
         }
     }
 }

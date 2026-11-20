@@ -7,6 +7,7 @@
     <string name="repertoire_side_white">Blancs</string>
     <string name="repertoire_side_black">Noirs</string>
     <string name="repertoire_drill">Réviser</string>
+    <string name="repertoire_gaps">Trous</string>
     <string name="repertoire_rename">Renommer</string>
     <string name="repertoire_delete">Supprimer</string>
     <plurals name="repertoire_move_count">

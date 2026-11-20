@@ -12,6 +12,7 @@ import com.chesscompanion.core.data.RoomRepertoireStore
 import com.chesscompanion.core.data.RoomReviewCardStore
 import com.chesscompanion.core.data.explorer.CachedExplorer
 import com.chesscompanion.core.data.explorer.ExplorerLookup
+import com.chesscompanion.core.data.explorer.GapFinder
 import com.chesscompanion.core.data.explorer.KeystoreTokenStore
 import com.chesscompanion.core.data.explorer.KtorExplorerFetcher
 import com.chesscompanion.core.data.explorer.TokenStore
@@ -85,6 +86,10 @@ object DataModule {
     fun provideTokenStore(
         @ApplicationContext context: Context,
     ): TokenStore = KeystoreTokenStore(context)
+
+    @Provides
+    @Singleton
+    fun provideGapFinder(explorer: ExplorerLookup): GapFinder = GapFinder(explorer)
 
     @Provides
     @Singleton
