@@ -38,8 +38,26 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   `retainOnly` est à appeler après une suppression de coups (S8-3). Un `put` en lot sera ajouté si l'apprentissage
   (S8-5) crée beaucoup de cartes d'un coup. Sauvegarde incrémentale du répertoire non nécessaire pour les cartes.
 
-### S8-3 à S8-8
-Voir le plan validé : file et cas d'usage (3), écran de drill (4), apprentissage (5),
+### S8-3 · File de révisions et logique du drill (Kotlin pur, `:core:srs`)
+- [x] `ReviewQueueBuilder` : une carte par position où le joueur doit répondre (au trait, avec une réponse au
+  répertoire) ; révisions dues d'abord (les plus en retard en tête), puis nouvelles positions du tronc vers les
+  branches ; limites quotidiennes (`QueueLimits`, 100 révisions / 10 nouvelles par défaut) ; chemin le plus court
+  depuis la racine pour rejouer la ligne ; transpositions = une seule carte.
+- [x] « Dû aujourd'hui » = échéance avant la fin du jour local (`endOfDay`), pour qu'une ligne vue à 21 h revienne
+  le lendemain matin.
+- [x] `DrillSession` : toute réponse du répertoire est juste ; bon coup sans aide = Good, avec indice = Hard,
+  déviation = Again ; une position ratée revient en fin de séance sans être notée à nouveau (le calendrier garde
+  la première note) ; l'appelant stocke chaque `updatedCard` non nul.
+- [x] 18 tests (queue 11, drill 7), dont les critères du sprint : ligne ratée due le lendemain mais pas aujourd'hui,
+  trois réussites aux écarts croissants. `:core:srs` dépend maintenant de `:core:chess` (api).
+- *Notes* : `ReviewCardStore.dueCount` compare une instant brute ; lui passer `endOfDay(...)` pour le compteur du jour.
+  La carte d'une position est créée à la première réponse (S8-4 l'enregistre via `put`). Appeler
+  `retainOnly` après une suppression de coups. Pas d'indicateur « Facile » ni de « passer » (hors périmètre).
+  Les tests du dépôt qui fusionnent plusieurs parties sans en-têtes (`RoomRepertoireStoreTest.sample`) n'en lisent
+  qu'une seule (« Text after the result ») : à corriger en passant.
+
+### S8-4 à S8-8
+Voir le plan validé : (3 fait), écran de drill (4), apprentissage (5),
 trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
 
 ---
