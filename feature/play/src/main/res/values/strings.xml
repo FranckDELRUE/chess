@@ -25,6 +25,27 @@
     <string name="play_analysis_eval_bar">Évaluation : %1$s</string>
     <string name="play_analysis_eval_bar_waiting">Évaluation en cours de calcul</string>
 
+    <string name="play_vs_status_thinking">Stockfish réfléchit…</string>
+    <string name="play_status_resigned">Vous avez abandonné : Stockfish gagne</string>
+    <string name="play_vs_take_back">Reprendre un coup</string>
+    <string name="play_vs_resign">Abandonner</string>
+    <string name="play_vs_setup_title">Partie contre Stockfish</string>
+    <string name="play_vs_color">Vous jouez</string>
+    <string name="play_vs_color_white">Les Blancs</string>
+    <string name="play_vs_color_black">Les Noirs</string>
+    <string name="play_vs_color_random">Au hasard</string>
+    <string name="play_vs_strength">Force de Stockfish</string>
+    <string name="play_vs_strength_elo">Limite d\'ELO</string>
+    <string name="play_vs_strength_skill">Niveau</string>
+    <string name="play_vs_elo_value">ELO %1$d</string>
+    <string name="play_vs_skill_value">Niveau %1$d sur 20</string>
+    <string name="play_vs_elo_note">L\'ELO de Stockfish a sa propre échelle : il ne correspond pas à celui de Chess.com ou de Lichess.</string>
+    <string name="play_vs_time">Temps par coup</string>
+    <string name="play_vs_time_value">%1$s s</string>
+    <string name="play_vs_start">Jouer</string>
+    <string name="play_vs_cancel">Annuler</string>
+    <string name="play_msg_engine_failed">Stockfish n\'a pas pu jouer son coup</string>
+
     <string name="play_nav_start">Début de la partie</string>
     <string name="play_nav_back">Coup précédent</string>
     <string name="play_nav_forward">Coup suivant</string>

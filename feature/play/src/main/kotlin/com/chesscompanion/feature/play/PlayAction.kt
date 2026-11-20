@@ -53,6 +53,23 @@ sealed interface PlayAction {
         val path: List<Int>,
     ) : Navigation
 
+    /** The game against Stockfish (S2-4). */
+    sealed interface Opponent : PlayAction
+
+    data object ShowOpponentSetup : Opponent
+
+    data object DismissOpponentSetup : Opponent
+
+    /** Starts a new game against Stockfish with these settings. */
+    data class StartOpponentGame(
+        val settings: OpponentSettings,
+    ) : Opponent
+
+    /** Back to the last position where it is the player's turn; the moves taken back stay as a variation. */
+    data object TakeBack : Opponent
+
+    data object Resign : Opponent
+
     /** Live engine analysis (S2-3). */
     sealed interface Analysis : PlayAction
 
@@ -112,6 +129,9 @@ sealed interface PlayMessage {
     ) : PlayMessage
 
     data object PositionLoaded : PlayMessage
+
+    /** Stockfish did not give a move it could play. */
+    data object EngineFailed : PlayMessage
 
     data object Saved : PlayMessage
 

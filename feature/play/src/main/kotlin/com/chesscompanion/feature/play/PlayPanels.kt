@@ -164,5 +164,6 @@ internal fun messageText(message: PlayMessage): String =
             } ?: stringResource(R.string.play_msg_nothing_to_import)
         PlayMessage.PositionLoaded -> stringResource(R.string.play_msg_position_loaded)
         PlayMessage.Saved -> stringResource(R.string.play_msg_saved)
+        PlayMessage.EngineFailed -> stringResource(R.string.play_msg_engine_failed)
         is PlayMessage.FileError -> stringResource(R.string.play_msg_file_error, message.detail)
     }

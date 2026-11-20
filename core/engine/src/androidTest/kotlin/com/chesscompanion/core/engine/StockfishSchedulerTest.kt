@@ -31,6 +31,30 @@ class StockfishSchedulerTest {
             assertTrue(events.last() is EngineEvent.BestMove)
         }
 
+    /** S2-4: the reply of the opponent at Elo 1500 after 1.e4: a legal move, in about the time given. */
+    @Test
+    fun limitedOpponentAnswersWithALegalMoveInTime() =
+        runBlocking {
+            val request =
+                SearchRequest(
+                    fen = Fen.START,
+                    limit = SearchLimit.MoveTime(MOVE_MS),
+                    moves = listOf("e2e4"),
+                    strength = EngineStrength.Elo(1500),
+                )
+            // The first search of the process starts Stockfish (network loading, about 2 s): not timed here.
+            withTimeout(TIMEOUT_MS) {
+                scheduler.search(EnginePriority.OPPONENT, SearchRequest(Fen.START, SearchLimit.Depth(1))).toList()
+            }
+            val start = System.nanoTime()
+            val events = withTimeout(TIMEOUT_MS) { scheduler.search(EnginePriority.OPPONENT, request).toList() }
+            val elapsedMs = (System.nanoTime() - start) / NS_PER_MS
+            val best = (events.last() as EngineEvent.BestMove).move
+            val after = Fen.parse(Fen.START).play(Move.parseUci("e2e4")!!)
+            assertTrue("illegal $best", after.isLegal(Move.parseUci(best)!!))
+            assertTrue("took $elapsedMs ms", elapsedMs < MOVE_MS + MARGIN_MS)
+        }
+
     @Test
     fun opponentPreemptsBackgroundSearch() =
         runBlocking {

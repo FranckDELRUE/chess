@@ -42,6 +42,8 @@ data class PlayUiState(
     val annotating: Boolean = false,
     val annotationColor: AnnotationColor = AnnotationColor.GREEN,
     val annotations: BoardAnnotations = BoardAnnotations.EMPTY,
+    /** The game against Stockfish (S2-4); null in the two-player game. */
+    val opponent: OpponentUi? = null,
 )
 
 /**
@@ -56,9 +58,23 @@ class PlayViewModel
         private val savedState: SavedStateHandle,
         private val documents: GameDocuments,
         analyzer: PositionAnalyzer,
+        opponentEngine: OpponentEngine,
     ) : ViewModel() {
         private val analysis = AnalysisController(analyzer, viewModelScope)
-        private var input = MoveInput(restoreSession())
+        private val opponent =
+            OpponentController(
+                engine = opponentEngine,
+                scope = viewModelScope,
+                saved = savedState,
+                host =
+                    OpponentCallbacks(
+                        onEngineMove = { update(MoveInput(input.session.play(it))) },
+                        onEngineFailed = { notify(PlayMessage.EngineFailed) },
+                        onChanged = { _state.value = buildState() },
+                    ),
+                vsEngine = savedState.get<String>(KEY_VS) == VS_ENGINE,
+            )
+        private var input = MoveInput(restoredSession(savedState))
         private var flipped: Boolean = savedState[KEY_FLIPPED] ?: false
         private var showLegalMoves: Boolean = savedState[KEY_SHOW_LEGAL_MOVES] ?: true
         private var choice: List<Game>? = null
@@ -76,23 +92,42 @@ class PlayViewModel
 
         init {
             analysis.show(input.session.position, input.session.status().isOver)
+            opponent.sync(input.session)
         }
 
         fun onAction(action: PlayAction) {
             when (action) {
-                is PlayAction.Board -> onBoard(action)
+                is PlayAction.Board ->
+                    if (action == PlayAction.NewGame && opponent.active) {
+                        opponent.accept(PlayAction.ShowOpponentSetup, input.session)
+                    } else {
+                        onBoard(action)
+                    }
                 is PlayAction.Navigation -> onNavigation(action)
                 is PlayAction.Annotation -> onAnnotation(action)
                 is PlayAction.Analysis ->
-                    analysis.accept(action, input.session.position)?.let {
-                        update(MoveInput(input.session.play(it)))
+                    if (opponent.analysisAllowed(input.session)) {
+                        analysis
+                            .accept(
+                                action,
+                                input.session.position,
+                            )?.let { update(MoveInput(input.session.play(it))) }
                     }
+                is PlayAction.Opponent -> {
+                    opponent.accept(action, input.session)?.let { update(MoveInput(it)) }
+                    // A new game from the black side is seen from the black side.
+                    if (action is PlayAction.StartOpponentGame) {
+                        flipped = opponent.ui(input.session)?.humanSide == Side.BLACK
+                        savedState[KEY_FLIPPED] = flipped
+                        _state.value = buildState()
+                    }
+                }
                 is PlayAction.Document -> onDocument(action)
             }
         }
 
-        /** The game as PGN, with its result when the main line is finished. */
-        fun exportPgn(): String = PgnWriter.write(input.session.toGame())
+        /** The game as PGN, with its result when the main line is finished (or resigned). */
+        fun exportPgn(): String = PgnWriter.write(opponent.finish(input.session.toGame()))
 
         private fun onBoard(action: PlayAction.Board) {
             annotation.consume(action)?.let {
@@ -100,11 +135,12 @@ class PlayViewModel
                 update(input)
                 return
             }
+            if (action.picksPiece() && !opponent.canHumanMove(input.session.position)) return
             when (action) {
-                is PlayAction.SquareTap -> update(input.tap(action.square))
+                is PlayAction.SquareTap -> played(input.tap(action.square))
                 is PlayAction.DragStart -> update(input.dragStart(action.square))
-                is PlayAction.Drop -> update(input.drop(action.from, action.to))
-                is PlayAction.Promote -> update(input.promote(action.type))
+                is PlayAction.Drop -> played(input.drop(action.from, action.to))
+                is PlayAction.Promote -> played(input.promote(action.type))
                 PlayAction.CancelPromotion -> update(input.cancelPromotion())
                 PlayAction.NewGame -> update(MoveInput(GameSession.new()))
                 PlayAction.Flip -> {
@@ -118,6 +154,12 @@ class PlayViewModel
                     update(input)
                 }
             }
+        }
+
+        /** The player's own input: when it changes the position, Stockfish is due to answer. */
+        private fun played(next: MoveInput) {
+            if (next.session.position != input.session.position) opponent.humanMoved()
+            update(next)
         }
 
         private fun onNavigation(action: PlayAction.Navigation) {
@@ -205,8 +247,11 @@ class PlayViewModel
             // Marks belong to the position shown: a move, a navigation or an import clears them.
             if (next.session.position != input.session.position) annotation = annotation.cleared()
             input = next
+            if (!opponent.analysisAllowed(next.session)) analysis.setEnabled(false)
             analysis.show(next.session.position, next.session.status().isOver)
             _state.value = buildState()
+            // Last: Stockfish may answer at once, and that move runs this function again.
+            opponent.sync(next.session)
         }
 
         private fun buildState(): PlayUiState {
@@ -244,19 +289,29 @@ class PlayViewModel
                 annotating = annotation.enabled,
                 annotationColor = annotation.color,
                 annotations = annotation.annotations,
+                opponent = opponent.ui(session),
             )
         }
 
-        /** The saved game, played to the end of its main line; a new game if there is none. */
-        private fun restoreSession(): GameSession {
-            val pgn = savedState.get<String>(KEY_PGN) ?: return GameSession.new()
-            val game = runCatching { PgnReader.read(pgn) }.getOrNull() ?: return GameSession.new()
-            return GameSession(game, game.mainline.map { 0 })
-        }
-
         private companion object {
-            const val KEY_PGN = "play.pgn"
             const val KEY_FLIPPED = "play.flipped"
             const val KEY_SHOW_LEGAL_MOVES = "play.showLegalMoves"
+
+            /** Navigation argument of the route: "engine" opens the game against Stockfish. */
+            const val KEY_VS = "vs"
+            const val VS_ENGINE = "engine"
         }
     }
+
+private const val KEY_PGN = "play.pgn"
+
+/** The saved game, played to the end of its main line; a new game if there is none. */
+private fun restoredSession(savedState: SavedStateHandle): GameSession {
+    val pgn = savedState.get<String>(KEY_PGN) ?: return GameSession.new()
+    val game = runCatching { PgnReader.read(pgn) }.getOrNull() ?: return GameSession.new()
+    return GameSession(game, game.mainline.map { 0 })
+}
+
+/** A gesture that picks or moves a piece (as opposed to promotion, flipping, settings). */
+private fun PlayAction.Board.picksPiece(): Boolean =
+    this is PlayAction.SquareTap || this is PlayAction.DragStart || this is PlayAction.Drop

@@ -28,6 +28,7 @@ import com.chesscompanion.core.ui.theme.ChessTheme
 @Composable
 fun HomeScreen(
     onOpenPlay: () -> Unit,
+    onOpenPlayEngine: () -> Unit,
     onOpenEngineDebug: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -36,6 +37,7 @@ fun HomeScreen(
         state = state,
         onFlip = viewModel::flipBoard,
         onOpenPlay = onOpenPlay,
+        onOpenPlayEngine = onOpenPlayEngine,
         onOpenEngineDebug = onOpenEngineDebug,
     )
 }
@@ -45,6 +47,7 @@ internal fun HomeContent(
     state: HomeUiState,
     onFlip: () -> Unit,
     onOpenPlay: () -> Unit,
+    onOpenPlayEngine: () -> Unit,
     onOpenEngineDebug: () -> Unit,
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -52,12 +55,24 @@ internal fun HomeContent(
             if (maxWidth > maxHeight) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     ChessBoard(state.fen, state.flipped, Modifier.weight(1f).fillMaxSize())
-                    SidePanel(onFlip, onOpenPlay, onOpenEngineDebug, Modifier.weight(1f).fillMaxSize())
+                    SidePanel(
+                        onFlip,
+                        onOpenPlay,
+                        onOpenPlayEngine,
+                        onOpenEngineDebug,
+                        Modifier.weight(1f).fillMaxSize(),
+                    )
                 }
             } else {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     ChessBoard(state.fen, state.flipped, Modifier.fillMaxWidth().weight(1f))
-                    SidePanel(onFlip, onOpenPlay, onOpenEngineDebug, Modifier.fillMaxWidth().weight(1f))
+                    SidePanel(
+                        onFlip,
+                        onOpenPlay,
+                        onOpenPlayEngine,
+                        onOpenEngineDebug,
+                        Modifier.fillMaxWidth().weight(1f),
+                    )
                 }
             }
         }
@@ -68,11 +83,13 @@ internal fun HomeContent(
 private fun SidePanel(
     onFlip: () -> Unit,
     onOpenPlay: () -> Unit,
+    onOpenPlayEngine: () -> Unit,
     onOpenEngineDebug: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onOpenPlayEngine) { Text(stringResource(R.string.home_play_engine)) }
             Button(onClick = onOpenPlay) { Text(stringResource(R.string.home_play)) }
             OutlinedButton(onClick = onFlip) { Text(stringResource(R.string.home_flip_board)) }
             OutlinedButton(onClick = onOpenEngineDebug) { Text(stringResource(R.string.home_engine_debug)) }
@@ -86,16 +103,16 @@ private const val FEN_MIDDLEGAME = "r2q1rk1/pp2bppp/2n1pn2/3p4/3P4/2N1PN2/PP2BPP
 
 @Preview(widthDp = 1280, heightDp = 800)
 @Composable
-private fun HomeLandscapePreview() = ChessTheme { HomeContent(HomeUiState(), {}, {}, {}) }
+private fun HomeLandscapePreview() = ChessTheme { HomeContent(HomeUiState(), {}, {}, {}, {}) }
 
 @Preview(widthDp = 800, heightDp = 1280)
 @Composable
-private fun HomePortraitFlippedPreview() = ChessTheme { HomeContent(HomeUiState(FEN_ITALIAN, true), {}, {}, {}) }
+private fun HomePortraitFlippedPreview() = ChessTheme { HomeContent(HomeUiState(FEN_ITALIAN, true), {}, {}, {}, {}) }
 
 @Preview(widthDp = 1280, heightDp = 800)
 @Composable
-private fun HomeEndgamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_ENDGAME), {}, {}, {}) }
+private fun HomeEndgamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_ENDGAME), {}, {}, {}, {}) }
 
 @Preview(widthDp = 800, heightDp = 1280)
 @Composable
-private fun HomeMiddlegamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_MIDDLEGAME), {}, {}, {}) }
+private fun HomeMiddlegamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_MIDDLEGAME), {}, {}, {}, {}) }

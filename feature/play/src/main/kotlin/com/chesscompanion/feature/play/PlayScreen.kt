@@ -178,6 +178,13 @@ fun PlayContent(
             onDismiss = { onAction(PlayAction.CancelPromotion) },
         )
     }
+    state.opponent?.setup?.let { settings ->
+        OpponentSetupDialog(
+            initial = settings,
+            onStart = { onAction(PlayAction.StartOpponentGame(it)) },
+            onDismiss = { onAction(PlayAction.DismissOpponentSetup) },
+        )
+    }
     state.gameChoice?.let { games ->
         GameChoiceDialog(
             games = games,
@@ -198,13 +205,15 @@ private fun SidePanel(
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceVariant) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = stringResource(statusMessage(state.status, state.sideToMove, state.highlights.check != null)),
+                text = statusText(state),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.testTag(PLAY_STATUS_TAG),
             )
             NavigationBar(state, onAction)
+            state.opponent?.let { OpponentControls(it, onAction) }
             AnnotationBar(state, onAction)
-            AnalysisPanel(analysis, onAction)
+            // Against Stockfish the analysis would be a free hint: it comes back when the game is over.
+            if (state.opponent?.over != false) AnalysisPanel(analysis, onAction)
             MoveList(state.moveList, onGoTo = { onAction(PlayAction.GoTo(it)) }, modifier = Modifier.weight(1f))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -226,6 +235,19 @@ private fun SidePanel(
             }
         }
     }
+}
+
+/** The line under the board: Stockfish thinking or the resignation, else the state of the game. */
+@Composable
+private fun statusText(state: PlayUiState): String {
+    val opponent = state.opponent
+    val message =
+        when {
+            opponent?.resigned == true -> R.string.play_status_resigned
+            opponent?.thinking == true -> R.string.play_vs_status_thinking
+            else -> statusMessage(state.status, state.sideToMove, state.highlights.check != null)
+        }
+    return stringResource(message)
 }
 
 private fun previewState(status: GameStatus = GameStatus.Ongoing): PlayUiState {
