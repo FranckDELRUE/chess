@@ -43,25 +43,30 @@ const val DRILL_CONTINUE_TAG = "drill-continue"
 const val DRILL_FINISHED_TAG = "drill-finished"
 const val DRILL_SUMMARY_TAG = "drill-summary"
 const val DRILL_LEARNED_SUMMARY_TAG = "drill-learned-summary"
+const val DRILL_QUIT_TAG = "drill-quit"
 
 /** The drill of one repertoire: the board on one side, the question and the feedback on the other. */
 @Composable
-fun DrillScreen(viewModel: DrillViewModel = hiltViewModel()) {
+fun DrillScreen(
+    onClose: () -> Unit,
+    viewModel: DrillViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    DrillContent(state, viewModel::onAction)
+    DrillContent(state, viewModel::onAction, onClose)
 }
 
 @Composable
 internal fun DrillContent(
     state: DrillUiState,
     onAction: (DrillAction) -> Unit,
+    onClose: () -> Unit = {},
 ) {
     Surface(Modifier.fillMaxSize()) {
         when (state.status) {
             DrillStatus.LOADING -> Text(stringResource(R.string.drill_loading), Modifier.padding(16.dp))
             DrillStatus.NOT_FOUND ->
                 Text(stringResource(R.string.drill_not_found), Modifier.padding(16.dp).testTag(DRILL_NOT_FOUND_TAG))
-            else -> DrillLayout(state, onAction)
+            else -> DrillLayout(state, onAction, onClose)
         }
     }
     state.promotionSide?.let { side ->
@@ -73,18 +78,19 @@ internal fun DrillContent(
 private fun DrillLayout(
     state: DrillUiState,
     onAction: (DrillAction) -> Unit,
+    onClose: () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
         val board = @Composable { modifier: Modifier -> DrillBoard(state, onAction, modifier) }
         if (maxWidth > maxHeight) {
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 board(Modifier.weight(1f).fillMaxSize())
-                DrillPanel(state, onAction, Modifier.weight(1f).fillMaxSize())
+                DrillPanel(state, onAction, onClose, Modifier.weight(1f).fillMaxSize())
             }
         } else {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 board(Modifier.fillMaxWidth().weight(1f))
-                DrillPanel(state, onAction, Modifier.fillMaxWidth().weight(1f))
+                DrillPanel(state, onAction, onClose, Modifier.fillMaxWidth().weight(1f))
             }
         }
     }
@@ -112,6 +118,7 @@ private fun DrillBoard(
 private fun DrillPanel(
     state: DrillUiState,
     onAction: (DrillAction) -> Unit,
+    onClose: () -> Unit,
     modifier: Modifier,
 ) {
     Column(
@@ -124,6 +131,14 @@ private fun DrillPanel(
             DrillStatus.ASKING -> AskingPanel(state, onAction)
             DrillStatus.FEEDBACK -> FeedbackPanel(state, onAction)
             else -> FinishedPanel(state)
+        }
+        val finished = state.status == DrillStatus.FINISHED
+        val label = if (finished) R.string.drill_done else R.string.drill_quit
+        val quit = Modifier.testTag(DRILL_QUIT_TAG)
+        if (finished) {
+            Button(onClick = onClose, modifier = quit) { Text(stringResource(label)) }
+        } else {
+            OutlinedButton(onClick = onClose, modifier = quit) { Text(stringResource(label)) }
         }
     }
 }

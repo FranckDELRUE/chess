@@ -59,7 +59,7 @@ fun ChessNavHost() {
             ROUTE_DRILL_PATTERN,
             arguments = listOf(navArgument(DRILL_REPERTOIRE_ID_ARG) { type = NavType.StringType }),
         ) {
-            DrillScreen()
+            DrillScreen(onClose = { navController.popBackStack() })
         }
         composable(
             ROUTE_GAPS_PATTERN,

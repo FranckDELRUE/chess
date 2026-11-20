@@ -15,6 +15,7 @@ import com.chesscompanion.core.srs.ReviewQueueBuilder
 import com.chesscompanion.core.ui.board.squareTestTag
 import com.chesscompanion.core.ui.theme.ChessTheme
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,6 +32,8 @@ import java.time.ZoneId
 class DrillScreenTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var closed = false
 
     private fun sq(name: String) = checkNotNull(Square.parse(name))
 
@@ -52,7 +55,7 @@ class DrillScreenTest {
                 scheduler(),
                 Clock.fixed(now, ZoneId.of("Europe/Paris")),
             )
-        compose.setContent { ChessTheme { DrillScreen(viewModel) } }
+        compose.setContent { ChessTheme { DrillScreen({ closed = true }, viewModel) } }
         compose.waitForIdle()
     }
 
@@ -105,5 +108,12 @@ class DrillScreenTest {
         compose.onNodeWithTag(DRILL_LEARNED_TAG).assertTextContains("Appris", substring = true)
         compose.onNodeWithTag(DRILL_CONTINUE_TAG).performClick()
         compose.onNodeWithTag(DRILL_LEARN_MOVES_TAG).assertTextContains("c4", substring = true)
+    }
+
+    @Test
+    fun theSessionCanBeLeftAtAnyTime() {
+        launch(reviewed = true)
+        compose.onNodeWithTag(DRILL_QUIT_TAG).performClick()
+        assertTrue(closed)
     }
 }

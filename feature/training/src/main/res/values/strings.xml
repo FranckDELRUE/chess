@@ -27,6 +27,8 @@
     <string name="drill_learn_miss">Ce n’est pas le coup à apprendre. Joue celui qui est indiqué.</string>
     <string name="drill_learned">Appris : %1$s</string>
     <string name="drill_summary_learned">%1$d nouvelles positions apprises.</string>
+    <string name="drill_quit">Quitter la séance (progression conservée)</string>
+    <string name="drill_done">Terminer</string>
     <string name="drill_continue">Continuer</string>
     <string name="drill_finished_title">Séance terminée</string>
     <string name="drill_nothing_title">Rien à réviser</string>

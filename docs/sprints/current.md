@@ -98,6 +98,8 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   Lichess ou des positions en cache ; le rappel ne compte que les révisions échues (pas les nouvelles positions) ; le
   worker et `DueCounter` n'ont pas de test dédié (le fake de store renvoie un flux vide) ; l'heure (18 h) n'est pas
   réglable ; WorkManager n'est pas exact à la minute.
+- [x] Correctif (retour du joueur) : bouton « Quitter la séance » toujours visible dans le drill, « Terminer » à la fin ; la
+  progression est déjà enregistrée à chaque réponse. 1 test d'écran de plus.
 ### S8-7 et S8-8
 Voir le plan validé : export PGN (7), démo et clôture (8).
 
