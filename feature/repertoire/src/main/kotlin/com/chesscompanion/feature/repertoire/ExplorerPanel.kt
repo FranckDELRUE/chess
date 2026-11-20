@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.chesscompanion.core.data.explorer.ExplorerLevel
 import com.chesscompanion.core.data.explorer.ExplorerProblem
+import java.text.NumberFormat
 
 const val EXPLORER_EVAL_TAG = "explorer-eval"
 const val EXPLORER_PROBLEM_TAG = "explorer-problem"
@@ -100,7 +101,7 @@ private fun Moves(
         Text(stringResource(R.string.explorer_no_move))
         return
     }
-    Text(stringResource(R.string.explorer_games, content.games))
+    Text(stringResource(R.string.explorer_games, groupDigits(content.games)))
     content.rows.forEach { row ->
         Column(
             Modifier.fillMaxWidth().testTag(explorerRowTag(row.uci)),
@@ -108,7 +109,7 @@ private fun Moves(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(row.label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.explorer_row_games, row.games))
+                Text(stringResource(R.string.explorer_row_games, groupDigits(row.games)))
                 Text(stringResource(R.string.explorer_row_shares, row.whitePercent, row.drawPercent, row.blackPercent))
                 OutlinedButton(
                     onClick = { onAction(EditorAction.PlayUci(row.uci)) },
@@ -119,6 +120,9 @@ private fun Moves(
         }
     }
 }
+
+/** A count with the thousands separator of the language of the device (S7-8a). */
+private fun groupDigits(count: Long): String = NumberFormat.getIntegerInstance().format(count)
 
 @Composable
 private fun ResultBar(row: ExplorerRow) {

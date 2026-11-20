@@ -75,7 +75,6 @@ internal fun EditorPanel(
             Header(state)
             NavigationRow(state, onAction)
             Continuations(state, onAction)
-            ExplorerSection(explorer, onAction)
             MarksBar(state, onAction)
             CommentField(state, onAction)
             SourceFields(state, onAction)
@@ -90,6 +89,8 @@ internal fun EditorPanel(
                     modifier = Modifier.testTag(EDITOR_IMPORT_TAG),
                 ) { Text(stringResource(R.string.editor_import)) }
             }
+            // Last: twelve rows of statistics must not push the notes out of reach (S7-8b).
+            ExplorerSection(explorer, onAction)
         }
     }
 }

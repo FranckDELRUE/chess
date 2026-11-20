@@ -95,9 +95,15 @@ l'analyse des erreurs HTTP avec un faux transport.
 ANR) ; test avec faux transport réseau.
 
 ### S7-8 · Démo de bout en bout et corrections
-- [ ] Parcours complet sur la tablette : créer, éditer, importer PGN et étude, explorer, fermer et rouvrir ;
+- [x] Parcours complet sur la tablette : créer, éditer, importer PGN et étude, explorer, fermer et rouvrir ;
   enchaînement des modes et relecture du PGN exporté.
-- [ ] Chaque défaut trouvé reçoit sa story de correction (S7-8a, S7-8b…) avant la clôture.
+- [x] Chaque défaut trouvé reçoit sa story de correction (S7-8a, S7-8b…) avant la clôture.
+- [x] S7-8a : séparateurs de milliers dans les nombres de parties de l'explorateur.
+- [x] S7-8b : explorateur en fin de panneau, pour ne plus repousser notes et source.
+
+> **Note (S7-8)** : démo consignée dans `s7.md`, 4 captures dans `s7-demo/`. Deux défauts corrigés (S7-8a, S7-8b).
+> Dette : ouverture lente d'un répertoire de ~10 000 coups (~5 s) et export PGN absent de l'interface,
+> notés dans `backlog.md`. L'export n'a été vérifié que par le test d'aller-retour.
 
 **Acceptation** : démo consignée dans `s7.md` (tableau des étapes et défauts), capture d'écran.
 
