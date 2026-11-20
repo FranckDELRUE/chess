@@ -34,14 +34,6 @@ const val REPERTOIRE_NAME_FIELD_TAG = "repertoire-name-field"
 const val REPERTOIRE_CONFIRM_TAG = "repertoire-confirm"
 const val REPERTOIRE_EMPTY_TAG = "repertoire-empty"
 
-fun repertoireRowTag(id: String) = "repertoire-row-$id"
-
-fun repertoireRenameTag(id: String) = "repertoire-rename-$id"
-
-fun repertoireDeleteTag(id: String) = "repertoire-delete-$id"
-
-fun repertoireSideTag(side: Side) = "repertoire-side-${side.name.lowercase()}"
-
 /**
  * The list of repertoires. [onOpen] opens one (the editor arrives in S7-4); while it is null the
  * rows are not tappable.
@@ -49,10 +41,11 @@ fun repertoireSideTag(side: Side) = "repertoire-side-${side.name.lowercase()}"
 @Composable
 fun RepertoireListScreen(
     onOpen: ((String) -> Unit)? = null,
+    onDrill: ((String) -> Unit)? = null,
     viewModel: RepertoireListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    RepertoireListContent(state, viewModel::onAction, onOpen)
+    RepertoireListContent(state, viewModel::onAction, onOpen, onDrill)
 }
 
 @Composable
@@ -60,6 +53,7 @@ internal fun RepertoireListContent(
     state: RepertoireListUiState,
     onAction: (RepertoireListAction) -> Unit,
     onOpen: ((String) -> Unit)? = null,
+    onDrill: ((String) -> Unit)? = null,
 ) {
     Surface(Modifier.fillMaxSize()) {
         Column(
@@ -77,7 +71,7 @@ internal fun RepertoireListContent(
                     modifier = Modifier.testTag(REPERTOIRE_NEW_TAG),
                 ) { Text(stringResource(R.string.repertoire_new)) }
             }
-            RepertoireItems(state, onAction, onOpen)
+            RepertoireItems(state, onAction, onOpen, onDrill)
         }
     }
     state.dialog?.let { RepertoireDialogs(it, onAction) }
@@ -88,6 +82,7 @@ private fun RepertoireItems(
     state: RepertoireListUiState,
     onAction: (RepertoireListAction) -> Unit,
     onOpen: ((String) -> Unit)?,
+    onDrill: ((String) -> Unit)?,
 ) {
     when {
         !state.loaded -> Text(stringResource(R.string.repertoire_loading))
@@ -95,7 +90,7 @@ private fun RepertoireItems(
             Text(stringResource(R.string.repertoire_empty), Modifier.testTag(REPERTOIRE_EMPTY_TAG))
         else ->
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.items, key = { it.id }) { item -> RepertoireRow(item, onAction, onOpen) }
+                items(state.items, key = { it.id }) { item -> RepertoireRow(item, onAction, onOpen, onDrill) }
             }
     }
 }
@@ -105,6 +100,7 @@ private fun RepertoireRow(
     item: RepertoireSummary,
     onAction: (RepertoireListAction) -> Unit,
     onOpen: ((String) -> Unit)?,
+    onDrill: ((String) -> Unit)?,
 ) {
     val rowModifier = Modifier.fillMaxWidth().testTag(repertoireRowTag(item.id))
     val content: @Composable () -> Unit = {
@@ -115,6 +111,12 @@ private fun RepertoireRow(
                     stringResource(R.string.repertoire_summary, sideLabel(item.side), moveCountLabel(item.moveCount)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+            if (onDrill != null && item.moveCount > 0) {
+                Button(
+                    onClick = { onDrill(item.id) },
+                    modifier = Modifier.testTag(repertoireDrillTag(item.id)),
+                ) { Text(stringResource(R.string.repertoire_drill)) }
             }
             TextButton(
                 onClick = { onAction(RepertoireListAction.StartRename(item.id)) },

@@ -63,9 +63,11 @@ class DrillSessionTest {
     fun aMissedPositionComesBackUngradedUntilFound() {
         val session = session()
         assertEquals(1, session.remaining)
+        assertFalse(session.isRetry)
         val graded = session.answer(move("e2e4"), now)
         assertNotNull(graded.updatedCard)
         assertEquals(1, session.remaining) // the miss went back to the end
+        assertTrue(session.isRetry)
 
         val wrongAgain = session.answer(move("e2e4"), now)
         assertNull(wrongAgain.rating)
@@ -88,9 +90,10 @@ class DrillSessionTest {
                 .first()
                 .copy(card = stored)
         val result = DrillSession(listOf(item)).answer(item.expected.first().move, now)
-        assertEquals(2, result.updatedCard!!.reps)
-        assertTrue(result.updatedCard!!.stability!! > stored.stability!!)
-        assertNotNull(result.updatedCard!!.due)
+        val updated = checkNotNull(result.updatedCard)
+        assertEquals(2, updated.reps)
+        assertTrue(checkNotNull(updated.stability) > checkNotNull(stored.stability))
+        assertNotNull(updated.due)
     }
 
     @Test

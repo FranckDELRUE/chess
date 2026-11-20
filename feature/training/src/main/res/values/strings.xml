@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="drill_title">Réviser : %1$s</string>
+    <string name="drill_loading">Chargement…</string>
+    <string name="drill_not_found">Répertoire introuvable.</string>
+    <string name="drill_line_start">Début du répertoire</string>
+    <string name="drill_line">Ligne : %1$s</string>
+    <string name="drill_ask_white">Les Blancs jouent : quel est ton coup du répertoire ?</string>
+    <string name="drill_ask_black">Les Noirs jouent : quel est ton coup du répertoire ?</string>
+    <string name="drill_new_position">Nouvelle position</string>
+    <string name="drill_retry">À revoir (n\'est plus noté)</string>
+    <string name="drill_remaining">Restantes : %1$d</string>
+    <string name="drill_hint">Indice</string>
+    <string name="drill_hint_shown">Indice : %1$s (la position comptera comme difficile)</string>
+    <string name="drill_correct">Correct : %1$s</string>
+    <string name="drill_wrong">Tu as joué %1$s. Le répertoire attend : %2$s.</string>
+    <string name="drill_repertoire_line">Ligne du répertoire : %1$s</string>
+    <string name="drill_eval_played">Évaluation après %1$s : %2$s</string>
+    <string name="drill_eval_expected">Évaluation après %1$s : %2$s</string>
+    <string name="drill_eval_pending">…</string>
+    <string name="drill_eval_unavailable">indisponible</string>
+    <string name="drill_eval_note">Évaluation de Stockfish, du point de vue des Blancs.</string>
+    <string name="drill_back_tomorrow">Cette position reviendra demain.</string>
+    <string name="drill_continue">Continuer</string>
+    <string name="drill_finished_title">Séance terminée</string>
+    <string name="drill_nothing_title">Rien à réviser</string>
+    <string name="drill_nothing_message">Aucune position à réviser aujourd\'hui dans ce répertoire.</string>
+    <string name="drill_summary">%1$d positions notées : %2$d trouvées, %3$d manquées.</string>
+    <string name="drill_left">Encore disponibles aujourd\'hui : %1$d à réviser, %2$d nouvelles.</string>
+</resources>

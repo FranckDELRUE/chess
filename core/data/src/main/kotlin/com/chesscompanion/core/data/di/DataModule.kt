@@ -28,6 +28,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
+import java.time.Clock
 import javax.inject.Singleton
 
 private const val CONNECT_TIMEOUT_MS = 10_000L
@@ -53,6 +54,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideRepertoireStore(database: ChessDatabase): RepertoireStore = RoomRepertoireStore(database)
+
+    @Provides
+    @Singleton
+    fun provideClock(): Clock = Clock.systemDefaultZone()
 
     @Provides
     @Singleton

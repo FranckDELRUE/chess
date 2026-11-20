@@ -56,9 +56,24 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   Les tests du dépôt qui fusionnent plusieurs parties sans en-têtes (`RoomRepertoireStoreTest.sample`) n'en lisent
   qu'une seule (« Text after the result ») : à corriger en passant.
 
-### S8-4 à S8-8
-Voir le plan validé : (3 fait), écran de drill (4), apprentissage (5),
-trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
+### S8-4 · Écran de drill (`:feature:training`)
+- [x] Module `:feature:training` : `DrillViewModel` (UDF, un point d'entrée `onAction`), `DrillScreen` (échiquier + panneau,
+  paysage et portrait), textes en français ; route `drill/{id}` ; bouton « Réviser » sur chaque répertoire non vide.
+- [x] Question : position au trait avec la ligne jouée jusque-là, indice (compte comme « difficile »), saisie par
+  toucher ou glisser, promotion. Réponse : flèches vertes (coups du répertoire) et rouge (coup joué).
+- [x] Retour factuel sur une déviation : coup joué, coup(s) attendu(s), ligne du répertoire, évaluation Stockfish après
+  chacun (priorité `LIVE`, 1 s, point de vue des Blancs) ; sans moteur, le retour s'affiche sans évaluation.
+  Chaque réponse notée est écrite dans `review_card` ; la position ratée revient en fin de séance, sans être renotée.
+- [x] Fin de séance (bilan, positions encore disponibles) ; « rien à réviser » si la file est vide.
+- [x] 14 tests (ViewModel 11, écran 3) ; `DrillSession.isRetry` ajouté (test) ; `Clock` fourni par Hilt (`DataModule`).
+- [x] Installé sur la tablette (`installDebug`) : l'application démarre ; migration Room 3 → 4 à l'ouverture d'un répertoire.
+- *Dette* : `DrillInput` et `formatEvaluation`/`lineText` dupliquent ceux de `:feature:repertoire` (à extraire dans
+  `:core:ui` / `:core:engine` quand un troisième écran les utilisera) ; pas de vérification visuelle automatisée sur la
+  tablette (à faire par le joueur) ; l'ordre des nouvelles positions est celui du graphe, sans regroupement par ligne ;
+  `RepertoireListScreen` : le bouton « Réviser » n'a pas de test d'écran dédié.
+
+### S8-5 à S8-8
+Voir le plan validé : apprentissage (5), trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
 
 ---
 

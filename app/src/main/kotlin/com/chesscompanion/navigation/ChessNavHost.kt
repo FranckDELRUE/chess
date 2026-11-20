@@ -12,6 +12,8 @@ import com.chesscompanion.feature.play.PlayScreen
 import com.chesscompanion.feature.repertoire.REPERTOIRE_ID_ARG
 import com.chesscompanion.feature.repertoire.RepertoireEditorScreen
 import com.chesscompanion.feature.repertoire.RepertoireListScreen
+import com.chesscompanion.feature.training.DRILL_REPERTOIRE_ID_ARG
+import com.chesscompanion.feature.training.DrillScreen
 import com.chesscompanion.home.HomeScreen
 
 @Composable
@@ -33,7 +35,10 @@ fun ChessNavHost() {
             )
         }
         composable(ROUTE_REPERTOIRES) {
-            RepertoireListScreen(onOpen = { navController.navigate(repertoireRoute(it)) })
+            RepertoireListScreen(
+                onOpen = { navController.navigate(repertoireRoute(it)) },
+                onDrill = { navController.navigate(drillRoute(it)) },
+            )
         }
         composable(
             ROUTE_REPERTOIRE_PATTERN,
@@ -46,6 +51,12 @@ fun ChessNavHost() {
                 ),
         ) {
             RepertoireEditorScreen()
+        }
+        composable(
+            ROUTE_DRILL_PATTERN,
+            arguments = listOf(navArgument(DRILL_REPERTOIRE_ID_ARG) { type = NavType.StringType }),
+        ) {
+            DrillScreen()
         }
         composable(ROUTE_PLAY_PATTERN, arguments = listOf(navArgument("vs") { defaultValue = "" })) { PlayScreen() }
         if (entries.showEngineDebug) {

@@ -30,4 +30,5 @@ include(":core:engine")
 include(":core:srs")
 include(":feature:play")
 include(":feature:repertoire")
+include(":feature:training")
 // :spike:llm (S0-6) is kept as a reference only and no longer built (ADR 0003).

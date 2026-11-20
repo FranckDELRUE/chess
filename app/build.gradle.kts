@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":core:engine"))
     implementation(project(":feature:play"))
     implementation(project(":feature:repertoire"))
+    implementation(project(":feature:training"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

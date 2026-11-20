@@ -56,6 +56,9 @@ class DrillSession(
 
     val isFinished: Boolean get() = pending.isEmpty()
 
+    /** True when the current position is a practice retry after a miss (its answer is not graded). */
+    val isRetry: Boolean get() = pending.firstOrNull()?.graded == false
+
     /** The move to show as a hint for the current position: the first repertoire move. */
     val hint: RepertoireEdge? get() = current?.expected?.firstOrNull()
 
