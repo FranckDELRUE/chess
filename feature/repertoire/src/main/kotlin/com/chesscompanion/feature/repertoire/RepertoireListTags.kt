@@ -12,4 +12,6 @@ fun repertoireDrillTag(id: String) = "repertoire-drill-$id"
 
 fun repertoireGapsTag(id: String) = "repertoire-gaps-$id"
 
+fun repertoireExportTag(id: String) = "repertoire-export-$id"
+
 fun repertoireSideTag(side: Side) = "repertoire-side-${side.name.lowercase()}"

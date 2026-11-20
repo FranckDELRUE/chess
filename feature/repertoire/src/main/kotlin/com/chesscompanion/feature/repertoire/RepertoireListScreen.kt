@@ -1,5 +1,9 @@
 package com.chesscompanion.feature.repertoire
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,8 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -28,15 +37,28 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chesscompanion.core.chess.Side
 import com.chesscompanion.core.data.RepertoireSummary
 import com.chesscompanion.core.ui.theme.ChessTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
 
 const val REPERTOIRE_NEW_TAG = "repertoire-new"
 const val REPERTOIRE_NAME_FIELD_TAG = "repertoire-name-field"
 const val REPERTOIRE_CONFIRM_TAG = "repertoire-confirm"
 const val REPERTOIRE_EMPTY_TAG = "repertoire-empty"
+const val REPERTOIRE_EXPORT_RESULT_TAG = "repertoire-export-result"
+
+/** What a row can open; a null callback hides its button. */
+data class RepertoireRowActions(
+    val onOpen: ((String) -> Unit)? = null,
+    val onDrill: ((String) -> Unit)? = null,
+    val onGaps: ((String) -> Unit)? = null,
+    val onExport: ((String) -> Unit)? = null,
+)
 
 /**
- * The list of repertoires. [onOpen] opens one (the editor arrives in S7-4); while it is null the
- * rows are not tappable.
+ * The list of repertoires. [onOpen] opens one; while it is null the rows are not tappable. "Exporter" writes the
+ * repertoire as a PGN file chosen by the player (Storage Access Framework, no storage permission).
  */
 @Composable
 fun RepertoireListScreen(
@@ -46,16 +68,65 @@ fun RepertoireListScreen(
     viewModel: RepertoireListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    RepertoireListContent(state, viewModel::onAction, onOpen, onDrill, onGaps)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf<String?>(null) }
+    var exported by remember { mutableStateOf<Boolean?>(null) }
+    val picker =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/x-chess-pgn")) { uri ->
+            val id = exporting
+            exporting = null
+            if (uri != null && id != null) {
+                scope.launch { exported = writePgn(context, uri, viewModel.exportPgn(id)) }
+            }
+        }
+    val actions =
+        RepertoireRowActions(
+            onOpen,
+            onDrill,
+            onGaps,
+            onExport = { id ->
+                exported = null
+                exporting = id
+                picker.launch(exportFileName(state.items.firstOrNull { it.id == id }?.name))
+            },
+        )
+    RepertoireListContent(state, viewModel::onAction, actions, exported)
 }
+
+/** `Ma Sicilienne` becomes `Ma-Sicilienne.pgn`: no character a file system dislikes. */
+internal fun exportFileName(name: String?): String {
+    val clean =
+        name
+            .orEmpty()
+            .trim()
+            .replace(Regex("[^\\p{L}\\p{N}]+"), "-")
+            .trim('-')
+    return "${clean.ifEmpty { "repertoire" }}.pgn"
+}
+
+private suspend fun writePgn(
+    context: Context,
+    uri: Uri,
+    text: String?,
+): Boolean =
+    text != null &&
+        try {
+            withContext(Dispatchers.IO) {
+                context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+                    ?: throw IOException("Cannot write $uri")
+            }
+            true
+        } catch (_: IOException) {
+            false
+        }
 
 @Composable
 internal fun RepertoireListContent(
     state: RepertoireListUiState,
     onAction: (RepertoireListAction) -> Unit,
-    onOpen: ((String) -> Unit)? = null,
-    onDrill: ((String) -> Unit)? = null,
-    onGaps: ((String) -> Unit)? = null,
+    actions: RepertoireRowActions = RepertoireRowActions(),
+    exported: Boolean? = null,
 ) {
     Surface(Modifier.fillMaxSize()) {
         Column(
@@ -73,7 +144,13 @@ internal fun RepertoireListContent(
                     modifier = Modifier.testTag(REPERTOIRE_NEW_TAG),
                 ) { Text(stringResource(R.string.repertoire_new)) }
             }
-            RepertoireItems(state, onAction, onOpen, onDrill, onGaps)
+            exported?.let {
+                Text(
+                    stringResource(if (it) R.string.repertoire_exported else R.string.repertoire_export_failed),
+                    Modifier.testTag(REPERTOIRE_EXPORT_RESULT_TAG),
+                )
+            }
+            RepertoireItems(state, onAction, actions)
         }
     }
     state.dialog?.let { RepertoireDialogs(it, onAction) }
@@ -83,9 +160,7 @@ internal fun RepertoireListContent(
 private fun RepertoireItems(
     state: RepertoireListUiState,
     onAction: (RepertoireListAction) -> Unit,
-    onOpen: ((String) -> Unit)?,
-    onDrill: ((String) -> Unit)?,
-    onGaps: ((String) -> Unit)?,
+    actions: RepertoireRowActions,
 ) {
     when {
         !state.loaded -> Text(stringResource(R.string.repertoire_loading))
@@ -93,7 +168,7 @@ private fun RepertoireItems(
             Text(stringResource(R.string.repertoire_empty), Modifier.testTag(REPERTOIRE_EMPTY_TAG))
         else ->
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.items, key = { it.id }) { item -> RepertoireRow(item, onAction, onOpen, onDrill, onGaps) }
+                items(state.items, key = { it.id }) { item -> RepertoireRow(item, onAction, actions) }
             }
     }
 }
@@ -102,10 +177,10 @@ private fun RepertoireItems(
 private fun RepertoireRow(
     item: RepertoireSummary,
     onAction: (RepertoireListAction) -> Unit,
-    onOpen: ((String) -> Unit)?,
-    onDrill: ((String) -> Unit)?,
-    onGaps: ((String) -> Unit)?,
+    actions: RepertoireRowActions,
 ) {
+    val (onOpen, onDrill, onGaps) = actions
+    val onExport = actions.onExport
     val rowModifier = Modifier.fillMaxWidth().testTag(repertoireRowTag(item.id))
     val content: @Composable () -> Unit = {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -127,6 +202,12 @@ private fun RepertoireRow(
                     onClick = { onGaps(item.id) },
                     modifier = Modifier.testTag(repertoireGapsTag(item.id)),
                 ) { Text(stringResource(R.string.repertoire_gaps)) }
+            }
+            if (onExport != null && item.moveCount > 0) {
+                TextButton(
+                    onClick = { onExport(item.id) },
+                    modifier = Modifier.testTag(repertoireExportTag(item.id)),
+                ) { Text(stringResource(R.string.repertoire_export)) }
             }
             TextButton(
                 onClick = { onAction(RepertoireListAction.StartRename(item.id)) },

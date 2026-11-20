@@ -2,6 +2,8 @@ package com.chesscompanion.feature.repertoire
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chesscompanion.core.chess.pgn.PgnWriter
+import com.chesscompanion.core.chess.repertoire.toGame
 import com.chesscompanion.core.data.RepertoireStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +42,10 @@ class RepertoireListViewModel
                 RepertoireListAction.Dismiss -> open(null)
             }
         }
+
+        /** The repertoire as PGN text (one game, variations, notes as comments); null if the repertoire is unknown. */
+        suspend fun exportPgn(id: String): String? =
+            store.load(id)?.let { PgnWriter.write(it.repertoire.toGame(event = it.name)) }
 
         private fun item(id: String) = _state.value.items.firstOrNull { it.id == id }
 

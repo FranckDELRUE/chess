@@ -105,8 +105,17 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   `practiceResult` dans `:core:srs` ; `DrillViewModel` réécrit autour des lignes (statut `REPLYING`, entraînement non
   noté). Tests : `LineWalkTest` (4), `DrillSessionTest` (+2), `DrillViewModelTest` (+3, 1 adapté). Installé sur la tablette.
 - *Notes* : pas de réglage de la pause ni de l'arrêt « à la position visée » ; non vérifié visuellement sur la tablette.
-### S8-7 et S8-8
-Voir le plan validé : export PGN (7), démo et clôture (8).
+### S8-7 · Export PGN d'un répertoire
+- [x] Bouton « Exporter » sur chaque répertoire non vide de la liste : `RepertoireListViewModel.exportPgn(id)` écrit le
+  répertoire en une partie PGN (`Repertoire.toGame`, variations pour les autres coups, notes en commentaires) dans un
+  fichier choisi par le joueur (sélecteur de documents Android, sans permission de stockage), avec un message de
+  réussite ou d'échec. Nom proposé : `Nom-du-repertoire.pgn`.
+- [x] Tests : aller-retour export puis relecture (mêmes positions et mêmes coups), répertoire inconnu, nom de fichier
+  sûr. `RepertoireListContent` reçoit désormais ses callbacks groupés (`RepertoireRowActions`). Installé sur la tablette.
+- *Notes* : les notes de la position de départ ne sont pas exportées (limite de `toGame`) ; l'écriture du fichier n'a pas
+  de test automatisé (sélecteur système), à vérifier à la main sur la tablette.
+### S8-8
+Voir le plan validé : démo de bout en bout et clôture du sprint (rétrospective, archive `docs/sprints/s8.md`).
 
 ---
 

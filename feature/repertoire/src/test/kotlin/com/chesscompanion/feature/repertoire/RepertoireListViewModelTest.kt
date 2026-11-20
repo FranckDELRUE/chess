@@ -1,8 +1,11 @@
 package com.chesscompanion.feature.repertoire
 
 import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.pgn.PgnReader
+import com.chesscompanion.core.chess.repertoire.Repertoire
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -119,5 +122,35 @@ class RepertoireListViewModelTest {
         viewModel.onAction(RepertoireListAction.StartRename(ui.items.single().id))
         viewModel.onAction(RepertoireListAction.ChooseSide(Side.BLACK))
         assertTrue(ui.dialog is RepertoireDialog.Rename)
+    }
+
+    private fun graphOf(pgn: String) =
+        PgnReader.readAll(pgn).games.fold(Repertoire.empty(Side.WHITE)) { r, g -> r.merge(g).repertoire }
+
+    @Test
+    fun `a repertoire is exported as PGN that reads back into the same graph`() {
+        create("Ma Italienne")
+        val id = ui.items.single().id
+        val pgn = "[Event \"x\"]" + System.lineSeparator().repeat(2) + "1. e4 e5 2. Nf3 (2. Bc4 Nc6) 2... Nc6 *"
+        val graph = graphOf(pgn)
+        runBlocking { store.save(id, graph) }
+
+        val exported = checkNotNull(runBlocking { viewModel.exportPgn(id) })
+        assertTrue(exported.contains("[Event \"Ma Italienne\"]"))
+        val back = graphOf(exported)
+        assertEquals(graph.nodeCount, back.nodeCount)
+        assertEquals(graph.edgeCount, back.edgeCount)
+    }
+
+    @Test
+    fun `an unknown repertoire exports nothing`() {
+        assertNull(runBlocking { viewModel.exportPgn("nope") })
+    }
+
+    @Test
+    fun `the suggested file name is safe`() {
+        assertEquals("Ma-Sicilienne-Najdorf.pgn", exportFileName("  Ma Sicilienne / Najdorf ?"))
+        assertEquals("repertoire.pgn", exportFileName("???"))
+        assertEquals("repertoire.pgn", exportFileName(null))
     }
 }
