@@ -41,3 +41,5 @@ professeur (S4), lien revue de parties / répertoire (S6).
   premières cartes.
 - Dette héritée à trier au plan : réglages (jeton, niveau), marques jaunes, ouverture lente d'un gros
   répertoire (`docs/backlog.md`, sections « Issu de S7-x »).
+- **Demande de l'utilisateur (2026-11-20)** : refonte de l'éditeur de répertoire (panneau unique mieux ordonné,
+  suites nommables), **planifiée après S8** ; description dans `docs/backlog.md`.
