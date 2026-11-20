@@ -73,7 +73,8 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 ## Issu de S2-5
 - Stocker aussi les résultats de l'analyse en direct (profondeur atteinte) dans `position_analysis`.
 - File d'analyses : annuler une seule partie sans annuler celles qui attendent (aujourd'hui une seule chaîne WorkManager) ; liste des parties analysées (S6).
-- Notification d'analyse : la vérifier à l'écran (permission refusée pendant la démo S2-5) et ajouter « Ouvrir la partie ».
+- ~~Notification d'analyse : la vérifier à l'écran~~ (vérifiée à la démo S2-7) ; ajouter « Ouvrir la partie ».
+- Le statut de la file (« Partie analysée (72 positions) ») est celui de la dernière analyse, même quand une autre partie est affichée (démo S2-7) : l'associer à la partie affichée, avec la liste des parties analysées (S6).
 
 ## Issu de S2-6
 - Déplacer l'écran « Debug moteur » et le benchmark Maia dans le source set `debug/` pour les exclure de l'APK release (aujourd'hui compilés mais inatteignables).

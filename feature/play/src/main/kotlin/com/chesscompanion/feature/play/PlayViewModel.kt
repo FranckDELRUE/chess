@@ -65,14 +65,14 @@ class PlayViewModel
         private val queue: GameAnalysisQueue,
     ) : ViewModel() {
         private val analysis = AnalysisController(analyzer, viewModelScope, stored = queue::stored)
-        private val opponent =
+        private val opponent: OpponentController =
             OpponentController(
                 engine = opponentEngine,
                 scope = viewModelScope,
                 saved = savedState,
                 host =
                     OpponentCallbacks(
-                        onEngineMove = { update(MoveInput(input.session.play(it))) },
+                        onEngineMove = { update(MoveInput(opponent.played(input.session.play(it)))) },
                         onEngineFailed = { notify(PlayMessage.EngineFailed) },
                         onChanged = { _state.value = buildState() },
                     ),
@@ -166,8 +166,12 @@ class PlayViewModel
 
         /** The player's own input: when it changes the position, Stockfish is due to answer. */
         private fun played(next: MoveInput) {
-            if (next.session.position != input.session.position) opponent.humanMoved()
-            update(next)
+            if (next.session.position == input.session.position) {
+                update(next)
+                return
+            }
+            opponent.humanMoved()
+            update(next.copy(session = opponent.played(next.session)))
         }
 
         private fun onNavigation(action: PlayAction.Navigation) {
@@ -208,7 +212,7 @@ class PlayViewModel
                 is PlayAction.PickGame -> {
                     val game = choice?.getOrNull(action.index)
                     choice = null
-                    update(game?.let { MoveInput(GameSession(it)) } ?: input)
+                    update(game?.let { opponent.replaceGame(GameSession(it)) } ?: input)
                 }
                 PlayAction.DismissGameChoice -> {
                     choice = null
@@ -223,7 +227,7 @@ class PlayViewModel
             val position = runCatching { Fen.parse(text) }.getOrNull()
             if (position != null) {
                 message = PlayMessage.PositionLoaded
-                update(MoveInput(GameSession.new(position)))
+                update(opponent.replaceGame(GameSession.new(position)))
                 return
             }
             val import = PgnReader.readAll(text)
@@ -236,7 +240,7 @@ class PlayViewModel
                 }
             when (games.size) {
                 0 -> update(input)
-                1 -> update(MoveInput(GameSession(games.single())))
+                1 -> update(opponent.replaceGame(GameSession(games.single())))
                 else -> {
                     choice = games
                     update(input)
@@ -318,6 +322,12 @@ private fun restoredSession(savedState: SavedStateHandle): GameSession {
     val pgn = savedState.get<String>(KEY_PGN) ?: return GameSession.new()
     val game = runCatching { PgnReader.read(pgn) }.getOrNull() ?: return GameSession.new()
     return GameSession(game, game.mainline.map { 0 })
+}
+
+/** An opened or pasted game replaces the current one, and ends a game against Stockfish (S2-8). */
+private fun OpponentController.replaceGame(session: GameSession): MoveInput {
+    leave()
+    return MoveInput(session)
 }
 
 /** A gesture that picks or moves a piece (as opposed to promotion, flipping, settings). */

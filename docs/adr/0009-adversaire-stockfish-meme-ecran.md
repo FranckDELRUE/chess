@@ -27,8 +27,16 @@ PGN. `PlayViewModel` est aussi à la limite de detekt (11 fonctions par classe).
    partie est finie (mat, nulle, abandon).
 6. **Reprendre un coup** revient au dernier trait du joueur ; les coups repris restent dans l'arbre
    comme variante (aucune perte). **Abandonner** donne le résultat à Stockfish dans le PGN exporté.
+   *Corrigé en S2-8 : jusque-là, le coup rejoué s'ajoutait en variante et la ligne principale gardait
+   les coups repris. Désormais, chaque coup joué contre Stockfish (du joueur ou du moteur) promeut la
+   ligne courante en ligne principale (`GameSession.promoteLine()`), donc l'export, le résultat et
+   « Analyser la partie » portent sur la partie réellement jouée. Naviguer sans jouer ne réordonne rien.*
 7. **Sauvegarde** : réglages, camp et abandon sont gardés avec le PGN dans le `SavedStateHandle` ; si le
    processus est tué pendant la réflexion, Stockfish reprend son coup à la restauration.
+8. **Quitter la partie** (S2-8) : ouvrir ou coller une partie ou une FEN remplace la partie contre
+   Stockfish par une partie à deux joueurs (`OpponentController.leave()`), recherche arrêtée ; ce
+   choix est sauvegardé, pour que l'argument de route `vs=engine` ne rouvre pas les réglages après la
+   mort du processus.
 
 ## Conséquences
 - La force offerte est celle de Stockfish (`UCI_Elo` 1320 à 3190, ou `Skill Level` 0 à 20) : son ELO n'est
