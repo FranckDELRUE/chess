@@ -131,3 +131,44 @@ Tablette : une partie de Heidoji de 72 positions importée par « Ouvrir… », 
 Tests : `:core:data` 8 (Room en mémoire avec Robolectric), `:feature:play` 100 (`GameAnalyzer` 9, worker 3 avec `work-testing`, ViewModel 4, ligne stockée dans le contrôleur, parcours Robolectric du panneau). `ktlintCheck detekt test assembleDebug` passent.
 Écarts : table `analysis_job` ajoutée (WorkManager limite ses données d'entrée à 10 Ko) ; une seule ligne par position au lieu d'une par profondeur ; code dans `:feature:play` en attendant `:feature:review` (S6) ; annuler l'analyse annule aussi les parties en attente (chaîne WorkManager). La note de S2-2 annonçait ≈ 1,5 min par partie de 40 coups : c'est ≈ 3 min, la partie comptant 80 positions.
 Dette : notification non vérifiée à l'écran (permission refusée pendant la démo) ; reprise après arrêt par le système couverte par les tests seulement ; l'analyse en direct ne stocke pas ses propres résultats ; à déplacer dans `:feature:review` en S6.
+
+---
+
+## Rétrospective S2 (brouillon, 2026-11-20 ; à finaliser après la démo)
+
+### Résultat
+- **Critère de vitesse tenu, sans marge** : P18 en médiane 2,05 s sur les 20 milieux de partie de Heidoji (tablette, 4 threads) ; chaque médiane par position est sous 5 s, mais la pire vaut 4,96 s et 2 passes isolées sur 60 dépassent 5 s (jusqu'à 6,1 s).
+- **Critère de fluidité tenu au sens strict** (aucun ANR, aucune pause due à l'analyse), mais pas confortable : images de 32 à 34 ms en médiane pendant une analyse (27 ms sans), en build debug. Le coût vient du redessin de l'échiquier de S1, pas du moteur.
+- Stories 1 à 6 faites, mergées via les PR #21 à #26 (planification : #20). ADR 0008, 0009 et 0010 écrits ; ADR 0004 et 0008 annotés en fin de sprint.
+- Tests : 417 par défaut, contre 307 à la fin de S1 (`:core:chess` 233, `:feature:play` 100, `:core:engine` 57, `:app` 10, `:core:ui` 9, `:core:data` 8), plus les tests instrumentés de `:core:engine` sur la tablette et le benchmark (`-PengineBenchmark`).
+- Modules : `:core:data` reçoit sa première base Room (écart de périmètre validé en planification) ; `:feature:play` dépend de `:core:engine` et `:core:data`.
+
+### Ce qui a bien marché
+- **Un seul moteur derrière un planificateur à priorités** (ADR 0008) : l'adversaire, l'analyse en direct et la file d'analyses se sont branchés sans se gêner ; la préemption mesurée sur la tablette (coup de 500 ms rendu en 0,69 s pendant une recherche de 30 s) a validé le choix.
+- **Le faux moteur UCI en JVM** : préemption, annulation, options rétablies et la course de S2-4 se reproduisent en tests rapides ; la course de `UciEngine` a été corrigée avec un test qui échoue sans la correction.
+- **Des positions de test choisies par une règle écrite et un outil** (S2-2) : la règle se relit et se rejoue, et la leçon de S1 (aucune valeur de référence de mémoire) a tenu tout le sprint.
+- **La tablette branchée à chaque story d'interface** : chaque story de S2-3 à S2-5 a été vérifiée sur l'appareil avant d'être close, contrairement à S1.
+
+### Ce qui a coûté
+- **Une course rare dans `UciEngine`** (≈ 5 % des essais d'un test instrumenté) n'est apparue qu'en S2-4, sur l'appareil : les tests JVM de S2-1 ne couvraient pas une annulation pendant l'envoi de `go`. À retenir : pour du code concurrent, répéter les tests instrumentés (plusieurs dizaines d'essais) avant de clore.
+- **La fluidité** a demandé trois essais d'optimisation sans effet net avant d'identifier la vraie cause (le redessin de l'échiquier) : mesurer d'abord avec `dumpsys gfxinfo`, sur un build release, avant d'optimiser.
+- **Une estimation fausse** (≈ 1,5 min par partie de 40 coups au lieu de ≈ 3 min, 80 positions) : compter en demi-coups dès le départ.
+- **Le sprint s'est étiré** : S2-1 à S2-4 le 2026-10-19 et 20, S2-5 et S2-6 le 2026-11-20.
+- **Fins de ligne** : `core.autocrlf=true` a extrait le corpus en CRLF et cassé un test de S1 (corrigé dans le test, `.gitattributes` au backlog).
+
+### Dette restante
+| Dette | Où | Quand |
+| --- | --- | --- |
+| Fluidité : mesurer en release, alléger le redessin de l'échiquier | S2-3, backlog | avant S13 |
+| Analyse en direct sans historique des coups (répétitions ignorées), interrupteur non sauvegardé, premier coup d'une ligne seulement | S2-3, backlog | S4 ou S6 |
+| Préchauffage de Stockfish ; ELO de Stockfish non calibré sur Chess.com ou Lichess | S2-4, backlog | S3 |
+| Notification d'analyse non vérifiée à l'écran ; reprise après arrêt par le système testée en JVM seulement | S2-5 | démo S2-7 |
+| File d'analyses dans `:feature:play` ; annulation d'une seule partie ; analyse en direct non stockée | S2-5, backlog | S6 |
+| Code de debug compilé dans l'APK release (inatteignable) ; APK de 150 Mo | S2-6, backlog | S13 |
+| Benchmark à 4 et 6 threads, résultats dans un fichier ; `.gitattributes` | S2-1, S2-2, backlog | à planifier |
+
+### Ajustements proposés pour la suite
+- **S3** (Maia) : Maia ne passe pas par l'`EngineScheduler` (ADR 0008) ; l'écran de partie et `OpponentController` (ADR 0009) peuvent accueillir un adversaire Maia sans nouvel écran. Préchauffer le moteur à l'ouverture de la partie, ajouter la pendule et l'enregistrement automatique des parties dans `:core:data` (la base Room existe).
+- **S4** (professeur) : la perte de chances de gain s'appuiera sur `Score.winProbability` (S2-1) et sur l'analyse MultiPV ; envoyer l'historique des coups dans l'analyse en direct pour ne pas rater une répétition.
+- **S6** (revue de parties) : déplacer `GameAnalyzer`, le worker et la file dans `:feature:review` ; `position_analysis` est déjà réutilisable ; ajouter la liste des parties analysées.
+- Mesurer la fluidité sur un build release dès qu'un écran ajoute du dessin à l'échiquier (flèche du meilleur coup en S4).

@@ -25,7 +25,9 @@ recherche : on ne peut que l'arrêter (`stop`).
    répétitions.
 6. **Échanges UCI jamais coupés au milieu** : lectures et attentes de `readyok` non annulables ; une
    annulation envoie `stop` aussitôt (sans attendre la ligne suivante du moteur) puis lit la sortie
-   jusqu'au `bestmove`. La recherche suivante part ainsi d'un flux propre.
+   jusqu'au `bestmove`. La recherche suivante part ainsi d'un flux propre. *Complété en S2-4 :
+   la boucle de lecture vérifie aussi `isActive`, sinon une annulation arrivée pendant l'envoi
+   de `go` laissait la recherche courir jusqu'à sa fin naturelle.*
 
 ## Conséquences
 - L'adversaire répond dans son temps par coup même pendant une analyse de fond (mesuré sur la
@@ -33,4 +35,6 @@ recherche : on ne peut que l'arrêter (`stop`).
 - Une analyse en direct interrompue reprend à la profondeur 1 : l'écran garde ses lignes tant que
   la nouvelle profondeur ne les dépasse pas (S2-3).
 - Le moteur démarre au premier besoin (copie du réseau NNUE comprise), pas au lancement de l'app.
+- L'adversaire (S2-4) et la file d'analyses (S2-5) envoient la position de départ et les coups ;
+  l'analyse en direct (S2-3) n'envoie encore que la FEN de la position affichée (dette au backlog).
 - Maia (ONNX) n'est pas concerné : il ne partage pas Stockfish et sert ses requêtes directement.

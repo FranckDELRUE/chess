@@ -31,10 +31,12 @@ docs/
   backlog.md                       Idées hors sprint
   sprints/current.md               Sprint en cours, stories et critères (vide entre deux sprints)
   sprints/s0.md, s1.md             Sprints terminés (notes, dette, rétrospective)
-  adr/                             Décisions d'architecture (0001 à 0007)
+  adr/                             Décisions d'architecture (0001 à 0010)
   spikes/rapport-s0.md             Mesures des spikes de S0
+  spikes/rapport-s2.md             Mesures de Stockfish sur les positions de Heidoji (S2-2)
   prompts/                         Instructions du projet Claude, prompts du S0
 testdata/pgn/                      Corpus de parties de Heidoji pour les tests
+testdata/positions/                20 milieux de partie de test pour Stockfish (règle dans le README)
 ```
 
 ## Modules
@@ -43,10 +45,10 @@ testdata/pgn/                      Corpus de parties de Heidoji pour les tests
 | --- | --- | --- |
 | `:core:chess` | Règles, FEN, SAN, PGN, arbre de coups (Kotlin pur) | S1 : perft exact, 100 parties réimportées |
 | `:core:ui` | Échiquier Compose interactif, annotations | S1 |
-| `:core:engine` | `ChessEngine`, Stockfish (JNI), Maia (ONNX) | coups légaux par les règles depuis S1-5 |
-| `:core:data` | Room, dépôts | squelette |
-| `:feature:play` | Écran de partie à deux joueurs | S1 (créé avant S3, voir ADR 0007) |
-| `:app` | Navigation, thème, écran « Debug moteur » | |
+| `:core:engine` | `ChessEngine`, Stockfish (JNI), Maia (ONNX), `EngineScheduler` (moteur unique partagé, ADR 0008) | S2 : MultiPV, force réglable, priorités |
+| `:core:data` | Room : analyses par position, file d'analyses (ADR 0010) | S2 : `ChessDatabase` v1 |
+| `:feature:play` | Écran de partie : deux joueurs, contre Stockfish, analyse en direct, analyse de partie en arrière-plan | S1, S2 (ADR 0007, 0009, 0010) |
+| `:app` | Navigation, thème, initialisation de WorkManager ; écran « Debug moteur » en debug seulement | |
 
 ## Moteur Stockfish (à partir de S0-4)
 
@@ -72,6 +74,7 @@ Sans les modèles, `MaiaPipelineTest` est ignoré (cas de la CI).
 | Installer sur la tablette | `gradlew.bat installDebug` |
 | Tests (JUnit 5, dont l'UI sur la JVM) | `gradlew.bat test` |
 | Perft profond (≈ 750 M nœuds, environ 1 min) | `gradlew.bat :core:chess:test -PslowTests` |
+| Benchmark Stockfish sur la tablette (lancer `adb logcat -G 4M` avant) | `gradlew.bat :core:engine:connectedDebugAndroidTest -PengineBenchmark` |
 | Qualité | `gradlew.bat ktlintCheck detekt` |
 | Corriger le style automatiquement | `gradlew.bat ktlintFormat` |
 
