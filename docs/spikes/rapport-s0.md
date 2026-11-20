@@ -48,6 +48,7 @@ plus que la taille du modèle ; avec le JSON brut, aucun modèle ne dépasse 4 r
 - **Limite des données** : les positions 4, 5, 6 et 9 sont très déséquilibrées (+6 à +10 pions) ;
   ce ne sont pas des milieux de partie équilibrés. Les temps restent valides pour dimensionner,
   mais la série mérite d'être remplacée par des positions équilibrées tirées du corpus Heidoji (S0-8).
+  **Fait en S2-2** : 20 milieux de partie équilibrés de Heidoji, voir `docs/spikes/rapport-s2.md`.
 - Non mesuré : 1 et 2 threads (le sélecteur existe dans l'écran de debug).
 
 ### Mémoire

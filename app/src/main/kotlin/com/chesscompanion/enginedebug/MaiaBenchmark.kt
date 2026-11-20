@@ -2,9 +2,12 @@ package com.chesscompanion.enginedebug
 
 import android.content.Context
 import com.chesscompanion.core.engine.EngineEvent
+import com.chesscompanion.core.engine.EnginePriority
+import com.chesscompanion.core.engine.EngineScheduler
 import com.chesscompanion.core.engine.RulesLegalMoveProvider
 import com.chesscompanion.core.engine.Score
-import com.chesscompanion.core.engine.UciEngine
+import com.chesscompanion.core.engine.SearchLimit
+import com.chesscompanion.core.engine.SearchRequest
 import com.chesscompanion.core.engine.maia.Lc0Encoder
 import com.chesscompanion.core.engine.maia.MaiaEngine
 import com.chesscompanion.core.engine.maia.OnnxMaiaNetwork
@@ -29,14 +32,11 @@ class MaiaBenchmark(
         val xnnpack: Boolean,
     )
 
-    suspend fun run(stockfish: UciEngine) {
+    suspend fun run(stockfish: EngineScheduler) {
         val fens = BenchmarkPositions.MAIA_FENS
         log("maia start pss=${DeviceProbe.pssMb()}MB temp=${DeviceProbe.batteryTempC(context)}C")
         val bestScores =
-            fens.map { fen ->
-                stockfish.newGame()
-                score(stockfish, fen, emptyList())
-            }
+            fens.map { fen -> score(stockfish, fen, emptyList()) }
         log("stockfish d$DEPTH reference done")
 
         NETS.forEach { net ->
@@ -89,7 +89,7 @@ class MaiaBenchmark(
     private suspend fun measureMoves(
         net: String,
         bytes: ByteArray,
-        stockfish: UciEngine,
+        stockfish: EngineScheduler,
         bestScores: List<Int>,
     ) {
         val maia = MaiaEngine(OnnxMaiaNetwork(bytes))
@@ -102,7 +102,6 @@ class MaiaBenchmark(
             val evaluation = maia.evaluate(fen)
             val top = evaluation.priors.first()
             val isLegal = top.move in RulesLegalMoveProvider.legalMoves(fen)
-            stockfish.newGame()
             val loss = (bestScores[i] - score(stockfish, fen, listOf(top.move))).coerceAtLeast(0)
             if (isLegal) legal++
             if (evaluation.rawBestIsLegal) rawLegal++
@@ -124,12 +123,15 @@ class MaiaBenchmark(
 
     /** Stockfish score (centipawns, side to move) at depth [DEPTH], optionally restricted to [moves]. */
     private suspend fun score(
-        stockfish: UciEngine,
+        stockfish: EngineScheduler,
         fen: String,
         moves: List<String>,
     ): Int {
         var last: Score? = null
-        stockfish.analyze(fen, DEPTH, moves).collect { if (it is EngineEvent.Info) last = it.info.score }
+        val request = SearchRequest(fen, SearchLimit.Depth(DEPTH), searchMoves = moves, newGame = true)
+        stockfish.search(EnginePriority.BACKGROUND, request).collect {
+            if (it is EngineEvent.Info) last = it.info.score
+        }
         return when (val s = last) {
             is Score.Centipawns -> s.value.coerceIn(-SCORE_CAP, SCORE_CAP)
             is Score.Mate -> if (s.moves > 0) SCORE_CAP - min(abs(s.moves), MATE_SPREAD) else -SCORE_CAP

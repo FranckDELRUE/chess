@@ -1,4 +1,4 @@
-"""S0-7: Stockfish 19 x86-64 on all cores, time to reach depth 30 on the 10 positions of S0-4.
+"""S0-7, S2-2: Stockfish 19 x86-64 on all cores, time to reach depth 30 on the benchmark middlegames.
 
 Usage: python -m bench.stockfish [--threads 32] [--hash 2048] [--depth 30]
 """
@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from bench.common import SF_FENS, median, save_results
+from bench.common import median, save_results, sf_fens
 from bench.uci import UciEngine
 from station.config import StationConfig
 
@@ -23,7 +23,7 @@ def run(threads: int, hash_mb: int, depth: int) -> dict:
         engine.set_option("Hash", hash_mb)
         engine.ready()
         print(f"{engine.name} threads={threads} hash={hash_mb}MB depth={depth}")
-        for i, fen in enumerate(SF_FENS, start=1):
+        for i, fen in enumerate(sf_fens(), start=1):
             engine.new_game()
             result = engine.go(fen, f"depth {depth}")
             last = result.last

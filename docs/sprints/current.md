@@ -32,21 +32,21 @@ Sprint précédent : `docs/sprints/s1.md`.
 ## Stories
 
 ### S2-1 · API moteur et partage du moteur unique
-- [ ] `ChessEngine` : MultiPV, `go movetime`, `go nodes`, `searchmoves` ; options de force
+- [x] `ChessEngine` : MultiPV, `go movetime`, `go nodes`, `searchmoves` ; options de force
   (`Skill Level`, `UCI_LimitStrength`, `UCI_Elo`).
-- [ ] Score ramené au point de vue des blancs ; conversion en probabilité de gain pour la barre.
-- [ ] `EngineScheduler` : tâches à priorité ; une tâche plus prioritaire interrompt (`stop`) une
+- [x] Score ramené au point de vue des blancs ; conversion en probabilité de gain pour la barre.
+- [x] `EngineScheduler` : tâches à priorité ; une tâche plus prioritaire interrompt (`stop`) une
   recherche moins prioritaire, qui reprend ensuite ; chaque tâche applique ses propres options.
-- [ ] ADR 0008.
+- [x] ADR 0008.
 
 **Acceptation** : tests JVM avec le faux transport (MultiPV, préemption, reprise, options
 rétablies entre deux tâches, annulation) ; test instrumenté de MultiPV 3 sur la tablette.
 
 ### S2-2 · Positions de test du corpus Heidoji et nouvelles mesures
-- [ ] Environ 20 positions de milieu de partie tirées de `testdata/pgn/chesscom-heidoji-100.pgn`
+- [x] Environ 20 positions de milieu de partie tirées de `testdata/pgn/chesscom-heidoji-100.pgn`
   par `PgnReader`, selon une règle écrite et reproductible ; elles remplacent les 10 positions
   de S0-4 (`BenchmarkPositions`).
-- [ ] Mesures P16, P18, P20 sur la tablette (4 threads) et sur la station PC (`station-pc/bench`).
+- [x] Mesures P16, P18, P20 sur la tablette (4 threads) et sur la station PC (`station-pc/bench`).
 
 **Acceptation** : P18 sous 5 s sur chaque position (sinon, écart signalé avant tout réglage) ;
 mesures consignées dans `docs/spikes/rapport-s0.md` ou un rapport S2.
@@ -96,3 +96,16 @@ une partie de Heidoji analysée sur la tablette, annulation vérifiée.
 
 ## Notes de sprint
 _(à compléter en fin de story : fait, dette, ajustements)_
+
+**S2-1** — Fait : `SearchRequest` (FEN + coups UCI, limite `Depth`/`MoveTime`/`Nodes`, `searchmoves`, MultiPV, force, `newGame`) remplace la surcharge `analyze(fen, depth, searchMoves)` ; `EngineStrength` (`Full`, `Skill` 0–20, `Elo` 1320–3190, bornes relues dans `engine.cpp` et `search.h` de Stockfish 19). `Score.forWhite`, `winningChances`, `winProbability` : formule de Lichess relue dans `ui/lib/src/ceval/winningChances.ts` (lila) et `eval.scala` (scalachess). `UciEngine` envoie `position fen … moves …`, n'envoie que les options qui changent et ne coupe plus jamais un échange au milieu : lectures non annulables, `stop` envoyé dès l'annulation par un observateur, sortie lue jusqu'au `bestmove`. `EngineScheduler` (priorités `OPPONENT > LIVE > BACKGROUND`, préemption par relance avec `EngineEvent.Restarted`, démarrage paresseux) fourni par Hilt (`EngineModule`, Hilt ajouté à `:core:engine`) ; `EngineProvider` supprimé, écran de debug et benchmark Maia migrés en priorité `BACKGROUND`. `MaiaEngine` accepte une `SearchRequest` (coups joués par `:core:chess`). ADR 0008, `CLAUDE.md` mis à jour. Tests : `:core:engine` passe de 31 à 56 tests JVM (faux moteur à recherches longues, préemption, ordre, annulations, options rétablies ; une mutation qui désactive la préemption fait échouer 2 tests) ; premier `androidTest` de `:core:engine`, vert sur la tablette : MultiPV 3 à profondeur 12 en 2,0 s (3 premiers coups distincts à chaque profondeur), coup adverse de 500 ms (`UCI_Elo` 1500) rendu en 0,69 s en interrompant une recherche de fond de 30 s. Dépendances de test : `androidx.test:runner` 1.6.2 et `androidx.test.ext:junit` 1.2.1 (Apache 2.0). `ktlintCheck detekt test assembleDebug` passent.
+Hors story : `PlayScreenTest` (S1-7) échouait sur ce poste parce que git y extrait le corpus PGN en CRLF (`core.autocrlf=true`) ; le test normalise maintenant les fins de ligne.
+Dette : une préemption juste après l'attribution du moteur, avant le lancement de la recherche, émet un `Restarted` sans recherche réellement interrompue (sans effet visible) ; `.gitattributes` pour fixer les fins de ligne de `testdata/` à voir ; pas de changement visible dans l'app, écran de debug non revérifié à la main sur la tablette (couvert par le test instrumenté du planificateur).
+
+**S2-2** — Fait : 20 milieux de partie de Heidoji choisis par une règle reproductible en deux étapes (`testdata/positions/`, README). Étape 1 : `HeidojiSelection` (tests de `:app`), 261 candidates. Étape 2 : `station-pc/bench/select_positions.py`, Stockfish à 1 thread, ±150 cp à profondeur 18. Les tests vérifient que les fichiers correspondent à la règle et que `BenchmarkPositions.FENS` est identique au fichier. Le fichier est partagé par la tablette (`BenchmarkPositions`, assets du `androidTest` de `:core:engine`) et le PC (`bench/common.py`, `sf_fens()`). Le benchmark tablette est un test instrumenté `StockfishBenchmark`, exclu par défaut et lancé avec `-PengineBenchmark` ; il passe par l'`EngineScheduler`, avec 3 passes à P18 et un échauffement non chronométré. Écran de debug : lot de 20×3. Mesures et verdict dans `docs/spikes/rapport-s2.md` :
+- P18 en médiane 2,05 s ; toutes les médianes par position restent sous 5 s, mais la pire vaut **4,96 s**, et 2 passes isolées sur 60 dépassent 5 s (jusqu'à 6,1 s). La deuxième série donne le même résultat.
+- PC : P30 en médiane 17,4 s.
+
+Critère du sprint tenu au sens validé (médiane par position), **sans marge**. Pour S2-3, afficher les lignes au fil des profondeurs sans attendre P18. Entrée du backlog issue de S0-8 rayée. `ktlintCheck detekt test assembleDebug` et pytest de la station passent.
+Écart validé : l'étape 1 ne gardait qu'un demi-coup par partie et ne donnait que 19 positions équilibrées ; elle liste maintenant tous les demi-coups admissibles de 30 à 40, avec toujours une position par partie.
+Leçon : le tampon logcat de la tablette (256 Kio) perd les premières lignes d'un lot ; il faut lancer `adb logcat -G 4M` avant (c'est noté dans le KDoc du benchmark).
+Dette : 4 et 6 threads non mesurés ; le benchmark ne publie ses résultats que dans logcat (pas de fichier).

@@ -62,7 +62,13 @@ class PlayScreenTest {
     /** S1-7 acceptance: paste a game of Heidoji, browse it, copy it back as PGN. */
     @Test
     fun importBrowseAndExportAHeidojiGame() {
-        val original = File("../../testdata/pgn/chesscom-heidoji-100.pgn").readText().split("\n\n[Event").first()
+        // Git may check the corpus out with CRLF line endings on Windows (core.autocrlf).
+        val original =
+            File("../../testdata/pgn/chesscom-heidoji-100.pgn")
+                .readText()
+                .replace("\r\n", "\n")
+                .split("\n\n[Event")
+                .first()
         val game = PgnReader.read(original)
         clipboard.setPrimaryClip(ClipData.newPlainText("PGN", original))
         showScreen()

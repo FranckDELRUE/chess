@@ -13,6 +13,16 @@ import kotlin.concurrent.thread
 object StockfishEngine {
     const val NETWORK_FILE = "nn-1a298aa575a0.nnue"
 
+    /** Réglages des mesures de S0-4 sur la tablette (`docs/spikes/rapport-s0.md`). */
+    const val DEFAULT_THREADS = 4
+    const val DEFAULT_HASH_MB = 64
+
+    /** Crée le moteur et le démarre avec [DEFAULT_THREADS] et [DEFAULT_HASH_MB]. */
+    suspend fun start(context: Context): UciEngine =
+        create(context).also {
+            it.start(mapOf("Threads" to DEFAULT_THREADS.toString(), "Hash" to DEFAULT_HASH_MB.toString()))
+        }
+
     /** Copie le réseau NNUE depuis les assets (au premier lancement) et crée le moteur. */
     suspend fun create(context: Context): UciEngine {
         val network = withContext(Dispatchers.IO) { installNetwork(context) }

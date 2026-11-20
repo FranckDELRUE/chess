@@ -10,7 +10,7 @@
     <string name="engine_debug_threads">Threads</string>
     <string name="engine_debug_analyze">Analyser</string>
     <string name="engine_debug_stop">Stop</string>
-    <string name="engine_debug_batch">Lot 10×3</string>
+    <string name="engine_debug_batch">Lot 20×3</string>
     <string name="engine_debug_thermal">Chauffe 5 min</string>
     <string name="engine_debug_maia">Lot Maia 20×3</string>
     <string name="engine_debug_status">État : %1$s</string>

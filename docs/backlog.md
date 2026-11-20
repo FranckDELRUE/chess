@@ -29,8 +29,9 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
   Q4_K_M contre Q5, `num_gpu`, application seule.
 
 ## Issu de S0-8
-- S2 : remplacer les 10 positions de test Stockfish de S0-4 (plusieurs déséquilibrées) par des
-  positions de milieu de partie tirées du corpus Heidoji, puis refaire les mesures tablette et PC.
+- ~~S2 : remplacer les 10 positions de test Stockfish de S0-4 (plusieurs déséquilibrées) par des
+  positions de milieu de partie tirées du corpus Heidoji, puis refaire les mesures tablette et PC.~~
+  Fait en S2-2 (`testdata/positions/`, `docs/spikes/rapport-s2.md`).
 - Supprimer `spike/llm/` du dépôt si le LLM embarqué n'est pas réévalué d'ici S13.
 
 ## Issu de S1-6

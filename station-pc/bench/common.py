@@ -1,4 +1,4 @@
-"""Shared helpers for the S0-7 benchmarks: positions, results files, GPU memory."""
+"""Shared helpers for the benchmarks (S0-7, S2-2): positions, results files, GPU memory."""
 
 from __future__ import annotations
 
@@ -10,19 +10,22 @@ from pathlib import Path
 
 from station.config import REPO_ROOT, StationConfig
 
-# The 10 middlegames of S0-4 (`app/.../enginedebug/BenchmarkPositions.kt`), so PC and tablet compare.
-SF_FENS = [
-    "r2q1rk1/pp2bppp/2n1pn2/3p4/3P4/2N1PN2/PP2BPPP/R2Q1RK1 w - - 0 10",
-    "r1bq1rk1/pp2ppbp/2np1np1/8/3NP3/2N1BP2/PPPQ2PP/R3KB1R w KQ - 2 9",
-    "r1bqkb1r/pp3ppp/2n1pn2/2pp4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 6",
-    "2rq1rk1/pp1bppbp/3p1np1/8/3NP3/2N1BP2/PPPQ2PP/2KR1B1R w - - 0 11",
-    "r3k2r/pp1nbppp/2p1pn2/q7/2PP4/2N1PN2/PPQ2PPP/R1B1KB1R w KQkq - 3 9",
-    "r1b2rk1/ppq1bppp/2n1pn2/2pp4/3P1B2/2PBPN2/PP1N1PPP/R2Q1RK1 w - - 0 10",
-    "rnbq1rk1/pp2bppp/4pn2/2pp4/2PP4/2N2NP1/PP2PPBP/R1BQ1RK1 b - - 0 7",
-    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-    "2r2rk1/pp2qppp/2n1p3/3pP3/3P4/P1N1B3/1PQ2PPP/R4RK1 w - - 0 15",
-    "r1bq1rk1/ppp2ppp/2n2n2/3pp3/1bP5/2NP1NP1/PP2PPBP/R1BQ1RK1 w - - 0 7",
-]
+HEIDOJI_CANDIDATES = REPO_ROOT / "testdata/positions/heidoji-candidates.txt"
+# The 20 middlegames of S2-2, shared with the tablet (`BenchmarkPositions.FENS`) so PC and tablet compare.
+HEIDOJI_MIDDLEGAMES = REPO_ROOT / "testdata/positions/heidoji-middlegames.txt"
+
+
+def read_positions(path: Path, keep_comment: bool = False) -> list[str]:
+    """Non-blank, non-`#` lines; without [keep_comment], only the FEN before ` ;`."""
+    lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
+    entries = [line for line in lines if line and not line.startswith("#")]
+    return entries if keep_comment else [line.split(" ;")[0] for line in entries]
+
+
+def sf_fens() -> list[str]:
+    """Stockfish benchmark positions (S2-2; S0-4 used 10 hand-picked ones, see rapport-s0.md)."""
+    return read_positions(HEIDOJI_MIDDLEGAMES)
+
 
 MAIA_POSITIONS = REPO_ROOT / "core/engine/src/test/resources/maia-positions.txt"
 
