@@ -34,15 +34,17 @@ const val EDITOR_DELETE_CONFIRM_TAG = "editor-delete-confirm"
 @Composable
 fun RepertoireEditorScreen(viewModel: RepertoireEditorViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val explorer by viewModel.explorerState.collectAsStateWithLifecycle()
     // The app may be killed once it is in the background: write what is pending.
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.saveNow() }
-    RepertoireEditorContent(state, viewModel::onAction)
+    RepertoireEditorContent(state, viewModel::onAction, explorer)
 }
 
 @Composable
 internal fun RepertoireEditorContent(
     state: RepertoireEditorUiState,
     onAction: (EditorAction) -> Unit,
+    explorer: ExplorerUiState = ExplorerUiState(),
 ) {
     Surface(Modifier.fillMaxSize()) {
         when (state.status) {
@@ -52,7 +54,7 @@ internal fun RepertoireEditorContent(
                     stringResource(R.string.editor_not_found),
                     Modifier.padding(16.dp).testTag(EDITOR_NOT_FOUND_TAG),
                 )
-            EditorStatus.READY -> EditorLayout(state, onAction)
+            EditorStatus.READY -> EditorLayout(state, explorer, onAction)
         }
     }
     state.promotionSide?.let { side ->
@@ -65,6 +67,7 @@ internal fun RepertoireEditorContent(
 @Composable
 private fun EditorLayout(
     state: RepertoireEditorUiState,
+    explorer: ExplorerUiState,
     onAction: (EditorAction) -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
@@ -72,12 +75,12 @@ private fun EditorLayout(
         if (maxWidth > maxHeight) {
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 board(Modifier.weight(1f).fillMaxSize())
-                EditorPanel(state, onAction, Modifier.weight(1f).fillMaxSize())
+                EditorPanel(state, explorer, onAction, Modifier.weight(1f).fillMaxSize())
             }
         } else {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 board(Modifier.fillMaxWidth().weight(1f))
-                EditorPanel(state, onAction, Modifier.fillMaxWidth().weight(1f))
+                EditorPanel(state, explorer, onAction, Modifier.fillMaxWidth().weight(1f))
             }
         }
     }

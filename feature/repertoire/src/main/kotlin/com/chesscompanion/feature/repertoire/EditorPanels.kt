@@ -63,6 +63,7 @@ private const val BOOK_WEIGHT = 2f
 @Composable
 internal fun EditorPanel(
     state: RepertoireEditorUiState,
+    explorer: ExplorerUiState,
     onAction: (EditorAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,6 +75,7 @@ internal fun EditorPanel(
             Header(state)
             NavigationRow(state, onAction)
             Continuations(state, onAction)
+            ExplorerSection(explorer, onAction)
             MarksBar(state, onAction)
             CommentField(state, onAction)
             SourceFields(state, onAction)

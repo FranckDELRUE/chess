@@ -8,6 +8,11 @@ import com.chesscompanion.core.data.Migrations
 import com.chesscompanion.core.data.RepertoireStore
 import com.chesscompanion.core.data.RoomAnalysisStore
 import com.chesscompanion.core.data.RoomRepertoireStore
+import com.chesscompanion.core.data.explorer.CachedExplorer
+import com.chesscompanion.core.data.explorer.ExplorerLookup
+import com.chesscompanion.core.data.explorer.KeystoreTokenStore
+import com.chesscompanion.core.data.explorer.KtorExplorerFetcher
+import com.chesscompanion.core.data.explorer.TokenStore
 import com.chesscompanion.core.data.study.KtorStudyFetcher
 import com.chesscompanion.core.data.study.StudyFetcher
 import dagger.Module
@@ -36,7 +41,7 @@ object DataModule {
     ): ChessDatabase =
         Room
             .databaseBuilder(context, ChessDatabase::class.java, ChessDatabase.NAME)
-            .addMigrations(Migrations.V1_TO_V2)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3)
             .build()
 
     @Provides
@@ -49,16 +54,32 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideStudyFetcher(): StudyFetcher =
-        KtorStudyFetcher(
-            HttpClient(OkHttp) {
-                expectSuccess = false
-                install(HttpTimeout) {
-                    connectTimeoutMillis = CONNECT_TIMEOUT_MS
-                    requestTimeoutMillis = REQUEST_TIMEOUT_MS
-                }
-                // A generic client name: no account, no contact detail, no token.
-                defaultRequest { header(HttpHeaders.UserAgent, "ChessCompanion") }
-            },
-        )
+    fun provideHttpClient(): HttpClient =
+        HttpClient(OkHttp) {
+            expectSuccess = false
+            install(HttpTimeout) {
+                connectTimeoutMillis = CONNECT_TIMEOUT_MS
+                requestTimeoutMillis = REQUEST_TIMEOUT_MS
+            }
+            // A generic client name: no account, no contact detail. No token here (ADR 0013).
+            defaultRequest { header(HttpHeaders.UserAgent, "ChessCompanion") }
+        }
+
+    @Provides
+    @Singleton
+    fun provideStudyFetcher(client: HttpClient): StudyFetcher = KtorStudyFetcher(client)
+
+    @Provides
+    @Singleton
+    fun provideTokenStore(
+        @ApplicationContext context: Context,
+    ): TokenStore = KeystoreTokenStore(context)
+
+    @Provides
+    @Singleton
+    fun provideExplorer(
+        client: HttpClient,
+        tokens: TokenStore,
+        database: ChessDatabase,
+    ): ExplorerLookup = CachedExplorer(KtorExplorerFetcher(client, tokens), database.explorerDao())
 }

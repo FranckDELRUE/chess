@@ -67,6 +67,8 @@ internal data class EditorModel(
             EditorAction.Back -> if (trail.isEmpty()) this else show(repertoire, trail.dropLast(1))
             EditorAction.ToStart -> show(repertoire, emptyList())
             is EditorAction.Follow -> follow(action.uci)
+            // A move proposed from outside (the explorer) enters only if it is legal here (rule 2).
+            is EditorAction.PlayUci -> Move.parseUci(action.uci)?.takeIf(position::isLegal)?.let(::play) ?: this
             EditorAction.Flip -> copy(flipped = !flipped)
             else -> edit(action)
         }

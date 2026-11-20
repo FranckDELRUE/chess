@@ -86,10 +86,10 @@ d'import mesuré sur la tablette.
 l'analyse des erreurs HTTP avec un faux transport.
 
 ### S7-7 · Explorateur
-- [ ] Spike court : accès à l'explorateur Lichess (jeton requis ou non), décision consignée.
-- [ ] Statistiques de la position (coups, parties, résultats) filtrées par niveau, mises en cache dans Room.
-- [ ] Évaluation Stockfish de la position via `EngineScheduler` (priorité analyse en direct).
-- [ ] Ajouter un coup de l'explorateur au répertoire.
+- [x] Spike court : accès à l'explorateur Lichess (jeton requis ou non), décision consignée.
+- [x] Statistiques de la position (coups, parties, résultats) filtrées par niveau, mises en cache dans Room.
+- [x] Évaluation Stockfish de la position via `EngineScheduler` (priorité analyse en direct).
+- [x] Ajouter un coup de l'explorateur au répertoire.
 
 **Acceptation** : une position déjà consultée s'affiche sans réseau ; l'analyse ne bloque pas l'UI (aucun
 ANR) ; test avec faux transport réseau.
@@ -167,3 +167,19 @@ erreurs HTTP, hors ligne, taille), ViewModel, écran. **Vérifié sur la tablett
 test supprimé. Non vérifié sur la tablette : affichage des flèches/commentaires importés, mode avion (couvert
 par les tests JVM). Dette : une étude dont des chapitres partent d'une autre position est rejetée en
 `DIFFERENT_START` ; pas de jeton ni de nouvelle tentative sur 429 ; UTF-8 uniquement.
+
+**S7-7** (2026-11-20) : explorateur Lichess dans l'éditeur. **Spike** : l'API répond 401 sans jeton, d'où l'ADR 0013
+(jeton personnel facultatif, sans permission, chiffré par une clé AES-GCM de l'Android Keystore, envoyé au seul
+`explorer.lichess.ovh`). `:core:data.explorer` : `KtorExplorerFetcher` (aucune requête sans jeton, erreurs classées :
+pas de jeton, jeton refusé, limite, hors ligne, serveur), `CachedExplorer` (cache Room `explorer_position`,
+base v3 avec `Migrations.V2_TO_V3` testée, 7 jours, repli sur le cache si le réseau échoue), `KeystoreTokenStore`.
+Éditeur : `ExplorerController` (statistiques par niveau Débutant/Club/Fort/Maître, évaluation Stockfish via
+`EngineScheduler` en priorité `LIVE`, 2 s, annulée à chaque changement de position), panneau avec parties,
+pourcentages et barre de résultats, bouton Ajouter/Suivre qui passe par `Repertoire.add` (coup illégal refusé,
+SAN recalculé en français, jamais celui de Lichess). Tests : faux transport, cache, migration, contrôleur via le
+ViewModel. **Tablette** : migration v2→v3 sans perte, évaluation affichée (+0,28 au départ, +0,30 après 1. e4,
+vue des Blancs), enchaînement rapide de positions sans blocage, message « pas de jeton », puis stockage chiffré
+et requête réelle avec un faux jeton → 401 → « Lichess a refusé le jeton » ; faux jeton et répertoire de test
+retirés. **Non vérifié** : l'affichage des statistiques réelles (aucun jeton valide saisi) ; elles ne sont
+couvertes que par les tests JVM. Dette : jeton saisi dans le panneau (pas de réglages), évaluation à durée fixe,
+niveau non mémorisé.

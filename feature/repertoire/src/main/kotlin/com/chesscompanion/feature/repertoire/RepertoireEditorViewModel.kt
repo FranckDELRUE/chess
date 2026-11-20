@@ -5,9 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chesscompanion.core.chess.repertoire.importPgn
 import com.chesscompanion.core.data.RepertoireStore
+import com.chesscompanion.core.data.explorer.ExplorerLookup
+import com.chesscompanion.core.data.explorer.TokenStore
 import com.chesscompanion.core.data.study.StudyFetcher
 import com.chesscompanion.core.data.study.StudyRef
 import com.chesscompanion.core.data.study.StudyResult
+import com.chesscompanion.core.engine.EngineScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -37,10 +40,17 @@ class RepertoireEditorViewModel
         savedState: SavedStateHandle,
         private val store: RepertoireStore,
         private val studies: StudyFetcher,
+        explorer: ExplorerLookup,
+        tokens: TokenStore,
+        engine: EngineScheduler,
     ) : ViewModel() {
         private val id: String = savedState.get<String>(REPERTOIRE_ID_ARG).orEmpty()
         private val _state = MutableStateFlow(RepertoireEditorUiState())
         val state: StateFlow<RepertoireEditorUiState> = _state.asStateFlow()
+        private val explorerPanel = ExplorerController(explorer, tokens, engine, viewModelScope)
+
+        /** The explorer panel: statistics and evaluation of the position shown. */
+        val explorerState: StateFlow<ExplorerUiState> = explorerPanel.state
 
         private var model: EditorModel? = null
         private var name = ""
@@ -77,6 +87,7 @@ class RepertoireEditorViewModel
                 is EditorAction.FetchStudy -> fetchStudy(action.input)
                 is EditorAction.RunImport -> runImport(action.text)
                 EditorAction.ImportFileUnreadable -> setImport(ImportUiState.FileUnreadable)
+                is EditorAction.Explorer -> explorerPanel.onAction(action.action)
                 // Edits wait for the end of an import, which would overwrite them.
                 else -> if (_state.value.import !is ImportUiState.Running) edit(action)
             }
@@ -163,6 +174,10 @@ class RepertoireEditorViewModel
         private fun show(next: EditorModel) {
             model = next
             _state.update { next.toUiState(name).copy(import = it.import) }
+            explorerPanel.show(
+                next.position,
+                next.repertoire.movesFrom(next.current).mapTo(mutableSetOf()) { it.move.uci },
+            )
         }
 
         private fun scheduleSave() {

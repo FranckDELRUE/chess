@@ -8,6 +8,8 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Upsert
+import com.chesscompanion.core.data.explorer.ExplorerDao
+import com.chesscompanion.core.data.explorer.ExplorerPositionEntity
 import kotlinx.coroutines.flow.Flow
 
 /** One analysed position, keyed by its Zobrist key; [fen] holds the four identifying FEN fields. */
@@ -72,7 +74,8 @@ interface AnalysisJobDao {
 }
 
 /**
- * The app's database: background analyses (S2-5, version 1) and repertoires (S7-2, version 2).
+ * The app's database: background analyses (S2-5, version 1), repertoires (S7-2, version 2) and the
+ * explorer cache (S7-7, version 3).
  * Schemas are exported to `core/data/schemas`; migrations are in [Migrations].
  */
 @Database(
@@ -83,8 +86,9 @@ interface AnalysisJobDao {
             RepertoireEntity::class,
             RepertoireNodeEntity::class,
             RepertoireEdgeEntity::class,
+            ExplorerPositionEntity::class,
         ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class ChessDatabase : RoomDatabase() {
@@ -95,6 +99,8 @@ abstract class ChessDatabase : RoomDatabase() {
     abstract fun repertoireDao(): RepertoireDao
 
     abstract fun repertoireContentDao(): RepertoireContentDao
+
+    abstract fun explorerDao(): ExplorerDao
 
     companion object {
         const val NAME = "chess-companion.db"

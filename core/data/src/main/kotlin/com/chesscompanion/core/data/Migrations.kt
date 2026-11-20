@@ -13,6 +13,18 @@ object Migrations {
             }
         }
 
+    /** S7-7: adds the explorer cache; analyses and repertoires are untouched. */
+    val V2_TO_V3: Migration =
+        object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `explorer_position` (`fen` TEXT NOT NULL, `level` TEXT NOT NULL, " +
+                        "`white` INTEGER NOT NULL, `draws` INTEGER NOT NULL, `black` INTEGER NOT NULL, " +
+                        "`moves` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`fen`, `level`))",
+                )
+            }
+        }
+
     // Copied from core/data/schemas/.../2.json (createSql of the three new entities).
     private val MIGRATION_1_2_SQL: List<String> =
         listOf(
