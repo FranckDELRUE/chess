@@ -15,6 +15,7 @@ import com.chesscompanion.core.data.explorer.ExplorerLookup
 import com.chesscompanion.core.data.explorer.GapFinder
 import com.chesscompanion.core.data.explorer.KeystoreTokenStore
 import com.chesscompanion.core.data.explorer.KtorExplorerFetcher
+import com.chesscompanion.core.data.explorer.LineCompleter
 import com.chesscompanion.core.data.explorer.TokenStore
 import com.chesscompanion.core.data.study.KtorStudyFetcher
 import com.chesscompanion.core.data.study.StudyFetcher
@@ -90,6 +91,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideGapFinder(explorer: ExplorerLookup): GapFinder = GapFinder(explorer)
+
+    @Provides
+    @Singleton
+    fun provideLineCompleter(explorer: ExplorerLookup): LineCompleter = LineCompleter(explorer)
 
     @Provides
     @Singleton

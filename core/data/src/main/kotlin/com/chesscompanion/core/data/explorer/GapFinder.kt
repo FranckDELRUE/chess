@@ -47,12 +47,18 @@ data class GapSettings(
     val maxPositions: Int = DEFAULT_MAX_POSITIONS,
     /** Pause after each answer that came from the network, in milliseconds (none for one from the cache). */
     val pauseMs: Long = DEFAULT_PAUSE_MS,
+    /** Plies (both sides) added when a gap is completed; a line always ends on the player's move. */
+    val completionPlies: Int = DEFAULT_COMPLETION_PLIES,
+    /** A move is followed when it was played in at least this many games. */
+    val completionMinGames: Long = DEFAULT_COMPLETION_MIN_GAMES,
 ) {
     companion object {
         const val DEFAULT_MIN_PERCENT = 5
         const val DEFAULT_MIN_GAMES = 100L
         const val DEFAULT_MAX_POSITIONS = 40
         const val DEFAULT_PAUSE_MS = 300L
+        const val DEFAULT_COMPLETION_PLIES = 12
+        const val DEFAULT_COMPLETION_MIN_GAMES = 50L
     }
 }
 

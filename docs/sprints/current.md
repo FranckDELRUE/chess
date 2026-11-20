@@ -10,13 +10,18 @@
 
 ## Stories
 
-### S8b-1 · Ajouter un trou au répertoire
-- [x] Sur l'écran « Trous », un appui sur une ligne ajoute le coup adverse trouvé à l'ouverture (`Repertoire.add`, coup
-  validé par le moteur de règles) et sauvegarde le répertoire ; la ligne passe en « Ajouté au répertoire », une ligne
-  ne s'ajoute qu'une fois. Il reste à choisir sa propre réponse dans l'éditeur.
-- [x] Tests : 3 de plus dans `GapsViewModelTest` (ajout et sauvegarde, une seule fois, ligne inconnue).
-- *Note* : seul le coup de l'adversaire est ajouté (suggestion de réponse et ouverture de l'éditeur sur la position :
-  S8b-2 ou plus tard).
+### S8b-1 · Ajouter un trou au répertoire et compléter la ligne
+- [x] Sur l'écran « Trous », un appui sur une ligne ajoute le coup adverse trouvé **puis la suite de la ligne** :
+  `LineCompleter` (`:core:data`) suit le coup le plus joué de l'explorateur Lichess pour les deux camps (ta réponse et
+  les coups suivants), chaque coup validé par le moteur de règles, puis sauvegarde le répertoire. Limites
+  (`GapSettings`) : 12 demi-coups, coups joués dans au moins 50 parties ; la ligne finit toujours sur ton coup ; elle
+  s'arrête à une position inconnue de l'explorateur, à une position déjà dans le répertoire ou au premier problème
+  réseau (le coup du trou est ajouté quand même, la ligne dit pourquoi elle s'arrête).
+- [x] La ligne passe en « Ajouté au répertoire : n coups » ; une ligne ne s'ajoute qu'une fois, un seul ajout à la fois.
+- [x] Tests : `LineCompleterTest` (4 : deux camps jusqu'à la limite, sans explorateur, position peu jouée, coup illégal
+  écarté) et 3 de plus dans `GapsViewModelTest`. Installé sur la tablette.
+- *Notes* : les coups ajoutés sont les plus joués (niveau Club), pas forcément les meilleurs ; vérifier la ligne dans
+  l'éditeur. Pas de test d'écran dédié ; parcours réel non vu (jeton Lichess nécessaire).
 
 ### S8b-2 · Écran « Apprendre une ouverture » (à planifier avec le joueur)
 - Cours ligne par ligne (ligne principale d'abord), progression (positions apprises sur total), positions apprises

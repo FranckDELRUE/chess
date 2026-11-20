@@ -9,6 +9,7 @@ import com.chesscompanion.core.data.explorer.ExplorerOutcome
 import com.chesscompanion.core.data.explorer.ExplorerProblem
 import com.chesscompanion.core.data.explorer.ExplorerStats
 import com.chesscompanion.core.data.explorer.GapFinder
+import com.chesscompanion.core.data.explorer.LineCompleter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -56,6 +57,7 @@ class GapsViewModelTest {
         SavedStateHandle(mapOf(GAPS_REPERTOIRE_ID_ARG to id)),
         store,
         GapFinder(FakeExplorer(outcome)),
+        LineCompleter(FakeExplorer(outcome)),
     )
 
     @Test

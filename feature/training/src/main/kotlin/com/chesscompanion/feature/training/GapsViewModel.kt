@@ -11,6 +11,7 @@ import com.chesscompanion.core.data.explorer.ExplorerProblem
 import com.chesscompanion.core.data.explorer.GapFinder
 import com.chesscompanion.core.data.explorer.GapReport
 import com.chesscompanion.core.data.explorer.GapSettings
+import com.chesscompanion.core.data.explorer.LineCompleter
 import com.chesscompanion.core.data.explorer.RepertoireGap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -32,8 +33,13 @@ data class GapRow(
     val moveSan: String,
     val games: Long,
     val percent: Int,
-    /** The move was added to the repertoire (by a tap on the row). */
+    /** The line is being completed (the explorer is asked move after move). */
+    val adding: Boolean = false,
+    /** The line was added to the repertoire (by a tap on the row): [addedMoves] moves, both sides. */
     val added: Boolean = false,
+    val addedMoves: Int = 0,
+    /** Why the continuation stopped early (no token, offline...); the gap move itself was added anyway. */
+    val addProblem: ExplorerProblem? = null,
 )
 
 data class GapsUiState(
@@ -55,7 +61,7 @@ sealed interface GapsAction {
 
     data object Cancel : GapsAction
 
-    /** Adds the missing move of the row [index] to the repertoire. */
+    /** Adds the missing move of the row [index] to the repertoire and completes the line after it. */
     data class Add(
         val index: Int,
     ) : GapsAction
@@ -73,6 +79,7 @@ class GapsViewModel
         savedState: SavedStateHandle,
         private val repertoires: RepertoireStore,
         private val finder: GapFinder,
+        private val completer: LineCompleter,
     ) : ViewModel() {
         private val id: String = savedState.get<String>(GAPS_REPERTOIRE_ID_ARG).orEmpty()
         private val _state = MutableStateFlow(GapsUiState())
@@ -129,24 +136,41 @@ class GapsViewModel
         }
 
         /**
-         * Adds the opponent's missing move to the repertoire (checked legal by the rules engine) and saves it. Only
-         * the opponent's move is added: the player's answer to it is still to be chosen in the editor.
+         * Adds the opponent's missing move to the repertoire, then the most played moves of both sides after it (the
+         * player's answer and the rest of the line, from the Lichess explorer), every move checked by the rules engine,
+         * and saves. Without the explorer only the gap move is added and the row says why.
          */
         private fun add(index: Int) {
-            val graph = repertoire ?: return
+            if (!canAdd(index)) return
             val gap = found.getOrNull(index) ?: return
-            if (_state.value.gaps
-                    .getOrNull(index)
-                    ?.added != false
-            ) {
-                return
+            val graph = repertoire ?: return
+            updateRow(index) { it.copy(adding = true) }
+            viewModelScope.launch {
+                val completed = completer.complete(graph, gap.position, gap.move, settings)
+                repertoire = completed.repertoire
+                repertoires.save(id, completed.repertoire)
+                updateRow(index) {
+                    it.copy(
+                        adding = false,
+                        added = true,
+                        addedMoves = completed.addedMoves,
+                        addProblem = completed.problem,
+                    )
+                }
             }
-            val updated = graph.add(gap.position, gap.move).repertoire
-            repertoire = updated
-            _state.update { state ->
-                state.copy(gaps = state.gaps.mapIndexed { i, row -> if (i == index) row.copy(added = true) else row })
-            }
-            viewModelScope.launch { repertoires.save(id, updated) }
+        }
+
+        /** The row exists, is not added yet and no other line is being completed (saves go one at a time). */
+        private fun canAdd(index: Int): Boolean {
+            val rows = _state.value.gaps
+            return rows.getOrNull(index)?.added == false && rows.none { it.adding }
+        }
+
+        private fun updateRow(
+            index: Int,
+            change: (GapRow) -> GapRow,
+        ) = _state.update { state ->
+            state.copy(gaps = state.gaps.mapIndexed { i, row -> if (i == index) change(row) else row })
         }
 
         private fun cancel() {

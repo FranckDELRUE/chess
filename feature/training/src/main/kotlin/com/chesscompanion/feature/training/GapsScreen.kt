@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -108,7 +109,7 @@ private fun GapsResult(
             Card(
                 onClick = { onAction(GapsAction.Add(index)) },
                 modifier = Modifier.fillMaxWidth().testTag(gapRowTag(index)),
-                enabled = !gap.added,
+                enabled = !gap.added && !gap.adding,
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
@@ -129,15 +130,7 @@ private fun GapsResult(
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    if (gap.added) {
-                        Text(
-                            stringResource(R.string.gaps_added),
-                            Modifier.testTag(gapAddedTag(index)),
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                    } else {
-                        Text(stringResource(R.string.gaps_tap_to_add), style = MaterialTheme.typography.bodySmall)
-                    }
+                    AddStatus(index, gap)
                 }
             }
         }
@@ -152,3 +145,26 @@ private fun problemText(problem: ExplorerProblem): Int =
         ExplorerProblem.OFFLINE -> R.string.gaps_problem_offline
         ExplorerProblem.SERVER -> R.string.gaps_problem_server
     }
+
+@Composable
+private fun AddStatus(
+    index: Int,
+    gap: GapRow,
+) {
+    when {
+        gap.adding -> Text(stringResource(R.string.gaps_adding), Modifier.testTag(gapAddedTag(index)))
+        gap.added -> {
+            Text(
+                pluralStringResource(R.plurals.gaps_added, gap.addedMoves, gap.addedMoves),
+                Modifier.testTag(gapAddedTag(index)),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            gap.addProblem?.let {
+                Text(
+                    stringResource(R.string.gaps_added_incomplete, stringResource(problemText(it))),
+                )
+            }
+        }
+        else -> Text(stringResource(R.string.gaps_tap_to_add), style = MaterialTheme.typography.bodySmall)
+    }
+}
