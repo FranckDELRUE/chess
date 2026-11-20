@@ -29,6 +29,7 @@ import com.chesscompanion.core.ui.theme.ChessTheme
 fun HomeScreen(
     onOpenPlay: () -> Unit,
     onOpenPlayEngine: () -> Unit,
+    onOpenRepertoires: () -> Unit,
     onOpenEngineDebug: (() -> Unit)?,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -38,6 +39,7 @@ fun HomeScreen(
         onFlip = viewModel::flipBoard,
         onOpenPlay = onOpenPlay,
         onOpenPlayEngine = onOpenPlayEngine,
+        onOpenRepertoires = onOpenRepertoires,
         onOpenEngineDebug = onOpenEngineDebug,
     )
 }
@@ -48,6 +50,7 @@ internal fun HomeContent(
     onFlip: () -> Unit,
     onOpenPlay: () -> Unit,
     onOpenPlayEngine: () -> Unit,
+    onOpenRepertoires: () -> Unit,
     onOpenEngineDebug: (() -> Unit)?,
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -59,6 +62,7 @@ internal fun HomeContent(
                         onFlip,
                         onOpenPlay,
                         onOpenPlayEngine,
+                        onOpenRepertoires,
                         onOpenEngineDebug,
                         Modifier.weight(1f).fillMaxSize(),
                     )
@@ -70,6 +74,7 @@ internal fun HomeContent(
                         onFlip,
                         onOpenPlay,
                         onOpenPlayEngine,
+                        onOpenRepertoires,
                         onOpenEngineDebug,
                         Modifier.fillMaxWidth().weight(1f),
                     )
@@ -84,6 +89,7 @@ private fun SidePanel(
     onFlip: () -> Unit,
     onOpenPlay: () -> Unit,
     onOpenPlayEngine: () -> Unit,
+    onOpenRepertoires: () -> Unit,
     onOpenEngineDebug: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
@@ -91,6 +97,7 @@ private fun SidePanel(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onOpenPlayEngine) { Text(stringResource(R.string.home_play_engine)) }
             Button(onClick = onOpenPlay) { Text(stringResource(R.string.home_play)) }
+            Button(onClick = onOpenRepertoires) { Text(stringResource(R.string.home_repertoires)) }
             OutlinedButton(onClick = onFlip) { Text(stringResource(R.string.home_flip_board)) }
             if (onOpenEngineDebug != null) {
                 OutlinedButton(onClick = onOpenEngineDebug) { Text(stringResource(R.string.home_engine_debug)) }
@@ -105,16 +112,19 @@ private const val FEN_MIDDLEGAME = "r2q1rk1/pp2bppp/2n1pn2/3p4/3P4/2N1PN2/PP2BPP
 
 @Preview(widthDp = 1280, heightDp = 800)
 @Composable
-private fun HomeLandscapePreview() = ChessTheme { HomeContent(HomeUiState(), {}, {}, {}, {}) }
+private fun HomeLandscapePreview() = ChessTheme { HomeContent(HomeUiState(), {}, {}, {}, {}, {}) }
 
 @Preview(widthDp = 800, heightDp = 1280)
 @Composable
-private fun HomePortraitFlippedPreview() = ChessTheme { HomeContent(HomeUiState(FEN_ITALIAN, true), {}, {}, {}, {}) }
+private fun HomePortraitFlippedPreview() =
+    ChessTheme {
+        HomeContent(HomeUiState(FEN_ITALIAN, true), {}, {}, {}, {}, {})
+    }
 
 @Preview(widthDp = 1280, heightDp = 800)
 @Composable
-private fun HomeEndgamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_ENDGAME), {}, {}, {}, {}) }
+private fun HomeEndgamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_ENDGAME), {}, {}, {}, {}, {}) }
 
 @Preview(widthDp = 800, heightDp = 1280)
 @Composable
-private fun HomeMiddlegamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_MIDDLEGAME), {}, {}, {}, {}) }
+private fun HomeMiddlegamePreview() = ChessTheme { HomeContent(HomeUiState(FEN_MIDDLEGAME), {}, {}, {}, {}, {}) }

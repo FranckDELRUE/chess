@@ -54,9 +54,9 @@ fois le même PGN ne change rien ; collision de clé Zobrist départagée par la
 graphe sans perte.
 
 ### S7-3 · Module `:feature:repertoire` et écrans de base
-- [ ] Création du module (Hilt, navigation, dépendances limitées à `:core:chess`, `:core:data`, `:core:ui`).
-- [ ] Liste des répertoires, création Blancs ou Noirs, renommage, suppression avec confirmation.
-- [ ] Entrée depuis l'accueil.
+- [x] Création du module (Hilt, navigation, dépendances limitées à `:core:chess`, `:core:data`, `:core:ui`).
+- [x] Liste des répertoires, création Blancs ou Noirs, renommage, suppression avec confirmation.
+- [x] Entrée depuis l'accueil.
 
 **Acceptation** : un répertoire créé survit à la fermeture de l'app (vérifié sur la tablette).
 
@@ -125,3 +125,10 @@ S7-2). Dette : `add` et `merge` recopient les index (O(taille)), à mesurer à l
 `androidx.room:room-testing` (Apache 2.0). Dette : `save` remplace tout le contenu du répertoire à chaque
 appel (O(taille) écritures), à mesurer à l'import de S7-5 ; les cartes de S8 référenceront
 (repertoireId, key, fen) sans clé étrangère vers les nœuds, pour survivre à ce remplacement.
+
+**S7-3** (2026-11-20) : module `:feature:repertoire` (liste, création Blancs/Noirs, renommage, suppression
+avec confirmation), `RepertoireListViewModel` à point d'entrée unique, bouton sur l'accueil et route
+`repertoires`. 9 tests de ViewModel et 6 tests UI Robolectric (en français pour les pluriels). Vérifié sur
+la tablette : création, redémarrage de l'app (le répertoire reste), suppression ; répertoire de test supprimé.
+Les lignes ne sont pas encore ouvrables (`onOpen` nul) : l'éditeur arrive en S7-4. Observation : la tablette
+affiche « 0 coups » (pluriel selon la langue du système, hors français), les tests JVM attendent « 0 coup ».
