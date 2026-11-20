@@ -37,3 +37,13 @@ y apparaît deux fois, avec deux commentaires et, en S8, deux cartes de révisio
   dépendent de ce chemin et ne servent pas.
 - Fusion et ajout recopient les index (coût proportionnel à la taille) ; acceptable pour des répertoires
   de quelques milliers de positions, à mesurer lors de l'import de S7-5.
+
+## Bilan à la fin de S7 (2026-11-20)
+- **Confirmé** : sur la tablette, l'import de l'étude Lichess `Y1yXP80U` (56 parties) a ajouté 9 725 coups
+  et reconnu 394 coups déjà présents ; les suites issues de plusieurs chemins (Fb5, d4 après 2...Cc6)
+  partagent leurs nœuds. Le critère « PGN de 500 variantes sans perte » est tenu par test.
+- **Coût mesuré** : l'import et la sauvegarde de ~9 300 coups prennent 4,5 à 5,6 s, et l'ouverture d'un
+  répertoire de 9 734 coups environ 5 s (« Chargement… »). Acceptable pour un vrai répertoire (quelques
+  centaines de coups) ; à revoir avec une sauvegarde incrémentale (`docs/backlog.md`).
+- Les cartes de S8 référenceront (répertoire, clé, FEN) sans clé étrangère vers les nœuds, car `save` remplace
+  tout le contenu.

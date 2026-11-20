@@ -72,3 +72,9 @@ déplacé tombe dans le sprint qui apporte sa dépendance.
   PGN, l'arbre et les révisions fonctionnent sans réseau. Les statistiques consultées sont mises en
   cache dans Room.
 - Règle 2 : tout PGN ou étude importé passe par `:core:chess` avant stockage, comme en S1.
+
+## Bilan à la fin de S7 (2026-11-20)
+- L'ordre S7 puis S8 a tenu : S7 est livré (répertoire, imports PGN et étude, explorateur, démo sur la
+  tablette) et S8 démarre sur un graphe de répertoire déjà stocké et clé par position.
+- Aucun élément de S3, S4 ou S6 n'a été touché ; les trois éléments déplacés (Maia qui joue le répertoire,
+  explication des déviations, lien revue/répertoire) restent à leur sprint d'arrivée.

@@ -78,3 +78,20 @@
 - **Ollama** (MIT) : application installée à part, pas une dépendance du code.
 - **Modèles** : qwen3:14b (Qwen3-14B, Apache 2.0) et mistral-nemo:12b (Mistral-Nemo-Instruct-2407,
   Apache 2.0), via le catalogue Ollama ; non versionnés.
+
+## Ktor client 3.5.2 et OkHttp (S7-6)
+
+- **Licence** : Apache 2.0, compatible GPL v3.
+- `io.ktor:ktor-client-core` et `io.ktor:ktor-client-okhttp` 3.5.2 (application, import d'étude et
+  explorateur Lichess) ; OkHttp en dépendance transitive. `io.ktor:ktor-client-mock` 3.5.2 en tests.
+
+## Robolectric 4.16 et room-testing (S7-2, S7-6)
+
+- **Licences** : Robolectric MIT ; `androidx.room:room-testing` Apache 2.0. Tests JVM seulement
+  (migrations Room, org.json, écrans Compose).
+
+## Services du système et réseau (S7-6, S7-7)
+
+- Android Keystore (clé AES-GCM du jeton Lichess) : API du système, aucune dépendance ajoutée.
+- Données consultées : API publiques de Lichess (étude PGN, explorateur) ; aucun contenu de Lichess n'est
+  versionné ; les statistiques ne sont gardées qu'en cache local.

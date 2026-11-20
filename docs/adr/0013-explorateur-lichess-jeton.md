@@ -34,3 +34,10 @@ jeton d'API personnel (gratuit, sans permission particulière).
   annulée quand on change de position).
 - `core:data` dépend de `android.security`/Keystore uniquement dans `KeystoreTokenStore` ; le reste passe par
   l'interface `TokenStore`, remplaçable dans les tests.
+
+## Bilan à la fin de S7 (2026-11-20)
+- **Vérifié sur la tablette** avec un jeton saisi par l'utilisateur : statistiques réelles par niveau,
+  évaluation Stockfish, et position déjà vue relue « en mémoire (pas de réseau utilisé) » ; le chemin
+  d'un jeton refusé (401) a été vérifié avec un faux jeton.
+- Le jeton est resté dans le panneau Explorateur ; un écran de réglages viendra quand il en existera un
+  (`docs/backlog.md`).
