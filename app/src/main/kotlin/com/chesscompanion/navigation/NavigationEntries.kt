@@ -1,0 +1,23 @@
+package com.chesscompanion.navigation
+
+internal const val ROUTE_HOME = "home"
+internal const val ROUTE_ENGINE_DEBUG = "engine-debug"
+internal const val ROUTE_PLAY = "play"
+
+/** `vs=engine` opens the game against Stockfish (read by `PlayViewModel` from its saved state). */
+internal const val ROUTE_PLAY_PATTERN = "play?vs={vs}"
+internal const val ROUTE_PLAY_ENGINE = "play?vs=engine"
+
+/** Which destinations exist; the debug ones are only reachable when [debugEnabled] (debug builds). */
+internal class NavigationEntries(
+    val debugEnabled: Boolean,
+) {
+    val routes: List<String> =
+        buildList {
+            add(ROUTE_HOME)
+            add(ROUTE_PLAY_PATTERN)
+            if (debugEnabled) add(ROUTE_ENGINE_DEBUG)
+        }
+
+    val showEngineDebug: Boolean get() = ROUTE_ENGINE_DEBUG in routes
+}
