@@ -37,10 +37,10 @@ Sprint précédent : `docs/sprints/s2.md`. Ordre d'exécution : ADR 0011 (S7 pui
 ## Stories
 
 ### S7-1 · Modèle du répertoire (Kotlin pur)
-- [ ] Graphe de répertoire dans `:core:chess.repertoire` : nœuds par clé Zobrist (FEN d'identification),
+- [x] Graphe de répertoire dans `:core:chess.repertoire` : nœuds par clé Zobrist (FEN d'identification),
   arêtes par coup (UCI + SAN), côté du répertoire (Blancs ou Noirs), position de départ.
-- [ ] Fusion d'une `Game` (avec variantes) dans le graphe, sans doublon ; transpositions détectées par clé.
-- [ ] ADR 0012 (graphe plutôt qu'arbre, commentaire et flèches portés par le nœud ou l'arête).
+- [x] Fusion d'une `Game` (avec variantes) dans le graphe, sans doublon ; transpositions détectées par clé.
+- [x] ADR 0012 (graphe plutôt qu'arbre, commentaire et flèches portés par le nœud ou l'arête).
 
 **Acceptation** : tests JVM : deux ordres de coups qui transposent donnent un seul nœud ; fusionner deux
 fois le même PGN ne change rien ; collision de clé Zobrist départagée par la FEN.
@@ -111,4 +111,8 @@ ANR) ; test avec faux transport réseau.
 ---
 
 ## Notes de fin de story
-(à remplir au fil du sprint)
+**S7-1** (2026-11-20) : `Repertoire`, `PositionId`, `RepertoireEdge`, `add` et `merge` dans
+`:core:chess.repertoire` ; ADR 0012. 15 tests dans `RepertoireTest`, dont transposition, fusion
+idempotente, cycle de répétition, case en passant inutilisable et collision de clé simulée.
+Choix : identité d'un nœud = clé Zobrist + FEN canonique ; annotations portées par le nœud (stockées en
+S7-2). Dette : `add` et `merge` recopient les index (O(taille)), à mesurer à l'import de S7-5.
