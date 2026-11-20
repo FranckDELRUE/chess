@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -46,12 +47,14 @@ class GapsViewModelTest {
             fromCache = true,
         )
 
+    private val store = FakeRepertoireStore("r", "Ma Queen", repertoire)
+
     private fun gaps(
         outcome: ExplorerOutcome,
         id: String = "r",
     ) = GapsViewModel(
         SavedStateHandle(mapOf(GAPS_REPERTOIRE_ID_ARG to id)),
-        FakeRepertoireStore("r", "Ma Queen", repertoire),
+        store,
         GapFinder(FakeExplorer(outcome)),
     )
 
@@ -98,5 +101,43 @@ class GapsViewModelTest {
         assertEquals(GapsStatus.DONE, vm.state.value.status)
         assertEquals(ExplorerProblem.OFFLINE, vm.state.value.problem)
         assertEquals(0, vm.state.value.scanned)
+    }
+
+    @Test
+    fun tappingAGapAddsItsMoveToTheRepertoireAndSavesIt() {
+        val vm = gaps(stats("d7d5" to 6_000, "g8f6" to 4_000))
+        vm.onAction(GapsAction.Scan)
+        assertFalse(
+            vm.state.value.gaps
+                .single()
+                .added,
+        )
+
+        vm.onAction(GapsAction.Add(0))
+        assertTrue(
+            vm.state.value.gaps
+                .single()
+                .added,
+        )
+        val saved = store.saved.single()
+        assertEquals(repertoire.edgeCount + 1, saved.edgeCount)
+        assertTrue(saved.allMoves.any { it.move.uci == "g8f6" })
+    }
+
+    @Test
+    fun aGapIsOnlyAddedOnce() {
+        val vm = gaps(stats("d7d5" to 6_000, "g8f6" to 4_000))
+        vm.onAction(GapsAction.Scan)
+        vm.onAction(GapsAction.Add(0))
+        vm.onAction(GapsAction.Add(0))
+        assertEquals(1, store.saved.size)
+    }
+
+    @Test
+    fun anUnknownRowAddsNothing() {
+        val vm = gaps(stats("d7d5" to 6_000, "g8f6" to 4_000))
+        vm.onAction(GapsAction.Scan)
+        vm.onAction(GapsAction.Add(5))
+        assertTrue(store.saved.isEmpty())
     }
 }

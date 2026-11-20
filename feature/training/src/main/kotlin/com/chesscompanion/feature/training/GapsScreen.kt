@@ -33,6 +33,8 @@ const val GAPS_PROBLEM_TAG = "gaps-problem"
 const val GAPS_NONE_TAG = "gaps-none"
 const val GAPS_TRUNCATED_TAG = "gaps-truncated"
 
+fun gapAddedTag(index: Int) = "gaps-added-$index"
+
 fun gapRowTag(index: Int) = "gaps-row-$index"
 
 /** The holes of one repertoire: frequent replies of the opponent that it does not answer. */
@@ -81,12 +83,15 @@ private fun GapsBody(
                 Text(stringResource(if (state.status == GapsStatus.DONE) R.string.gaps_rescan else R.string.gaps_scan))
             }
         }
-        if (state.status == GapsStatus.DONE) GapsResult(state)
+        if (state.status == GapsStatus.DONE) GapsResult(state, onAction)
     }
 }
 
 @Composable
-private fun GapsResult(state: GapsUiState) {
+private fun GapsResult(
+    state: GapsUiState,
+    onAction: (GapsAction) -> Unit,
+) {
     state.problem?.let { Text(stringResource(problemText(it)), Modifier.testTag(GAPS_PROBLEM_TAG)) }
     if (state.gaps.isEmpty() && state.problem == null) {
         Text(stringResource(R.string.gaps_none, state.scanned), Modifier.testTag(GAPS_NONE_TAG))
@@ -100,7 +105,11 @@ private fun GapsResult(state: GapsUiState) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(state.gaps.size) { index ->
             val gap = state.gaps[index]
-            Card(Modifier.fillMaxWidth().testTag(gapRowTag(index))) {
+            Card(
+                onClick = { onAction(GapsAction.Add(index)) },
+                modifier = Modifier.fillMaxWidth().testTag(gapRowTag(index)),
+                enabled = !gap.added,
+            ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         stringResource(
@@ -120,6 +129,15 @@ private fun GapsResult(state: GapsUiState) {
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                    if (gap.added) {
+                        Text(
+                            stringResource(R.string.gaps_added),
+                            Modifier.testTag(gapAddedTag(index)),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                    } else {
+                        Text(stringResource(R.string.gaps_tap_to_add), style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

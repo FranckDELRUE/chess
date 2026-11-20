@@ -11,6 +11,7 @@ import com.chesscompanion.core.data.explorer.ExplorerProblem
 import com.chesscompanion.core.data.explorer.GapFinder
 import com.chesscompanion.core.data.explorer.GapReport
 import com.chesscompanion.core.data.explorer.GapSettings
+import com.chesscompanion.core.data.explorer.RepertoireGap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,8 @@ data class GapRow(
     val moveSan: String,
     val games: Long,
     val percent: Int,
+    /** The move was added to the repertoire (by a tap on the row). */
+    val added: Boolean = false,
 )
 
 data class GapsUiState(
@@ -51,6 +54,11 @@ sealed interface GapsAction {
     data object Scan : GapsAction
 
     data object Cancel : GapsAction
+
+    /** Adds the missing move of the row [index] to the repertoire. */
+    data class Add(
+        val index: Int,
+    ) : GapsAction
 }
 
 /**
@@ -72,6 +80,7 @@ class GapsViewModel
 
         private var repertoire: Repertoire? = null
         private var job: Job? = null
+        private var found: List<RepertoireGap> = emptyList()
 
         /** Thresholds of the scan; tests remove the pause between network requests. */
         internal var settings = GapSettings()
@@ -92,6 +101,7 @@ class GapsViewModel
             when (action) {
                 GapsAction.Scan -> scan()
                 GapsAction.Cancel -> cancel()
+                is GapsAction.Add -> add(action.index)
             }
         }
 
@@ -113,8 +123,30 @@ class GapsViewModel
                         finder.find(graph, settings) { done, total ->
                             _state.update { it.copy(done = done, total = total) }
                         }
+                    found = report.gaps
                     _state.update { it.copy(status = GapsStatus.DONE).withReport(report, graph) }
                 }
+        }
+
+        /**
+         * Adds the opponent's missing move to the repertoire (checked legal by the rules engine) and saves it. Only
+         * the opponent's move is added: the player's answer to it is still to be chosen in the editor.
+         */
+        private fun add(index: Int) {
+            val graph = repertoire ?: return
+            val gap = found.getOrNull(index) ?: return
+            if (_state.value.gaps
+                    .getOrNull(index)
+                    ?.added != false
+            ) {
+                return
+            }
+            val updated = graph.add(gap.position, gap.move).repertoire
+            repertoire = updated
+            _state.update { state ->
+                state.copy(gaps = state.gaps.mapIndexed { i, row -> if (i == index) row.copy(added = true) else row })
+            }
+            viewModelScope.launch { repertoires.save(id, updated) }
         }
 
         private fun cancel() {
