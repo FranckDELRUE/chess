@@ -272,7 +272,7 @@ Toutes les briques sont gratuites ; la seule contrainte forte est la licence GPL
 
 ## 5. Modèle de données
 
-La base Room s'organise autour de la position (FEN normalisée) : parties, répertoire, puzzles et erreurs s'y rattachent, ce qui permet de relier une erreur de partie à la ligne de répertoire concernée.
+La base Room s'organise autour de la position (clé Zobrist, avec les quatre premiers champs de la FEN contre les collisions, depuis S2-5) : parties, répertoire, puzzles et erreurs s'y rattachent, ce qui permet de relier une erreur de partie à la ligne de répertoire concernée.
 
 | Entité | Champs principaux | Relations |
 | --- | --- | --- |
@@ -345,12 +345,12 @@ Critères d'acceptation : suite de tests perft validée sur les positions de ré
 
 Détaillé story par story dans `docs/sprints/current.md`.
 
-- [ ] Intégrer Stockfish via le NDK derrière l'interface `ChessEngine` (protocole UCI).
-- [ ] Barre d'évaluation et 3 meilleures lignes en analyse libre.
-- [ ] Adversaire Stockfish réglable (niveau, limite d'ELO, temps par coup).
-- [ ] File d'analyses en arrière-plan avec WorkManager, annulable.
+- [x] Intégrer Stockfish via le NDK derrière l'interface `ChessEngine` (protocole UCI), un seul moteur partagé par priorités (ADR 0008).
+- [x] Barre d'évaluation et 3 meilleures lignes en analyse libre.
+- [x] Adversaire Stockfish réglable (niveau, limite d'ELO, temps par coup).
+- [x] File d'analyses en arrière-plan avec WorkManager, annulable ; résultats par position dans Room (ADR 0010).
 
-Critères d'acceptation : analyse à profondeur 18 d'une position en moins de 5 s sur la tablette ; aucun blocage de l'UI.
+Critères d'acceptation : analyse à profondeur 18 d'une position en moins de 5 s sur la tablette (tenu en médiane par position sur 20 positions de Heidoji, sans marge : pire médiane 4,96 s) ; aucun blocage de l'UI (aucun ANR ; images de 32 à 34 ms en médiane pendant une analyse en build debug, coût dominé par le redessin de l'échiquier).
 
 ### S3 — Adversaires humains
 

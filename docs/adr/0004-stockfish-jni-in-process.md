@@ -13,7 +13,8 @@ exécutable lancé par `ProcessBuilder`, ou bibliothèque partagée appelée en 
    (`-Dmain=…` sur `main.cpp` seulement) ; un pont C++ relie `std::cin`/`std::cout` à deux tubes
    POSIX via des `streambuf`, sans toucher au stdio de l'application.
 2. **Une session par processus** : Stockfish garde un état global, `quit` est définitif. Le moteur
-   vit donc dans un singleton Hilt (`EngineProvider`).
+   vit donc dans un singleton Hilt (`EngineProvider`). *Révisé en S2-1 : `EngineProvider` est
+   remplacé par `EngineScheduler`, seul accès au moteur partagé (ADR 0008).*
 3. **Transport UCI abstrait** (`UciTransport`) : `UciEngine` est testé en JVM avec un faux moteur ;
    seul `StockfishEngine` dépend d'Android.
 4. **Réseau NNUE en assets** (`NNUE_EMBEDDING_OFF`), copié dans `filesDir` au premier lancement et

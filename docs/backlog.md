@@ -52,6 +52,14 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
   Chess.com) pour les garder par coup et les exporter ; utile aux cours tirés des livres (S10).
 - Flèches de cavalier en L (aujourd'hui droites) ; plus de couleurs (jaune).
 
+## Issu de S2-1
+- `.gitattributes` pour fixer les fins de ligne de `testdata/` en LF (aujourd'hui extraites en CRLF sous Windows avec `core.autocrlf=true`, ce qui a cassé `PlayScreenTest`).
+- `EngineScheduler` : une préemption juste après l'attribution du moteur émet un `Restarted` sans recherche réellement interrompue (sans effet visible).
+
+## Issu de S2-2
+- Benchmark Stockfish : mesurer 4 et 6 threads sur la tablette ; écrire les résultats dans un fichier (aujourd'hui dans logcat seulement).
+- P18 tient sous 5 s en médiane mais sans marge (pire médiane 4,96 s) : si une fonction a besoin de P18 garanti, prévoir une limite de temps plutôt que de profondeur.
+
 ## Issu de S2-3
 - Analyse libre : jouer ou prévisualiser toute la variante d'une ligne (aujourd'hui le premier coup seulement), flèche du meilleur coup sur l'échiquier.
 - Garder l'interrupteur d'analyse et envoyer l'historique des coups à Stockfish (répétitions).
@@ -66,3 +74,6 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Stocker aussi les résultats de l'analyse en direct (profondeur atteinte) dans `position_analysis`.
 - File d'analyses : annuler une seule partie sans annuler celles qui attendent (aujourd'hui une seule chaîne WorkManager) ; liste des parties analysées (S6).
 - Notification d'analyse : la vérifier à l'écran (permission refusée pendant la démo S2-5) et ajouter « Ouvrir la partie ».
+
+## Issu de S2-6
+- Déplacer l'écran « Debug moteur » et le benchmark Maia dans le source set `debug/` pour les exclure de l'APK release (aujourd'hui compilés mais inatteignables).
