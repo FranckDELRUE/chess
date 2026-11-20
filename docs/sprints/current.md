@@ -90,6 +90,13 @@ une partie de Heidoji analysée sur la tablette, annulation vérifiée.
 
 **Acceptation** : `assembleRelease` passe ; test de la navigation sans les entrées de debug.
 
+### S2-8 · Correctifs de la démo (partie contre Stockfish)
+_Ajoutée le 2026-11-20 (écart validé) : deux défauts trouvés pendant la démo de S2-7._
+- [x] Ouvrir ou coller une partie, ou choisir une partie importée, quitte la partie contre Stockfish (partie à deux joueurs, sauvegardée).
+- [x] Contre Stockfish, la partie jouée après « Reprendre un coup » devient la ligne principale (`GameSession.promoteLine()`), les coups repris restent en variante.
+
+**Acceptation** : tests de `promoteLine`, de l'adversaire et du ViewModel (PGN exporté) ; les deux scénarios de la démo rejoués sur la tablette.
+
 ### S2-7 · Documentation et démo
 - [ ] ADR et notes de sprint à jour ; idées hors périmètre reportées dans `docs/backlog.md`.
 - [ ] Démo sur la tablette ; capture `docs/sprints/s2-demo.png` ; rétrospective ; archivage en
@@ -132,6 +139,11 @@ Tests : `:core:data` 8 (Room en mémoire avec Robolectric), `:feature:play` 100 
 Écarts : table `analysis_job` ajoutée (WorkManager limite ses données d'entrée à 10 Ko) ; une seule ligne par position au lieu d'une par profondeur ; code dans `:feature:play` en attendant `:feature:review` (S6) ; annuler l'analyse annule aussi les parties en attente (chaîne WorkManager). La note de S2-2 annonçait ≈ 1,5 min par partie de 40 coups : c'est ≈ 3 min, la partie comptant 80 positions.
 Dette : notification non vérifiée à l'écran (permission refusée pendant la démo) ; reprise après arrêt par le système couverte par les tests seulement ; l'analyse en direct ne stocke pas ses propres résultats ; à déplacer dans `:feature:review` en S6.
 
+**S2-8** — Fait et vérifié sur la tablette le 2026-11-20 (story ajoutée après la démo de S2-7). `GameSession.promoteLine()` (`:core:chess`) fait de la ligne courante la ligne principale à chaque embranchement, les autres coups gardant leur ordre en variantes, sans perte. Contre Stockfish, chaque coup joué (du joueur ou du moteur) promeut la ligne : après « Reprendre un coup », l'export, le résultat de l'abandon et « Analyser la partie » portent sur la partie réellement jouée ; naviguer sans jouer ne réordonne rien. `OpponentController.leave()` : ouvrir, coller une partie ou une FEN, ou choisir une partie importée remet l'écran en partie à deux joueurs (recherche arrêtée), choix sauvegardé pour que la route `vs=engine` ne rouvre pas les réglages après la mort du processus. ADR 0009 complété (points 6 et 8). detekt : `analysisAllowed`, `played` et `replaceGame` deviennent des extensions de fichier (les deux classes étaient à 11 fonctions), `resigned` lisible en `private set`.
+Tests : `:core:chess` 236 (+3, `promoteLine`), `:feature:play` 106 (+6 : partie jouée en ligne principale et envoyée à la file, coup repris rejoué, navigation sans effet, import après abandon avec PGN intact et restauration, FEN collée pendant la réflexion, nouvelle partie contre Stockfish après un import) ; 5 des 6 nouveaux tests échouent sans les correctifs. Total 426. `ktlintCheck detekt test assembleDebug` passent.
+Tablette : 1. e4 c6 2. Cf3 Dc7, reprise, 2. d4 d5, abandon → liste « 1. e4 c6 2. d4 (2. Cf3 Dc7) 2… d5 », « Partie analysée (5 positions) » ; puis « Ouvrir… » une partie de Heidoji → « Aux Blancs de jouer », plus de « Reprendre » ni « Abandonner », et « Enregistrer… » rend un fichier aux étiquettes identiques à l'original (résultat 1-0, aucune mention de Stockfish). Fichiers de test supprimés de `Téléchargements`.
+Dette : aucune nouvelle ; le statut de la file qui suit la dernière analyse est au backlog (S6).
+
 ---
 
 ## Démo de fin de sprint (2026-11-20, tablette Honor HEY2-W09)
@@ -150,7 +162,7 @@ Démo pilotée par adb (appuis injectés), build debug sauf mention contraire.
 | Analyser la partie (102 positions), « Annuler » dans la notification | « Analyse annulée » à 18/102, notification retirée ; relance à 20/102 en 2 s (positions stockées sautées), fin « Partie analysée (102 positions) » en 188 s (≈ 2,3 s par position) |
 | APK release (signée avec la clé debug, installée par-dessus) | accueil sans « Debug moteur » ; Stockfish joue (1. e4 d6) ; APK de 131 Mo |
 
-**Défauts trouvés** (non corrigés dans S2-7, hors périmètre de la story) :
+**Défauts trouvés** (hors périmètre de S2-7 ; 1 et 2 corrigés en S2-8, 3 au backlog) :
 1. **Ouvrir ou coller une partie après une partie contre Stockfish garde le mode adversaire.** `importText` et `PickGame` remplacent la partie sans réinitialiser `OpponentController` : l'en-tête reste « Vous avez abandonné », et `exportPgn()` passe par `opponent.finish(...)`, donc enregistrer la partie importée lui donnerait le résultat et les étiquettes de la partie contre Stockfish. Sans abandon, Stockfish jouerait sur la partie importée.
 2. **Après « Reprendre un coup », la partie réellement jouée est une variante.** `takeBackTarget` recule seulement ; le nouveau coup s'ajoute en variante et la ligne principale garde les coups repris. « Analyser la partie » et l'export PGN (avec le résultat) portent donc sur la ligne abandonnée (ici 5. O-O a6 au lieu de 5. c4 Cd7). L'ADR 0009 (« les coups repris restent comme variante ») annonçait l'inverse.
 3. Mineur : le statut de la file (« Partie analysée (72 positions) ») est celui de la dernière analyse, même sur une autre partie.

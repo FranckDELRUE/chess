@@ -82,6 +82,16 @@ data class GameSession(
     }
 
     /**
+     * Makes the current line the main line: at each step of [path], the chosen move moves to the
+     * front of its siblings, the others keep their order after it as variations. No move is lost;
+     * the session stays on the same move, whose path becomes all zeros.
+     */
+    fun promoteLine(): GameSession {
+        if (path.all { it == 0 }) return this
+        return GameSession(game.copy(moves = promote(game.moves, path)), path.map { 0 })
+    }
+
+    /**
      * The game ready for PGN export: when the main line ends in mate or a draw, the result comes from
      * the rules; otherwise the game keeps its own (a resignation or a time loss read from a PGN).
      */
@@ -104,6 +114,16 @@ data class GameSession(
         return nodes.mapIndexed { i, child ->
             if (i == index) child.copy(children = insert(child.children, at.drop(1), node)) else child
         }
+    }
+
+    private fun promote(
+        nodes: List<MoveNode>,
+        at: List<Int>,
+    ): List<MoveNode> {
+        if (at.isEmpty()) return nodes
+        val index = at.first()
+        val chosen = nodes[index].let { it.copy(children = promote(it.children, at.drop(1))) }
+        return listOf(chosen) + nodes.filterIndexed { i, _ -> i != index }
     }
 
     companion object {

@@ -9,6 +9,7 @@ import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.Side
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -49,6 +50,64 @@ class GameSessionTest {
         )
         assertEquals(listOf("e4", "e5"), variation.game.mainline.map { it.san })
     }
+
+    @Test
+    fun `promoting the main line changes nothing`() {
+        val session = GameSession.new().play("e2e4", "e7e5")
+        assertSame(session, session.promoteLine())
+        val start = GameSession.new()
+        assertSame(start, start.promoteLine())
+    }
+
+    @Test
+    fun `promoting a variation makes it the main line and keeps the old one as a variation`() {
+        // 1. e4 e5 2. Nf3 Nc6, then back to 1... e5 and 2. Bc4 Bc5 instead.
+        val played = GameSession.new().play("e2e4", "e7e5", "g1f3", "b8c6")
+        val variation = played.copy(path = listOf(0, 0)).play("f1c4", "f8c5")
+        assertEquals(listOf(0, 0, 1, 0), variation.path)
+
+        val promoted = variation.promoteLine()
+
+        assertEquals(listOf(0, 0, 0, 0), promoted.path)
+        assertEquals(variation.position, promoted.position)
+        assertEquals(listOf("e4", "e5", "Bc4", "Bc5"), promoted.game.mainline.map { it.san })
+        val afterE5 =
+            promoted.game.moves[0]
+                .children[0]
+                .children
+        assertEquals(listOf("Bc4", "Nf3"), afterE5.map { it.san })
+        assertEquals(listOf("Nc6"), afterE5[1].children.map { it.san })
+    }
+
+    @Test
+    fun `promoting keeps the order of the other variations and works at several levels`() {
+        // Root: e4 (main), d4, c4; after 1. c4: e5 (main), c5. The current line is 1. c4 c5.
+        val base =
+            GameSession
+                .new()
+                .play("e2e4")
+                .toStart()
+                .play("d2d4")
+                .toStart()
+                .play("c2c4", "e7e5")
+        val current = base.copy(path = listOf(2)).play("c7c5")
+        assertEquals(listOf(2, 1), current.path)
+
+        val promoted = current.promoteLine()
+
+        assertEquals(listOf("c4", "e4", "d4"), promoted.game.moves.map { it.san })
+        assertEquals(
+            listOf("c5", "e5"),
+            promoted.game.moves[0]
+                .children
+                .map { it.san },
+        )
+        assertEquals(listOf(0, 0), promoted.path)
+        assertEquals(listOf("c4", "c5"), promoted.game.mainline.map { it.san })
+        assertEquals(countMoves(current.game.moves), countMoves(promoted.game.moves))
+    }
+
+    private fun countMoves(nodes: List<MoveNode>): Int = nodes.sumOf { 1 + countMoves(it.children) }
 
     @Test
     fun `illegal moves are rejected`() {

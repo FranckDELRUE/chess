@@ -51,7 +51,13 @@ class OpponentController(
 ) {
     private var settings: OpponentSettings? = OpponentSettings.decode(saved[KEY_SETTINGS])
     private var humanSide: Side = if (saved.get<String>(KEY_SIDE) == BLACK) Side.BLACK else Side.WHITE
-    private var resigned: Boolean = saved[KEY_RESIGNED] ?: false
+
+    /** The player resigned the game against Stockfish. */
+    var resigned: Boolean = saved[KEY_RESIGNED] ?: false
+        private set
+
+    /** The player left the game against Stockfish (an import): the engine route no longer applies. */
+    private var left: Boolean = saved[KEY_LEFT] ?: false
     private var setup: OpponentSettings? = null
     private var thinking = false
     private var due = false
@@ -61,7 +67,7 @@ class OpponentController(
     private var failed: String? = null
 
     init {
-        if (settings == null && vsEngine) {
+        if (settings == null && vsEngine && !left) {
             settings = OpponentSettings()
             setup = settings
             persist()
@@ -78,9 +84,6 @@ class OpponentController(
 
     /** The player may move: always in the two-player game, on its own turn against Stockfish. */
     fun canHumanMove(position: Position): Boolean = !active || (!resigned && position.sideToMove == humanSide)
-
-    /** The analysis is hidden while a game against Stockfish is being played. */
-    fun analysisAllowed(session: GameSession): Boolean = !active || resigned || session.status().isOver
 
     /** The player has just played: Stockfish answers even if the move was already in the tree. */
     fun humanMoved() {
@@ -123,6 +126,22 @@ class OpponentController(
         return result
     }
 
+    /**
+     * Another game replaces the one against Stockfish (a PGN or a FEN opened or pasted, S2-8): the
+     * search stops and the screen becomes a two-player game, also after process death.
+     */
+    fun leave() {
+        if (!active && setup == null) return
+        cancel()
+        settings = null
+        setup = null
+        resigned = false
+        failed = null
+        due = false
+        left = true
+        persist()
+    }
+
     /** The game shown changed: starts, keeps or cancels the search of Stockfish's move. */
     fun sync(session: GameSession) {
         current = session
@@ -152,6 +171,7 @@ class OpponentController(
         settings = chosen
         humanSide = sideOf(chosen.color, random)
         resigned = false
+        left = false
         setup = null
         failed = null
         due = false
@@ -207,16 +227,28 @@ class OpponentController(
         saved[KEY_SETTINGS] = settings?.encode()
         saved[KEY_SIDE] = if (humanSide == Side.BLACK) BLACK else WHITE
         saved[KEY_RESIGNED] = resigned
+        saved[KEY_LEFT] = left
     }
 
     private companion object {
         const val KEY_SETTINGS = "opponent.settings"
         const val KEY_SIDE = "opponent.side"
         const val KEY_RESIGNED = "opponent.resigned"
+        const val KEY_LEFT = "opponent.left"
         const val BLACK = "b"
         const val WHITE = "w"
     }
 }
+
+/** The analysis is hidden while a game against Stockfish is being played. */
+fun OpponentController.analysisAllowed(session: GameSession): Boolean = !active || resigned || session.status().isOver
+
+/**
+ * A move was just played (by the player or by Stockfish): against Stockfish, the line played
+ * becomes the main line (S2-8), so that after a take-back the export, the result and the game
+ * analysis follow the game actually played; the moves taken back stay as a variation.
+ */
+fun OpponentController.played(session: GameSession): GameSession = if (active) session.promoteLine() else session
 
 /** The move Stockfish ends on (null if it gave none), or the failure of the search. */
 private suspend fun OpponentEngine.bestMove(request: SearchRequest): Result<String?> =
