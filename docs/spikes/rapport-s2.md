@@ -130,8 +130,9 @@ Conséquences pour la suite :
 - **S2-3 (analyse en direct)** : ne pas attendre la profondeur 18. Afficher les lignes dès les
   premières profondeurs, ce qui donne une analyse utile en moins d'1 s (P16 médiane 1,2 s), et la
   laisser s'affiner.
-- **S2-5 (file en arrière-plan)** : la profondeur 18 coûte environ 2 s par coup, soit environ 1,5 min
-  pour une partie de 40 coups.
+- **S2-5 (file en arrière-plan)** : la profondeur 18 coûte environ 2 s par position, soit environ 3 min
+  pour une partie de 40 coups (80 positions ; corrigé en S2-5, mesuré ≈ 2,5 s par position sur une
+  partie de Heidoji).
 - **Réglages** : aucun changement fait. Piste si le critère devait devenir strict : mesurer 6 threads
   et un Hash plus grand.
 

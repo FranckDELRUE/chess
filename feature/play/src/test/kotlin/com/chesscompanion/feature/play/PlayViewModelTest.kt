@@ -39,7 +39,7 @@ class PlayViewModelTest {
     private val opponent = FakeOpponent()
 
     private fun newViewModel(saved: SavedStateHandle = SavedStateHandle()) =
-        PlayViewModel(saved, documents, analyzer, opponent)
+        PlayViewModel(saved, documents, analyzer, opponent, FakeQueue())
 
     private fun sq(name: String) = Square.parse(name)!!
 

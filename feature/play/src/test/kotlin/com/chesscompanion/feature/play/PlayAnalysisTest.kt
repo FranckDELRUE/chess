@@ -32,7 +32,8 @@ class PlayAnalysisTest {
     @AfterEach
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun newViewModel() = PlayViewModel(SavedStateHandle(), FakeDocuments(), analyzer, FakeOpponent())
+    private fun newViewModel() =
+        PlayViewModel(SavedStateHandle(), FakeDocuments(), analyzer, FakeOpponent(), FakeQueue())
 
     private fun sq(name: String) = Square.parse(name)!!
 

@@ -11,13 +11,16 @@ import com.chesscompanion.core.chess.pgn.Game
 import com.chesscompanion.core.chess.pgn.GameSession
 import com.chesscompanion.core.chess.pgn.PgnReader
 import com.chesscompanion.core.chess.pgn.PgnWriter
+import com.chesscompanion.core.data.AnalysisJob
 import com.chesscompanion.core.ui.board.AnnotationColor
 import com.chesscompanion.core.ui.board.BoardAnnotations
 import com.chesscompanion.core.ui.board.BoardHighlights
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -59,8 +62,9 @@ class PlayViewModel
         private val documents: GameDocuments,
         analyzer: PositionAnalyzer,
         opponentEngine: OpponentEngine,
+        private val queue: GameAnalysisQueue,
     ) : ViewModel() {
-        private val analysis = AnalysisController(analyzer, viewModelScope)
+        private val analysis = AnalysisController(analyzer, viewModelScope, stored = queue::stored)
         private val opponent =
             OpponentController(
                 engine = opponentEngine,
@@ -89,6 +93,9 @@ class PlayViewModel
          * engine thinks, and must not rebuild (and redraw) the board and the move list each time.
          */
         val analysisState: StateFlow<AnalysisState> = analysis.state
+
+        /** The latest game sent to the background analysis queue (S2-5), with its progress. */
+        val queueState: StateFlow<AnalysisJob?> = queue.latest.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
         init {
             analysis.show(input.session.position, input.session.status().isOver)
@@ -122,6 +129,7 @@ class PlayViewModel
                         _state.value = buildState()
                     }
                 }
+                is PlayAction.Queue -> viewModelScope.launch { queue.accept(action) { exportPgn() } }
                 is PlayAction.Document -> onDocument(action)
             }
         }
@@ -315,3 +323,12 @@ private fun restoredSession(savedState: SavedStateHandle): GameSession {
 /** A gesture that picks or moves a piece (as opposed to promotion, flipping, settings). */
 private fun PlayAction.Board.picksPiece(): Boolean =
     this is PlayAction.SquareTap || this is PlayAction.DragStart || this is PlayAction.Drop
+
+/** Sends the game ([pgn], read only when needed) to the queue, or cancels the queue. */
+private suspend fun GameAnalysisQueue.accept(
+    action: PlayAction.Queue,
+    pgn: () -> String,
+) = when (action) {
+    PlayAction.AnalyseGame -> enqueue(pgn())
+    PlayAction.CancelGameAnalysis -> cancelAll()
+}

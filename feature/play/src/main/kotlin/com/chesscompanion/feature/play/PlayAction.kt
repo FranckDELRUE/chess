@@ -70,6 +70,15 @@ sealed interface PlayAction {
 
     data object Resign : Opponent
 
+    /** The background analysis queue (S2-5). */
+    sealed interface Queue : PlayAction
+
+    /** Sends the game shown to the queue: each position of its main line is analysed and stored. */
+    data object AnalyseGame : Queue
+
+    /** Cancels the analysis in progress and the games waiting after it. */
+    data object CancelGameAnalysis : Queue
+
     /** Live engine analysis (S2-3). */
     sealed interface Analysis : PlayAction
 

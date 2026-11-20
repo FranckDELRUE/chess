@@ -61,3 +61,8 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Préchauffer Stockfish (réseau NNUE compris) à l'ouverture de la partie contre Stockfish : le premier coup coûte ≈ 2 s de plus.
 - Mesurer la force réelle des réglages de Stockfish (ELO et niveau) contre les parties de Heidoji ou contre Maia (S3), pour afficher un ELO plus parlant que `UCI_Elo`.
 - Partie contre Stockfish : pendule (S3), nulle proposée, revanche avec les mêmes réglages, enregistrement automatique des parties (S3).
+
+## Issu de S2-5
+- Stocker aussi les résultats de l'analyse en direct (profondeur atteinte) dans `position_analysis`.
+- File d'analyses : annuler une seule partie sans annuler celles qui attendent (aujourd'hui une seule chaîne WorkManager) ; liste des parties analysées (S6).
+- Notification d'analyse : la vérifier à l'écran (permission refusée pendant la démo S2-5) et ajouter « Ouvrir la partie ».

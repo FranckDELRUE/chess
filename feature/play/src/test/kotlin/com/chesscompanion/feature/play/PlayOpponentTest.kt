@@ -40,7 +40,7 @@ class PlayOpponentTest {
     private fun vsEngine(
         opponent: FakeOpponent,
         saved: SavedStateHandle = SavedStateHandle(mapOf("vs" to "engine")),
-    ) = PlayViewModel(saved, FakeDocuments(), FakeAnalyzer(), opponent)
+    ) = PlayViewModel(saved, FakeDocuments(), FakeAnalyzer(), opponent, FakeQueue())
 
     private fun PlayViewModel.start(chosen: OpponentSettings = settings) =
         onAction(PlayAction.StartOpponentGame(chosen))
@@ -60,7 +60,7 @@ class PlayOpponentTest {
     }
 
     private fun newTwoPlayerViewModel() =
-        PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer(), FakeOpponent())
+        PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer(), FakeOpponent(), FakeQueue())
 
     @Test
     fun `dismissing the setup keeps the default game`() {
@@ -237,7 +237,14 @@ class PlayOpponentTest {
     @Test
     fun `the analysis is not available during the game and comes back at the end`() {
         val analyzer = FakeAnalyzer()
-        val vm = PlayViewModel(SavedStateHandle(mapOf("vs" to "engine")), FakeDocuments(), analyzer, FakeOpponent())
+        val vm =
+            PlayViewModel(
+                SavedStateHandle(mapOf("vs" to "engine")),
+                FakeDocuments(),
+                analyzer,
+                FakeOpponent(),
+                FakeQueue(),
+            )
         vm.start()
         vm.onAction(PlayAction.ToggleAnalysis)
         assertFalse(vm.analysisState.value.enabled)

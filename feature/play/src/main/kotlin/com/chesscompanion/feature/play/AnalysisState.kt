@@ -5,6 +5,7 @@ import com.chesscompanion.core.chess.PieceLetters
 import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.San
 import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.data.StoredAnalysis
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.Score
 import com.chesscompanion.core.engine.forWhite
@@ -113,6 +114,27 @@ object AnalysisReducer {
                 blackFirst = position.sideToMove == Side.BLACK,
             )
         return state.copy(lines = (state.lines.filter { it.rank != line.rank } + line).sortedBy { it.rank })
+    }
+
+    /**
+     * The line stored by the background analysis (S2-5), shown before the live search catches up: as
+     * rank 1, it is replaced only by a live line at least as deep.
+     */
+    fun storedLine(
+        position: Position,
+        stored: StoredAnalysis,
+    ): AnalysisLine? {
+        val first = Move.parseUci(stored.bestMove)?.takeIf { position.isLegal(it) } ?: return null
+        val score = stored.mateIn?.let { Score.Mate(it) } ?: Score.Centipawns(stored.scoreCp ?: 0)
+        return AnalysisLine(
+            rank = 1,
+            depth = stored.depth,
+            score = score,
+            moves = sanLine(position, stored.pv.take(AnalysisLine.MAX_PLIES)),
+            firstMove = first,
+            moveNumber = position.fullmoveNumber,
+            blackFirst = position.sideToMove == Side.BLACK,
+        )
     }
 
     /** The variation in French SAN (only the plies shown are converted); stops at the first illegal move. */
