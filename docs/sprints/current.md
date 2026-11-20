@@ -85,8 +85,21 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   l'apprentissage » ni de réglage de la limite de nouvelles positions (10 par séance, `QueueLimits`) : à ajouter avec
   les réglages si le besoin se confirme. Les flèches et marques dessinées par l'auteur sur la position ne sont pas
   encore montrées pendant l'apprentissage (seuls commentaire et source le sont).
-### S8-6 à S8-8
-Voir le plan validé : trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
+### S8-6 · Trous du répertoire et rappel quotidien
+- [x] `GapFinder` (`:core:data`) : parcourt les positions où l'adversaire joue (de la racine vers les feuilles), interroge
+  l'explorateur Lichess (cache d'abord) et liste les réponses fréquentes (≥ 5 % et ≥ 100 parties) sans réponse dans le
+  répertoire ; coups validés par le moteur de règles. Écran « Trous » (`GapsViewModel`/`GapsScreen`), bouton dans la
+  liste des répertoires. 10 + 5 tests.
+- [x] Rappel quotidien optionnel (`ReviewReminderWorker`, WorkManager périodique 24 h, ~18 h locale) : notification
+  « n positions à réviser » seulement s'il y en a et si les notifications sont autorisées ; lit la base locale, aucun
+  réseau. Interrupteur sur l'accueil (`ReminderSwitch`) qui demande la permission POST_NOTIFICATIONS (Android 13+) ;
+  désactivé par défaut. 3 tests de calcul du délai. Installé sur la tablette.
+- *Notes / dette* : analyse limitée à 40 positions par passage (les plus proches de la racine) ; nécessite le jeton
+  Lichess ou des positions en cache ; le rappel ne compte que les révisions échues (pas les nouvelles positions) ; le
+  worker et `DueCounter` n'ont pas de test dédié (le fake de store renvoie un flux vide) ; l'heure (18 h) n'est pas
+  réglable ; WorkManager n'est pas exact à la minute.
+### S8-7 et S8-8
+Voir le plan validé : export PGN (7), démo et clôture (8).
 
 ---
 

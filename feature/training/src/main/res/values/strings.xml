@@ -48,4 +48,12 @@
     <string name="gaps_problem_rate_limited">Lichess demande de ralentir. Réessaie dans une minute.</string>
     <string name="gaps_problem_offline">Pas de réseau : seules les positions déjà consultées sont disponibles.</string>
     <string name="gaps_problem_server">Lichess ne répond pas correctement. Réessaie plus tard.</string>
+    <string name="reminder_switch">Rappel quotidien des révisions (18 h)</string>
+    <string name="reminder_denied">Notifications refusées : le rappel reste désactivé.</string>
+    <string name="reminder_channel">Rappel des révisions</string>
+    <string name="reminder_title">Révisions d’ouvertures</string>
+    <plurals name="reminder_text">
+        <item quantity="one">%1$d position à réviser aujourd’hui.</item>
+        <item quantity="other">%1$d positions à réviser aujourd’hui.</item>
+    </plurals>
 </resources>

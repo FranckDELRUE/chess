@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chesscompanion.R
 import com.chesscompanion.core.ui.board.ChessBoard
 import com.chesscompanion.core.ui.theme.ChessTheme
+import com.chesscompanion.feature.training.ReminderSwitch
 
 @Composable
 fun HomeScreen(
@@ -41,6 +42,7 @@ fun HomeScreen(
         onOpenPlayEngine = onOpenPlayEngine,
         onOpenRepertoires = onOpenRepertoires,
         onOpenEngineDebug = onOpenEngineDebug,
+        extra = { ReminderSwitch() },
     )
 }
 
@@ -52,6 +54,7 @@ internal fun HomeContent(
     onOpenPlayEngine: () -> Unit,
     onOpenRepertoires: () -> Unit,
     onOpenEngineDebug: (() -> Unit)?,
+    extra: @Composable () -> Unit = {},
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
@@ -64,6 +67,7 @@ internal fun HomeContent(
                         onOpenPlayEngine,
                         onOpenRepertoires,
                         onOpenEngineDebug,
+                        extra,
                         Modifier.weight(1f).fillMaxSize(),
                     )
                 }
@@ -76,6 +80,7 @@ internal fun HomeContent(
                         onOpenPlayEngine,
                         onOpenRepertoires,
                         onOpenEngineDebug,
+                        extra,
                         Modifier.fillMaxWidth().weight(1f),
                     )
                 }
@@ -91,6 +96,7 @@ private fun SidePanel(
     onOpenPlayEngine: () -> Unit,
     onOpenRepertoires: () -> Unit,
     onOpenEngineDebug: (() -> Unit)?,
+    extra: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceVariant) {
@@ -102,6 +108,7 @@ private fun SidePanel(
             if (onOpenEngineDebug != null) {
                 OutlinedButton(onClick = onOpenEngineDebug) { Text(stringResource(R.string.home_engine_debug)) }
             }
+            extra()
         }
     }
 }
