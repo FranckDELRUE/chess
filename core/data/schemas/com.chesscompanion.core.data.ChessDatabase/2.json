@@ -1,0 +1,356 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "72d54ab3e28d5724e22c8e8fa4d837a2",
+    "entities": [
+      {
+        "tableName": "position_analysis",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` INTEGER NOT NULL, `fen` TEXT NOT NULL, `depth` INTEGER NOT NULL, `scoreCp` INTEGER, `mateIn` INTEGER, `bestMove` TEXT NOT NULL, `pv` TEXT NOT NULL, `analysedAt` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fen",
+            "columnName": "fen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "depth",
+            "columnName": "depth",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scoreCp",
+            "columnName": "scoreCp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mateIn",
+            "columnName": "mateIn",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bestMove",
+            "columnName": "bestMove",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pv",
+            "columnName": "pv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "analysedAt",
+            "columnName": "analysedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "analysis_job",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `pgn` TEXT NOT NULL, `state` TEXT NOT NULL, `done` INTEGER NOT NULL, `total` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pgn",
+            "columnName": "pgn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "done",
+            "columnName": "done",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "total",
+            "columnName": "total",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_analysis_job_createdAt",
+            "unique": false,
+            "columnNames": [
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_analysis_job_createdAt` ON `${TABLE_NAME}` (`createdAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "repertoire",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `side` TEXT NOT NULL, `startFen` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startFen",
+            "columnName": "startFen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "repertoire_node",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`repertoireId` TEXT NOT NULL, `key` INTEGER NOT NULL, `fen` TEXT NOT NULL, `positionFen` TEXT NOT NULL, `comment` TEXT NOT NULL, `arrows` TEXT NOT NULL, `squares` TEXT NOT NULL, `sourceBook` TEXT, `sourceChapter` TEXT, `sourcePage` TEXT, PRIMARY KEY(`repertoireId`, `key`, `fen`), FOREIGN KEY(`repertoireId`) REFERENCES `repertoire`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "repertoireId",
+            "columnName": "repertoireId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fen",
+            "columnName": "fen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "positionFen",
+            "columnName": "positionFen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "comment",
+            "columnName": "comment",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "arrows",
+            "columnName": "arrows",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "squares",
+            "columnName": "squares",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceBook",
+            "columnName": "sourceBook",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceChapter",
+            "columnName": "sourceChapter",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourcePage",
+            "columnName": "sourcePage",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "repertoireId",
+            "key",
+            "fen"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "repertoire",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "repertoireId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "repertoire_edge",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`repertoireId` TEXT NOT NULL, `fromKey` INTEGER NOT NULL, `fromFen` TEXT NOT NULL, `uci` TEXT NOT NULL, `toKey` INTEGER NOT NULL, `toFen` TEXT NOT NULL, `san` TEXT NOT NULL, `ordinal` INTEGER NOT NULL, PRIMARY KEY(`repertoireId`, `fromKey`, `fromFen`, `uci`), FOREIGN KEY(`repertoireId`) REFERENCES `repertoire`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "repertoireId",
+            "columnName": "repertoireId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromKey",
+            "columnName": "fromKey",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromFen",
+            "columnName": "fromFen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uci",
+            "columnName": "uci",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toKey",
+            "columnName": "toKey",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toFen",
+            "columnName": "toFen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "san",
+            "columnName": "san",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ordinal",
+            "columnName": "ordinal",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "repertoireId",
+            "fromKey",
+            "fromFen",
+            "uci"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_repertoire_edge_repertoireId_ordinal",
+            "unique": false,
+            "columnNames": [
+              "repertoireId",
+              "ordinal"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_repertoire_edge_repertoireId_ordinal` ON `${TABLE_NAME}` (`repertoireId`, `ordinal`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "repertoire",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "repertoireId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '72d54ab3e28d5724e22c8e8fa4d837a2')"
+    ]
+  }
+}

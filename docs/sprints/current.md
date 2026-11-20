@@ -46,9 +46,9 @@ Sprint précédent : `docs/sprints/s2.md`. Ordre d'exécution : ADR 0011 (S7 pui
 fois le même PGN ne change rien ; collision de clé Zobrist départagée par la FEN.
 
 ### S7-2 · Stockage Room
-- [ ] Base en version 2 avec migration depuis la v1 ; schéma exporté dans `core/data/schemas`.
-- [ ] Tables répertoire, nœud, arête ; commentaire, flèches et source (livre, chapitre, page) par nœud.
-- [ ] DAO et dépôt (`RepertoireStore`) derrière une interface.
+- [x] Base en version 2 avec migration depuis la v1 ; schéma exporté dans `core/data/schemas`.
+- [x] Tables répertoire, nœud, arête ; commentaire, flèches et source (livre, chapitre, page) par nœud.
+- [x] DAO et dépôt (`RepertoireStore`) derrière une interface.
 
 **Acceptation** : test de migration v1 → v2 sur la tablette ou en JVM ; aller-retour graphe → Room →
 graphe sans perte.
@@ -116,3 +116,12 @@ ANR) ; test avec faux transport réseau.
 idempotente, cycle de répétition, case en passant inutilisable et collision de clé simulée.
 Choix : identité d'un nœud = clé Zobrist + FEN canonique ; annotations portées par le nœud (stockées en
 S7-2). Dette : `add` et `merge` recopient les index (O(taille)), à mesurer à l'import de S7-5.
+
+**S7-2** (2026-11-20) : base Room en version 2 (`repertoire`, `repertoire_node`, `repertoire_edge`), migration
+`Migrations.V1_TO_V2` testée avec `MigrationTestHelper` sous Robolectric (analyses de la v1 conservées),
+`RepertoireStore` / `RoomRepertoireStore` (créer, lister, charger, enregistrer, renommer, supprimer).
+Écart de périmètre : `NodeNotes` (commentaire, flèches, cases, source) et `Repertoire.restore` ajoutés à
+`:core:chess.repertoire`, nécessaires pour stocker les annotations. Nouvelle dépendance de test :
+`androidx.room:room-testing` (Apache 2.0). Dette : `save` remplace tout le contenu du répertoire à chaque
+appel (O(taille) écritures), à mesurer à l'import de S7-5 ; les cartes de S8 référenceront
+(repertoireId, key, fen) sans clé étrangère vers les nœuds, pour survivre à ce remplacement.
