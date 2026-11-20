@@ -5,7 +5,9 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -15,6 +17,7 @@ import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.ui.board.AnnotationColor
 import com.chesscompanion.core.ui.board.squareTestTag
 import com.chesscompanion.core.ui.theme.ChessTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -41,7 +44,10 @@ class RepertoireEditorScreenTest {
             ChessTheme {
                 RepertoireEditorScreen(
                     RepertoireEditorViewModel(SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)), store)
-                        .also { it.saveDelayMs = 0 },
+                        .also {
+                            it.saveDelayMs = 0
+                            it.importDispatcher = Dispatchers.Main
+                        },
                 )
             }
         }
@@ -113,6 +119,19 @@ class RepertoireEditorScreenTest {
             .assertIsEnabled()
             .performClick()
         assertEquals(0, store.repertoireOf(id).let { it.notes(it.root).squares.size })
+    }
+
+    @Test
+    fun pastingAPgnImportsItAndShowsTheReport() {
+        compose.onNodeWithTag(EDITOR_IMPORT_TAG).performScrollTo().performClick()
+        compose.onNodeWithTag(IMPORT_RUN_TAG).assertIsNotEnabled()
+        compose.onNodeWithTag(IMPORT_TEXT_TAG).performTextInput("1. e4 e5 2. Nf3 Nc6 *")
+        compose.onNodeWithTag(IMPORT_RUN_TAG).assertIsEnabled().performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag(IMPORT_REPORT_TAG).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Coups ajoutés : 4").assertExists()
+        compose.onNodeWithTag(IMPORT_CLOSE_TAG).performClick()
+        compose.onNodeWithTag(EDITOR_IMPORT_TAG).performScrollTo().assertIsEnabled()
+        compose.onNodeWithTag(editorContinuationTag("e2e4")).assertTextContains("e4")
     }
 
     @Test

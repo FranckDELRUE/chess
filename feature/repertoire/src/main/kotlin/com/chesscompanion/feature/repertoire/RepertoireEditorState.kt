@@ -45,6 +45,8 @@ data class RepertoireEditorUiState(
     /** Deleting the last move asks for a confirmation first. */
     val confirmDelete: Boolean = false,
     val moveCount: Int = 0,
+    /** The PGN import dialog (S7-5). */
+    val import: ImportUiState = ImportUiState.Closed,
 )
 
 sealed interface EditorAction {
@@ -102,4 +104,17 @@ sealed interface EditorAction {
     data object ConfirmDelete : EditorAction
 
     data object DismissDelete : EditorAction
+
+    /** Opens the PGN import dialog. */
+    data object OpenImport : EditorAction
+
+    data object CloseImport : EditorAction
+
+    /** Merges the games of [text] into the repertoire. */
+    data class RunImport(
+        val text: String,
+    ) : EditorAction
+
+    /** The chosen file could not be read. */
+    data object ImportFileUnreadable : EditorAction
 }

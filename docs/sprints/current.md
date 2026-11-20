@@ -70,9 +70,9 @@ graphe sans perte.
 d'interface JVM de l'éditeur ; vérifié sur la tablette.
 
 ### S7-5 · Import PGN
-- [ ] Import par fichier ou texte collé ; chaque partie passe par `:core:chess` avant stockage (règle 2).
-- [ ] Fusion dans le répertoire choisi, rapport : lignes ajoutées, déjà présentes, rejetées avec la raison.
-- [ ] Import hors du fil principal, progression visible.
+- [x] Import par fichier ou texte collé ; chaque partie passe par `:core:chess` avant stockage (règle 2).
+- [x] Fusion dans le répertoire choisi, rapport : lignes ajoutées, déjà présentes, rejetées avec la raison.
+- [x] Import hors du fil principal, progression visible.
 
 **Acceptation** : PGN de 500 variantes importé sans perte ; transpositions vers le même nœud ; temps
 d'import mesuré sur la tablette.
@@ -142,3 +142,15 @@ du dernier coup avec confirmation ; sauvegarde différée (600 ms) et forcée à
 commentaire, redémarrage forcé (4 coups et commentaire conservés) ; répertoire de test supprimé.
 Dette : `EditorInput` duplique `MoveInput` de `:feature:play` (à mutualiser) ; les notes de la position de
 départ ne sont pas exportées en PGN ; les marques jaunes sont ignorées (backlog) ; `save` remplace tout le contenu.
+
+**S7-5** (2026-11-20) : `Repertoire.importPgn` (`:core:chess`) fusionne toutes les parties d'un PGN en une seule
+passe (`mergeAll`, une copie du graphe) et rend un `ImportReport` : parties fusionnées, coups ajoutés ou déjà
+présents, rejets avec raison (`UNREADABLE` avec la ligne, `DIFFERENT_START`) ; une partie rejetée n'arrête pas
+les autres. Dans l'éditeur, bouton « Importer un PGN » : fichier (`GetContent`, 32 Mo maximum) ou texte collé,
+import sur `Dispatchers.Default` avec progression, un seul `save` à la fin, position affichée conservée,
+modifications bloquées pendant l'import. Tests : 500 lignes sans perte (comparées à une construction coup par
+coup), transpositions, rejets, réimport, progression, écran. **Mesure sur la tablette** : 500 parties de
+20 demi-coups (63 Ko) = 9262 coups ajoutés, 738 déjà présents, **4,5 s** import et sauvegarde compris, coups
+conservés après arrêt forcé ; répertoire et PGN de test supprimés. Dette : le `save` à remplacement complet
+domine probablement ces 4,5 s (non isolé) ; un fichier de plusieurs milliers de parties demandera un `save`
+incrémental ou par lots ; encodage lu en UTF-8 uniquement.

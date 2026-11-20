@@ -271,6 +271,77 @@ class RepertoireEditorViewModelTest {
             assertEquals("x", store.repertoireOf("r1").let { it.notes(it.movesFrom(it.root).single().to).comment })
         }
 
+    private val pgn = "[Event \"x\"]\n\n1. e4 e5 (1... c5) 2. Nf3 *\n\n[Event \"y\"]\n\n1. e4 Ke4 *\n"
+
+    private fun RepertoireEditorViewModel.importing(text: String = pgn) {
+        importDispatcher = UnconfinedTestDispatcher()
+        onAction(EditorAction.OpenImport)
+        onAction(EditorAction.RunImport(text))
+    }
+
+    @Test
+    fun `the import dialog opens and closes`() {
+        val vm = editor()
+        assertEquals(ImportUiState.Closed, vm.ui.import)
+        vm.onAction(EditorAction.OpenImport)
+        assertEquals(ImportUiState.Form, vm.ui.import)
+        vm.onAction(EditorAction.CloseImport)
+        assertEquals(ImportUiState.Closed, vm.ui.import)
+    }
+
+    @Test
+    fun `an import adds the lines, saves them at once and reports`() {
+        val vm = editor()
+        vm.importing()
+        val done = vm.ui.import as ImportUiState.Done
+        assertEquals(1, done.summary.gamesMerged)
+        assertEquals(2, done.summary.gamesInFile)
+        assertEquals(4, done.summary.addedMoves)
+        assertEquals(listOf(2), done.summary.rejected.map { it.gameNumber })
+        assertEquals(4, vm.ui.moveCount)
+        assertEquals(1, store.saves)
+        assertEquals(4, store.repertoireOf("r1").edgeCount)
+        assertEquals(listOf("e4"), vm.ui.continuations.map { it.label })
+    }
+
+    @Test
+    fun `importing what is already there changes and saves nothing`() {
+        val vm = editor()
+        vm.importing()
+        vm.onAction(EditorAction.CloseImport)
+        vm.importing()
+        val done = vm.ui.import as ImportUiState.Done
+        assertEquals(0, done.summary.addedMoves)
+        assertEquals(1, store.saves)
+    }
+
+    @Test
+    fun `an import keeps the position shown`() {
+        val vm = editor()
+        vm.tap("e2", "e4")
+        vm.importing()
+        assertEquals("1. e4", vm.ui.lineText)
+        assertEquals(listOf("e5", "c5"), vm.ui.continuations.map { it.label })
+    }
+
+    @Test
+    fun `an unreadable file is reported and can be closed`() {
+        val vm = editor()
+        vm.onAction(EditorAction.OpenImport)
+        vm.onAction(EditorAction.ImportFileUnreadable)
+        assertEquals(ImportUiState.FileUnreadable, vm.ui.import)
+        vm.onAction(EditorAction.CloseImport)
+        assertEquals(ImportUiState.Closed, vm.ui.import)
+    }
+
+    @Test
+    fun `an empty text reports no game and saves nothing`() {
+        val vm = editor()
+        vm.importing("   ")
+        assertEquals(0, (vm.ui.import as ImportUiState.Done).summary.gamesInFile)
+        assertEquals(0, store.saves)
+    }
+
     @Test
     fun `the saved repertoire exports to PGN with its comment and marks`() {
         val vm = editor()
