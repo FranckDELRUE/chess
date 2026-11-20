@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -35,6 +37,10 @@ import java.io.IOException
 
 const val IMPORT_FILE_TAG = "import-file"
 const val IMPORT_TEXT_TAG = "import-text"
+const val IMPORT_STUDY_TAG = "import-study"
+const val IMPORT_STUDY_RUN_TAG = "import-study-run"
+const val IMPORT_FETCHING_TAG = "import-fetching"
+const val IMPORT_STUDY_ERROR_TAG = "import-study-error"
 const val IMPORT_RUN_TAG = "import-run"
 const val IMPORT_PROGRESS_TAG = "import-progress"
 const val IMPORT_REPORT_TAG = "import-report"
@@ -56,6 +62,8 @@ internal fun ImportDialog(
         is ImportUiState.Running -> ImportRunning(state)
         is ImportUiState.Done -> ImportDone(state.summary, onAction)
         ImportUiState.FileUnreadable -> ImportMessage(stringResource(R.string.import_file_unreadable), onAction)
+        ImportUiState.Fetching -> ImportFetching(onAction)
+        is ImportUiState.StudyFailed -> ImportMessage(stringResource(state.problem.messageRes()), onAction)
     }
 }
 
@@ -64,6 +72,7 @@ private fun ImportForm(onAction: (EditorAction) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pasted by rememberSaveable { mutableStateOf("") }
+    var study by rememberSaveable { mutableStateOf("") }
     val picker =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
@@ -82,6 +91,7 @@ private fun ImportForm(onAction: (EditorAction) -> Unit) {
                 OutlinedButton(onClick = { picker.launch("*/*") }, modifier = Modifier.testTag(IMPORT_FILE_TAG)) {
                     Text(stringResource(R.string.import_choose_file))
                 }
+                StudyRow(study, { study = it }, onAction)
                 OutlinedTextField(
                     value = pasted,
                     onValueChange = { pasted = it },
@@ -214,4 +224,56 @@ private fun readPgn(
         null
     } catch (_: SecurityException) {
         null
+    }
+
+@Composable
+private fun StudyRow(
+    study: String,
+    onChange: (String) -> Unit,
+    onAction: (EditorAction) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = study,
+            onValueChange = onChange,
+            label = { Text(stringResource(R.string.import_study)) },
+            singleLine = true,
+            modifier = Modifier.weight(1f).testTag(IMPORT_STUDY_TAG),
+        )
+        OutlinedButton(
+            onClick = { onAction(EditorAction.FetchStudy(study)) },
+            enabled = study.isNotBlank(),
+            modifier = Modifier.testTag(IMPORT_STUDY_RUN_TAG),
+        ) { Text(stringResource(R.string.import_study_fetch)) }
+    }
+}
+
+@Composable
+private fun ImportFetching(onAction: (EditorAction) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onAction(EditorAction.CloseImport) },
+        title = { Text(stringResource(R.string.import_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.import_fetching))
+                LinearProgressIndicator(Modifier.fillMaxWidth().testTag(IMPORT_FETCHING_TAG))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onAction(EditorAction.CloseImport) }) {
+                Text(stringResource(R.string.repertoire_cancel))
+            }
+        },
+    )
+}
+
+private fun StudyProblem.messageRes(): Int =
+    when (this) {
+        StudyProblem.INVALID_REFERENCE -> R.string.import_study_invalid
+        StudyProblem.NOT_FOUND -> R.string.import_study_not_found
+        StudyProblem.PRIVATE -> R.string.import_study_private
+        StudyProblem.RATE_LIMITED -> R.string.import_study_rate_limited
+        StudyProblem.OFFLINE -> R.string.import_study_offline
+        StudyProblem.SERVER -> R.string.import_study_server
+        StudyProblem.TOO_LARGE -> R.string.import_study_too_large
     }

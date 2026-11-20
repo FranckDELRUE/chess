@@ -31,6 +31,13 @@ class RepertoireEditTest {
     // ---- PgnMarks ----
 
     @Test
+    fun `clock, evaluation and annotator commands are dropped from the text, marks are kept`() {
+        val parsed = PgnMarks.parse("[%eval 0.17,17] [%clk 1:59:58] Bon coup. [%anno \"Moi\", moi] [%cal Ge2e4]")
+        assertEquals("Bon coup.", parsed.text)
+        assertEquals(1, parsed.arrows.size)
+    }
+
+    @Test
     fun `marks are read from a comment and removed from its text`() {
         val parsed = PgnMarks.parse("Idée centrale. [%cal Ge2e4,Rd7d5] [%csl Gd4,Bf6] Fin.")
         assertEquals("Idée centrale. Fin.", parsed.text)

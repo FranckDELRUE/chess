@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Import of a public Lichess study (S7-6): one GET, no account, no token. The app works without it. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".ChessCompanionApp"
         android:allowBackup="true"

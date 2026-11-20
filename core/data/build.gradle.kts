@@ -39,6 +39,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     api(libs.kotlinx.coroutines.core)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -49,6 +51,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
     // Room tests on the JVM: Robolectric runs JUnit 4 tests through JUnit Vintage.
     testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit.vintage.engine)

@@ -13,10 +13,11 @@ data class ParsedComment(
  * Reads and writes the drawing commands that Lichess and Chess.com put in PGN comments:
  * `[%cal Ge2e4,Rd7d5]` for arrows and `[%csl Gd4]` for squares, each item being a colour letter
  * followed by the squares. Green, red and blue are kept; any other colour (yellow) is dropped, as
- * is any malformed item.
+ * is any malformed item. Other commands (clock, evaluation, annotator) are removed from the text.
  */
 object PgnMarks {
-    private val command = Regex("""\[%(cal|csl)\s+([^\]]*)]""")
+    // Any `[%name ...]` command: arrows and squares are read, the others (`%clk`, `%eval`, `%anno`...) are dropped.
+    private val command = Regex("""\[%(\w+)\s*([^\]]*)]""")
     private val spaces = Regex("[ \\t]{2,}")
     private val letters = mapOf('G' to MarkColor.GREEN, 'R' to MarkColor.RED, 'B' to MarkColor.BLUE)
     private const val SQUARE_LENGTH = 2
@@ -30,10 +31,9 @@ object PgnMarks {
                     .split(',')
                     .map { it.trim() }
                     .filter { it.isNotEmpty() }
-            if (match.groupValues[1] == "cal") {
-                items.mapNotNullTo(arrows, ::arrowOf)
-            } else {
-                items.mapNotNullTo(squares, ::squareOf)
+            when (match.groupValues[1]) {
+                "cal" -> items.mapNotNullTo(arrows, ::arrowOf)
+                "csl" -> items.mapNotNullTo(squares, ::squareOf)
             }
         }
         val text = comment.replace(command, " ").replace(spaces, " ").trim()

@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chesscompanion.core.chess.repertoire.importPgn
 import com.chesscompanion.core.data.RepertoireStore
+import com.chesscompanion.core.data.study.StudyFetcher
+import com.chesscompanion.core.data.study.StudyRef
+import com.chesscompanion.core.data.study.StudyResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +36,7 @@ class RepertoireEditorViewModel
     constructor(
         savedState: SavedStateHandle,
         private val store: RepertoireStore,
+        private val studies: StudyFetcher,
     ) : ViewModel() {
         private val id: String = savedState.get<String>(REPERTOIRE_ID_ARG).orEmpty()
         private val _state = MutableStateFlow(RepertoireEditorUiState())
@@ -42,6 +46,7 @@ class RepertoireEditorViewModel
         private var name = ""
         private var dirty = false
         private var saveJob: Job? = null
+        private var fetchJob: Job? = null
 
         /** Delay between the last change and the save; tests set 0. */
         internal var saveDelayMs = SAVE_DELAY_MS
@@ -66,10 +71,10 @@ class RepertoireEditorViewModel
                 EditorAction.OpenImport -> setImport(ImportUiState.Form)
                 EditorAction.CloseImport ->
                     if (_state.value.import !is ImportUiState.Running) {
-                        setImport(
-                            ImportUiState.Closed,
-                        )
+                        fetchJob?.cancel()
+                        setImport(ImportUiState.Closed)
                     }
+                is EditorAction.FetchStudy -> fetchStudy(action.input)
                 is EditorAction.RunImport -> runImport(action.text)
                 EditorAction.ImportFileUnreadable -> setImport(ImportUiState.FileUnreadable)
                 // Edits wait for the end of an import, which would overwrite them.
@@ -82,6 +87,25 @@ class RepertoireEditorViewModel
             val next = current.reduce(action)
             show(next)
             if (next.repertoire !== current.repertoire) scheduleSave()
+        }
+
+        /** Gets the PGN of a public Lichess study, then merges it like any PGN; a failure changes nothing. */
+        private fun fetchStudy(input: String) {
+            if (_state.value.import is ImportUiState.Running) return
+            val ref = StudyRef.parse(input)
+            if (ref == null) {
+                setImport(ImportUiState.StudyFailed(StudyProblem.INVALID_REFERENCE))
+                return
+            }
+            setImport(ImportUiState.Fetching)
+            fetchJob?.cancel()
+            fetchJob =
+                viewModelScope.launch {
+                    when (val result = studies.fetch(ref)) {
+                        is StudyResult.Found -> runImport(result.pgn)
+                        else -> setImport(ImportUiState.StudyFailed(result.toProblem()))
+                    }
+                }
         }
 
         private fun setImport(value: ImportUiState) = _state.update { it.copy(import = value) }
