@@ -4,6 +4,9 @@ internal const val ROUTE_HOME = "home"
 internal const val ROUTE_ENGINE_DEBUG = "engine-debug"
 internal const val ROUTE_PLAY = "play"
 internal const val ROUTE_REPERTOIRES = "repertoires"
+internal const val ROUTE_REPERTOIRE_PATTERN = "repertoire/{id}"
+
+internal fun repertoireRoute(id: String) = "repertoire/$id"
 
 /** `vs=engine` opens the game against Stockfish (read by `PlayViewModel` from its saved state). */
 internal const val ROUTE_PLAY_PATTERN = "play?vs={vs}"
@@ -18,6 +21,7 @@ internal class NavigationEntries(
             add(ROUTE_HOME)
             add(ROUTE_PLAY_PATTERN)
             add(ROUTE_REPERTOIRES)
+            add(ROUTE_REPERTOIRE_PATTERN)
             if (debugEnabled) add(ROUTE_ENGINE_DEBUG)
         }
 

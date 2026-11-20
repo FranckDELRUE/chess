@@ -61,10 +61,10 @@ graphe sans perte.
 **Acceptation** : un répertoire créé survit à la fermeture de l'app (vérifié sur la tablette).
 
 ### S7-4 · Éditeur sur l'échiquier
-- [ ] Jouer un coup l'ajoute au répertoire ; navigation dans le graphe ; retour à la position précédente.
-- [ ] Commentaire, flèches (couche de `:core:ui`) et source (livre, chapitre, page) sur chaque nœud.
-- [ ] Suppression d'une branche, avec confirmation.
-- [ ] `:core:chess` lit et écrit `[%cal]` et `[%csl]` dans les commentaires PGN.
+- [x] Jouer un coup l'ajoute au répertoire ; navigation dans le graphe ; retour à la position précédente.
+- [x] Commentaire, flèches (couche de `:core:ui`) et source (livre, chapitre, page) sur chaque nœud.
+- [x] Suppression d'une branche, avec confirmation.
+- [x] `:core:chess` lit et écrit `[%cal]` et `[%csl]` dans les commentaires PGN.
 
 **Acceptation** : test d'enchaînement : éditer, exporter en PGN, relire, annotations conservées ; test
 d'interface JVM de l'éditeur ; vérifié sur la tablette.
@@ -132,3 +132,13 @@ avec confirmation), `RepertoireListViewModel` à point d'entrée unique, bouton 
 la tablette : création, redémarrage de l'app (le répertoire reste), suppression ; répertoire de test supprimé.
 Les lignes ne sont pas encore ouvrables (`onOpen` nul) : l'éditeur arrive en S7-4. Observation : la tablette
 affiche « 0 coups » (pluriel selon la langue du système, hors français), les tests JVM attendent « 0 coup ».
+
+**S7-4** (2026-11-20) : éditeur sur l'échiquier (`RepertoireEditorViewModel`, modèle immuable `EditorModel`,
+écran à deux panneaux). Jouer ajoute le coup, rejouer un coup connu le suit, un autre coup crée une variante ;
+navigation Début / Reculer / suites ; commentaire, flèches et cases (G/R/B) et source par position ; suppression
+du dernier coup avec confirmation ; sauvegarde différée (600 ms) et forcée à ON_STOP / onCleared.
+`:core:chess` : `PgnMarks` (`[%cal]`, `[%csl]`), `Repertoire.removeMove`, `merge` conserve les commentaires,
+`Repertoire.toGame` (export PGN, aller-retour testé). Vérifié sur la tablette : coups, variante (e4 / d4),
+commentaire, redémarrage forcé (4 coups et commentaire conservés) ; répertoire de test supprimé.
+Dette : `EditorInput` duplique `MoveInput` de `:feature:play` (à mutualiser) ; les notes de la position de
+départ ne sont pas exportées en PGN ; les marques jaunes sont ignorées (backlog) ; `save` remplace tout le contenu.

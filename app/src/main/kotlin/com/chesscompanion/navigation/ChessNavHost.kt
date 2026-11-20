@@ -1,6 +1,7 @@
 package com.chesscompanion.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -8,6 +9,8 @@ import androidx.navigation.navArgument
 import com.chesscompanion.BuildConfig
 import com.chesscompanion.enginedebug.EngineDebugScreen
 import com.chesscompanion.feature.play.PlayScreen
+import com.chesscompanion.feature.repertoire.REPERTOIRE_ID_ARG
+import com.chesscompanion.feature.repertoire.RepertoireEditorScreen
 import com.chesscompanion.feature.repertoire.RepertoireListScreen
 import com.chesscompanion.home.HomeScreen
 
@@ -29,7 +32,21 @@ fun ChessNavHost() {
                     },
             )
         }
-        composable(ROUTE_REPERTOIRES) { RepertoireListScreen() }
+        composable(ROUTE_REPERTOIRES) {
+            RepertoireListScreen(onOpen = { navController.navigate(repertoireRoute(it)) })
+        }
+        composable(
+            ROUTE_REPERTOIRE_PATTERN,
+            arguments =
+                listOf(
+                    navArgument(REPERTOIRE_ID_ARG) {
+                        type =
+                            NavType.StringType
+                    },
+                ),
+        ) {
+            RepertoireEditorScreen()
+        }
         composable(ROUTE_PLAY_PATTERN, arguments = listOf(navArgument("vs") { defaultValue = "" })) { PlayScreen() }
         if (entries.showEngineDebug) {
             composable(ROUTE_ENGINE_DEBUG) { EngineDebugScreen() }
