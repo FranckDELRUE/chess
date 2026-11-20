@@ -25,6 +25,7 @@ class NavigationEntriesTest {
             val routes = NavigationEntries(debug).routes
             assertTrue(ROUTE_HOME in routes)
             assertTrue(ROUTE_PLAY_PATTERN in routes)
+            assertTrue(ROUTE_REPERTOIRES in routes)
         }
     }
 }
