@@ -8,6 +8,8 @@ plugins {
 android {
     namespace = "com.chesscompanion"
     compileSdk = 37
+    // Same NDK as the native modules, so their libraries are stripped when packaged.
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "com.chesscompanion"
@@ -15,12 +17,20 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        // Stockfish is built for arm64-v8a only; also keeps ONNX Runtime's other ABIs out of the APK.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
         }
+    }
+
+    testOptions {
+        unitTests.all { it.useJUnitPlatform() }
     }
 
     compileOptions {
@@ -30,6 +40,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -38,6 +49,9 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:data"))
     implementation(project(":core:engine"))
+    implementation(project(":feature:play"))
+    implementation(project(":feature:repertoire"))
+    implementation(project(":feature:training"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -52,6 +66,14 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
+}
+
+dependencies {
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

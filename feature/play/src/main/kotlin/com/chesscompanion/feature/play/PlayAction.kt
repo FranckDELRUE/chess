@@ -1,0 +1,158 @@
+package com.chesscompanion.feature.play
+
+import com.chesscompanion.core.chess.Move
+import com.chesscompanion.core.chess.PieceType
+import com.chesscompanion.core.chess.Square
+import com.chesscompanion.core.chess.pgn.PgnIssue
+import com.chesscompanion.core.ui.board.AnnotationColor
+
+/** Everything the game screen can ask its ViewModel (unidirectional data flow). */
+sealed interface PlayAction {
+    /** Moves and board settings. */
+    sealed interface Board : PlayAction
+
+    data class SquareTap(
+        val square: Square,
+    ) : Board
+
+    data class DragStart(
+        val square: Square,
+    ) : Board
+
+    data class Drop(
+        val from: Square,
+        val to: Square,
+    ) : Board
+
+    data class Promote(
+        val type: PieceType,
+    ) : Board
+
+    data object CancelPromotion : Board
+
+    data object NewGame : Board
+
+    data object Flip : Board
+
+    data class ShowLegalMoves(
+        val show: Boolean,
+    ) : Board
+
+    /** Moving through the game tree. */
+    sealed interface Navigation : PlayAction
+
+    data object ToStart : Navigation
+
+    data object Back : Navigation
+
+    data object Forward : Navigation
+
+    data object ToEnd : Navigation
+
+    data class GoTo(
+        val path: List<Int>,
+    ) : Navigation
+
+    /** The game against Stockfish (S2-4). */
+    sealed interface Opponent : PlayAction
+
+    data object ShowOpponentSetup : Opponent
+
+    data object DismissOpponentSetup : Opponent
+
+    /** Starts a new game against Stockfish with these settings. */
+    data class StartOpponentGame(
+        val settings: OpponentSettings,
+    ) : Opponent
+
+    /** Back to the last position where it is the player's turn; the moves taken back stay as a variation. */
+    data object TakeBack : Opponent
+
+    data object Resign : Opponent
+
+    /** The background analysis queue (S2-5). */
+    sealed interface Queue : PlayAction
+
+    /** Sends the game shown to the queue: each position of its main line is analysed and stored. */
+    data object AnalyseGame : Queue
+
+    /** Cancels the analysis in progress and the games waiting after it. */
+    data object CancelGameAnalysis : Queue
+
+    /** Live engine analysis (S2-3). */
+    sealed interface Analysis : PlayAction
+
+    data object ToggleAnalysis : Analysis
+
+    /** Plays the first move of an analysis line, if it is still legal on the position shown. */
+    data class PlayAnalysisMove(
+        val move: Move,
+    ) : Analysis
+
+    /** Coloured squares and arrows (S1-8). */
+    sealed interface Annotation : PlayAction
+
+    data object ToggleAnnotate : Annotation
+
+    data class PickAnnotationColor(
+        val color: AnnotationColor,
+    ) : Annotation
+
+    data object ClearAnnotations : Annotation
+
+    /** Import, export and messages. */
+    sealed interface Document : PlayAction
+
+    /** Pasted text: a FEN starts a game from that position, anything else is read as PGN. */
+    data class ImportText(
+        val text: String,
+    ) : Document
+
+    data class OpenFile(
+        val uri: String,
+    ) : Document
+
+    data class SaveFile(
+        val uri: String,
+    ) : Document
+
+    data class PickGame(
+        val index: Int,
+    ) : Document
+
+    data object DismissGameChoice : Document
+
+    data object MessageShown : Document
+}
+
+/** One-off message shown in a snackbar. */
+sealed interface PlayMessage {
+    data class Imported(
+        val games: Int,
+        val errors: Int,
+    ) : PlayMessage
+
+    /** Nothing could be read; [error] is the first one, null for an empty text. */
+    data class ImportFailed(
+        val error: PgnIssue?,
+    ) : PlayMessage
+
+    data object PositionLoaded : PlayMessage
+
+    /** Stockfish did not give a move it could play. */
+    data object EngineFailed : PlayMessage
+
+    data object Saved : PlayMessage
+
+    data class FileError(
+        val detail: String,
+    ) : PlayMessage
+}
+
+/** A game offered when a pasted or opened PGN holds several. */
+data class GameSummary(
+    val white: String,
+    val black: String,
+    val date: String,
+    val result: String,
+)

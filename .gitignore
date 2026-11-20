@@ -24,3 +24,16 @@ __pycache__/
 # Divers
 .DS_Store
 Thumbs.db
+
+# Kotlin / Gradle
+.kotlin/
+*.hprof
+
+# Secrets et signature
+*.jks
+*.keystore
+keystore.properties
+
+# Stockfish NNUE network (98 MB, fetched by scripts/fetch-stockfish-net.ps1)
+core/engine/src/main/assets/*.nnue
+.pytest_cache/

@@ -1,0 +1,344 @@
+package com.chesscompanion.feature.play
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.chesscompanion.core.chess.Board
+import com.chesscompanion.core.chess.Fen
+import com.chesscompanion.core.chess.GameStatus
+import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.pgn.Game
+import com.chesscompanion.core.chess.pgn.GameSession
+import com.chesscompanion.core.chess.pgn.PgnReader
+import com.chesscompanion.core.chess.pgn.PgnWriter
+import com.chesscompanion.core.data.AnalysisJob
+import com.chesscompanion.core.ui.board.AnnotationColor
+import com.chesscompanion.core.ui.board.BoardAnnotations
+import com.chesscompanion.core.ui.board.BoardHighlights
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class PlayUiState(
+    val board: Board,
+    val sideToMove: Side,
+    val status: GameStatus,
+    val highlights: BoardHighlights,
+    val flipped: Boolean,
+    val showLegalMoves: Boolean,
+    /** Side whose pawn waits for a promotion piece, null when no choice is pending. */
+    val promotionSide: Side?,
+    val moveList: List<MoveListItem> = emptyList(),
+    val canGoBack: Boolean = false,
+    val canGoForward: Boolean = false,
+    /** FEN of the position shown. */
+    val fen: String = "",
+    /** Games to choose from after importing a PGN that holds several; null otherwise. */
+    val gameChoice: List<GameSummary>? = null,
+    val message: PlayMessage? = null,
+    /** "Annoter" mode: taps and drags mark the board instead of playing. */
+    val annotating: Boolean = false,
+    val annotationColor: AnnotationColor = AnnotationColor.GREEN,
+    val annotations: BoardAnnotations = BoardAnnotations.EMPTY,
+    /** The game against Stockfish (S2-4); null in the two-player game. */
+    val opponent: OpponentUi? = null,
+)
+
+/**
+ * The game screen (S1-6, S1-7): two players on one board, navigation in the move tree, PGN and
+ * FEN import and export, live engine analysis (S2-3). Every request arrives through [onAction]; the
+ * rules of `:core:chess` decide. The game survives process death as PGN in the [SavedStateHandle].
+ */
+@HiltViewModel
+class PlayViewModel
+    @Inject
+    constructor(
+        private val savedState: SavedStateHandle,
+        private val documents: GameDocuments,
+        analyzer: PositionAnalyzer,
+        opponentEngine: OpponentEngine,
+        private val queue: GameAnalysisQueue,
+    ) : ViewModel() {
+        private val analysis = AnalysisController(analyzer, viewModelScope, stored = queue::stored)
+        private val opponent: OpponentController =
+            OpponentController(
+                engine = opponentEngine,
+                scope = viewModelScope,
+                saved = savedState,
+                host =
+                    OpponentCallbacks(
+                        onEngineMove = { update(MoveInput(opponent.played(input.session.play(it)))) },
+                        onEngineFailed = { notify(PlayMessage.EngineFailed) },
+                        onChanged = { _state.value = buildState() },
+                    ),
+                vsEngine = savedState.get<String>(KEY_VS) == VS_ENGINE,
+            )
+        private var input = MoveInput(restoredSession(savedState))
+        private var flipped: Boolean = savedState[KEY_FLIPPED] ?: false
+        private var showLegalMoves: Boolean = savedState[KEY_SHOW_LEGAL_MOVES] ?: true
+        private var choice: List<Game>? = null
+        private var message: PlayMessage? = null
+        private var annotation = AnnotationInput()
+
+        private val _state = MutableStateFlow(buildState())
+        val state: StateFlow<PlayUiState> = _state.asStateFlow()
+
+        /**
+         * The live analysis (S2-3), apart from [state]: it changes several times a second while the
+         * engine thinks, and must not rebuild (and redraw) the board and the move list each time.
+         */
+        val analysisState: StateFlow<AnalysisState> = analysis.state
+
+        /** The latest game sent to the background analysis queue (S2-5), with its progress. */
+        val queueState: StateFlow<AnalysisJob?> = queue.latest.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+        init {
+            analysis.show(input.session.position, input.session.status().isOver)
+            opponent.sync(input.session)
+        }
+
+        fun onAction(action: PlayAction) {
+            when (action) {
+                is PlayAction.Board ->
+                    if (action == PlayAction.NewGame && opponent.active) {
+                        opponent.accept(PlayAction.ShowOpponentSetup, input.session)
+                    } else {
+                        onBoard(action)
+                    }
+                is PlayAction.Navigation -> onNavigation(action)
+                is PlayAction.Annotation -> onAnnotation(action)
+                is PlayAction.Analysis ->
+                    if (opponent.analysisAllowed(input.session)) {
+                        analysis
+                            .accept(
+                                action,
+                                input.session.position,
+                            )?.let { update(MoveInput(input.session.play(it))) }
+                    }
+                is PlayAction.Opponent -> {
+                    opponent.accept(action, input.session)?.let { update(MoveInput(it)) }
+                    // A new game from the black side is seen from the black side.
+                    if (action is PlayAction.StartOpponentGame) {
+                        flipped = opponent.ui(input.session)?.humanSide == Side.BLACK
+                        savedState[KEY_FLIPPED] = flipped
+                        _state.value = buildState()
+                    }
+                }
+                is PlayAction.Queue -> viewModelScope.launch { queue.accept(action) { exportPgn() } }
+                is PlayAction.Document -> onDocument(action)
+            }
+        }
+
+        /** The game as PGN, with its result when the main line is finished (or resigned). */
+        fun exportPgn(): String = PgnWriter.write(opponent.finish(input.session.toGame()))
+
+        private fun onBoard(action: PlayAction.Board) {
+            annotation.consume(action)?.let {
+                annotation = it
+                update(input)
+                return
+            }
+            if (action.picksPiece() && !opponent.canHumanMove(input.session.position)) return
+            when (action) {
+                is PlayAction.SquareTap -> played(input.tap(action.square))
+                is PlayAction.DragStart -> update(input.dragStart(action.square))
+                is PlayAction.Drop -> played(input.drop(action.from, action.to))
+                is PlayAction.Promote -> played(input.promote(action.type))
+                PlayAction.CancelPromotion -> update(input.cancelPromotion())
+                PlayAction.NewGame -> update(MoveInput(GameSession.new()))
+                PlayAction.Flip -> {
+                    flipped = !flipped
+                    savedState[KEY_FLIPPED] = flipped
+                    update(input)
+                }
+                is PlayAction.ShowLegalMoves -> {
+                    showLegalMoves = action.show
+                    savedState[KEY_SHOW_LEGAL_MOVES] = action.show
+                    update(input)
+                }
+            }
+        }
+
+        /** The player's own input: when it changes the position, Stockfish is due to answer. */
+        private fun played(next: MoveInput) {
+            if (next.session.position == input.session.position) {
+                update(next)
+                return
+            }
+            opponent.humanMoved()
+            update(next.copy(session = opponent.played(next.session)))
+        }
+
+        private fun onNavigation(action: PlayAction.Navigation) {
+            val session = input.session
+            val target =
+                when (action) {
+                    PlayAction.ToStart -> session.toStart()
+                    PlayAction.Back -> session.back()
+                    PlayAction.Forward -> session.forward()
+                    PlayAction.ToEnd -> session.toEnd()
+                    is PlayAction.GoTo -> runCatching { session.goTo(action.path) }.getOrDefault(session)
+                }
+            update(MoveInput(target))
+        }
+
+        private fun onAnnotation(action: PlayAction.Annotation) {
+            annotation = annotation.on(action)
+            // Entering the mode drops the piece selection: taps now mark the board.
+            update(if (annotation.enabled) input.copy(selected = null) else input)
+        }
+
+        private fun onDocument(action: PlayAction.Document) {
+            when (action) {
+                is PlayAction.ImportText -> importText(action.text)
+                is PlayAction.OpenFile ->
+                    viewModelScope.launch {
+                        runCatching { documents.read(action.uri) }
+                            .onSuccess { importText(it) }
+                            .onFailure { notify(PlayMessage.FileError(it.message.orEmpty())) }
+                    }
+                is PlayAction.SaveFile ->
+                    viewModelScope.launch {
+                        val pgn = exportPgn()
+                        runCatching { documents.write(action.uri, pgn) }
+                            .onSuccess { notify(PlayMessage.Saved) }
+                            .onFailure { notify(PlayMessage.FileError(it.message.orEmpty())) }
+                    }
+                is PlayAction.PickGame -> {
+                    val game = choice?.getOrNull(action.index)
+                    choice = null
+                    update(game?.let { opponent.replaceGame(GameSession(it)) } ?: input)
+                }
+                PlayAction.DismissGameChoice -> {
+                    choice = null
+                    update(input)
+                }
+                PlayAction.MessageShown -> notify(null)
+            }
+        }
+
+        /** A FEN starts a new game from that position; otherwise the text is read as PGN (rule 2). */
+        private fun importText(text: String) {
+            val position = runCatching { Fen.parse(text) }.getOrNull()
+            if (position != null) {
+                message = PlayMessage.PositionLoaded
+                update(opponent.replaceGame(GameSession.new(position)))
+                return
+            }
+            val import = PgnReader.readAll(text)
+            val games = import.games
+            message =
+                if (games.isEmpty()) {
+                    PlayMessage.ImportFailed(import.errors.firstOrNull())
+                } else {
+                    PlayMessage.Imported(games.size, import.errors.size)
+                }
+            when (games.size) {
+                0 -> update(input)
+                1 -> update(opponent.replaceGame(GameSession(games.single())))
+                else -> {
+                    choice = games
+                    update(input)
+                }
+            }
+        }
+
+        private fun notify(next: PlayMessage?) {
+            message = next
+            update(input)
+        }
+
+        /** Applies the new input state, saves the game when it changed and publishes the UI state. */
+        private fun update(next: MoveInput) {
+            if (next.session.game !== input.session.game) savedState[KEY_PGN] = PgnWriter.write(next.session.game)
+            // Marks belong to the position shown: a move, a navigation or an import clears them.
+            if (next.session.position != input.session.position) annotation = annotation.cleared()
+            input = next
+            if (!opponent.analysisAllowed(next.session)) analysis.setEnabled(false)
+            analysis.show(next.session.position, next.session.status().isOver)
+            _state.value = buildState()
+            // Last: Stockfish may answer at once, and that move runs this function again.
+            opponent.sync(next.session)
+        }
+
+        private fun buildState(): PlayUiState {
+            val session = input.session
+            val position = session.position
+            val selected = input.selected
+            return PlayUiState(
+                board = position.board,
+                sideToMove = position.sideToMove,
+                status = session.status(),
+                highlights =
+                    BoardHighlights(
+                        selected = selected,
+                        targets = selected?.takeIf { showLegalMoves }?.let { input.targetsOf(it) }.orEmpty(),
+                        lastMove = session.lastMove,
+                        check = if (position.isCheck) position.board.kingSquare(position.sideToMove) else null,
+                    ),
+                flipped = flipped,
+                showLegalMoves = showLegalMoves,
+                promotionSide = if (input.pendingPromotion != null) position.sideToMove else null,
+                moveList = MoveListBuilder.build(session),
+                canGoBack = session.canGoBack,
+                canGoForward = session.canGoForward,
+                fen = position.toFen(),
+                gameChoice =
+                    choice?.map { game ->
+                        GameSummary(
+                            white = game.tag("White").orEmpty(),
+                            black = game.tag("Black").orEmpty(),
+                            date = game.tag("Date").orEmpty(),
+                            result = game.result.token,
+                        )
+                    },
+                message = message,
+                annotating = annotation.enabled,
+                annotationColor = annotation.color,
+                annotations = annotation.annotations,
+                opponent = opponent.ui(session),
+            )
+        }
+
+        private companion object {
+            const val KEY_FLIPPED = "play.flipped"
+            const val KEY_SHOW_LEGAL_MOVES = "play.showLegalMoves"
+
+            /** Navigation argument of the route: "engine" opens the game against Stockfish. */
+            const val KEY_VS = "vs"
+            const val VS_ENGINE = "engine"
+        }
+    }
+
+private const val KEY_PGN = "play.pgn"
+
+/** The saved game, played to the end of its main line; a new game if there is none. */
+private fun restoredSession(savedState: SavedStateHandle): GameSession {
+    val pgn = savedState.get<String>(KEY_PGN) ?: return GameSession.new()
+    val game = runCatching { PgnReader.read(pgn) }.getOrNull() ?: return GameSession.new()
+    return GameSession(game, game.mainline.map { 0 })
+}
+
+/** An opened or pasted game replaces the current one, and ends a game against Stockfish (S2-8). */
+private fun OpponentController.replaceGame(session: GameSession): MoveInput {
+    leave()
+    return MoveInput(session)
+}
+
+/** A gesture that picks or moves a piece (as opposed to promotion, flipping, settings). */
+private fun PlayAction.Board.picksPiece(): Boolean =
+    this is PlayAction.SquareTap || this is PlayAction.DragStart || this is PlayAction.Drop
+
+/** Sends the game ([pgn], read only when needed) to the queue, or cancels the queue. */
+private suspend fun GameAnalysisQueue.accept(
+    action: PlayAction.Queue,
+    pgn: () -> String,
+) = when (action) {
+    PlayAction.AnalyseGame -> enqueue(pgn())
+    PlayAction.CancelGameAnalysis -> cancelAll()
+}

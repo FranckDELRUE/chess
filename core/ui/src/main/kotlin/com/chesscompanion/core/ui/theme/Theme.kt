@@ -11,15 +11,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF3F6B3A),
-    secondary = Color(0xFF8A6D3B),
-)
+private val LightColors =
+    lightColorScheme(
+        primary = Color(0xFF3F6B3A),
+        secondary = Color(0xFF8A6D3B),
+    )
 
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFF9CD495),
-    secondary = Color(0xFFE0C28A),
-)
+private val DarkColors =
+    darkColorScheme(
+        primary = Color(0xFF9CD495),
+        secondary = Color(0xFFE0C28A),
+    )
 
 @Composable
 fun ChessTheme(
@@ -27,13 +29,14 @@ fun ChessTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val colors = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val colors =
+        when {
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            darkTheme -> DarkColors
+            else -> LightColors
         }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
     MaterialTheme(colorScheme = colors, content = content)
 }

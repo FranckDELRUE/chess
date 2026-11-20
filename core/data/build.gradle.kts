@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -9,6 +10,17 @@ android {
 
     defaultConfig {
         minSdk = 26
+    }
+
+    testOptions {
+        unitTests.all { it.useJUnitPlatform() }
+        // Room in memory on the JVM runs through Robolectric.
+        unitTests.isIncludeAndroidResources = true
+    }
+
+    // Migration tests read the exported schemas.
+    sourceSets {
+        getByName("test").assets.srcDir("$projectDir/schemas")
     }
 
     compileOptions {
@@ -23,7 +35,28 @@ ksp {
 
 dependencies {
     implementation(project(":core:chess"))
+    api(project(":core:srs"))
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    api(libs.kotlinx.coroutines.core)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+}
+
+dependencies {
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
+    // Room tests on the JVM: Robolectric runs JUnit 4 tests through JUnit Vintage.
+    testImplementation(libs.junit4)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.room.testing)
 }

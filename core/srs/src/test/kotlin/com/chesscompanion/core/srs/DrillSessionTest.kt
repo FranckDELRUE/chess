@@ -1,0 +1,164 @@
+package com.chesscompanion.core.srs
+
+import com.chesscompanion.core.chess.Move
+import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.repertoire.Repertoire
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+
+class DrillSessionTest {
+    private val now = Instant.parse("2026-03-10T07:00:00Z")
+    private val zone = ZoneId.of("Europe/Paris")
+
+    // White repertoire with two answers at the root (d4 and c4) so that any of them is correct.
+    private val repertoire: Repertoire = repertoireOf(Side.WHITE, "1. d4 d5 *", "1. c4 e5 *")
+
+    private fun session() = DrillSession(ReviewQueueBuilder.build(repertoire, emptyMap(), now, zone).items)
+
+    private fun move(uci: String) = checkNotNull(Move.parseUci(uci))
+
+    @Test
+    fun theRightMoveWithoutHelpIsGoodAndAnyRepertoireAnswerCounts() {
+        val session = session()
+        val result = session.answer(move("c2c4"), now)
+        assertTrue(result.isCorrect)
+        assertEquals(Rating.Good, result.rating)
+        assertEquals(1, result.updatedCard!!.reps)
+        assertTrue(session.isFinished)
+    }
+
+    @Test
+    fun aHintMakesItHard() {
+        val result = session().answer(move("d2d4"), now, hintUsed = true)
+        assertEquals(Rating.Hard, result.rating)
+    }
+
+    @Test
+    fun theHintIsARepertoireMove() {
+        val session = session()
+        assertTrue(session.hint!!.move in session.current!!.expected.map { it.move })
+    }
+
+    @Test
+    fun aDeviationIsAgainDueTomorrowWithTheExpectedMoves() {
+        val session = session()
+        val item = session.current!!
+        val result = session.answer(move("e2e4"), now)
+        val outcome = result.outcome as DrillOutcome.Deviation
+        assertEquals(move("e2e4"), outcome.played)
+        assertEquals(item.expected, outcome.expected)
+        assertEquals(Rating.Again, result.rating)
+        assertEquals(now + Duration.ofDays(1), result.updatedCard!!.due)
+    }
+
+    @Test
+    fun aMissedPositionComesBackUngradedUntilFound() {
+        val session = session()
+        assertEquals(1, session.remaining)
+        assertFalse(session.isRetry)
+        val graded = session.answer(move("e2e4"), now)
+        assertNotNull(graded.updatedCard)
+        assertEquals(1, session.remaining) // the miss went back to the end
+        assertTrue(session.isRetry)
+
+        val wrongAgain = session.answer(move("e2e4"), now)
+        assertNull(wrongAgain.rating)
+        assertNull(wrongAgain.updatedCard)
+        assertFalse(session.isFinished)
+
+        val found = session.answer(move("d2d4"), now)
+        assertTrue(found.isCorrect)
+        assertNull(found.updatedCard) // practice only: the schedule keeps the first (failed) grade
+        assertTrue(session.isFinished)
+    }
+
+    @Test
+    fun answeringAnAlreadyStoredCardUpdatesIt() {
+        val stored = Fsrs().review(FsrsCard(), Rating.Good, now - Duration.ofDays(3))
+        val item =
+            ReviewQueueBuilder
+                .build(repertoire, emptyMap(), now, zone)
+                .items
+                .first()
+                .copy(card = stored)
+        val result = DrillSession(listOf(item)).answer(item.expected.first().move, now)
+        val updated = checkNotNull(result.updatedCard)
+        assertEquals(2, updated.reps)
+        assertTrue(checkNotNull(updated.stability) > checkNotNull(stored.stability))
+        assertNotNull(updated.due)
+    }
+
+    @Test
+    fun anEmptyQueueIsFinishedAndRefusesAnswers() {
+        val session = DrillSession(emptyList())
+        assertTrue(session.isFinished)
+        assertNull(session.current)
+        assertThrows(IllegalStateException::class.java) { session.answer(move("e2e4"), now) }
+    }
+
+    @Test
+    fun aNewPositionIsLearnedBeforeItIsAsked() {
+        val session = session()
+        assertTrue(session.isLearning)
+        assertEquals(1, session.remaining)
+
+        val wrong = session.learn(move("e2e4"), now)
+        assertTrue(wrong is LearnResult.NotTheMove)
+        assertTrue(session.isLearning)
+
+        val learned = session.learn(move("c2c4"), now) as LearnResult.Learned
+        assertTrue(session.isFinished)
+        assertEquals(1, learned.card.reps)
+        assertEquals(now + Duration.ofDays(1), learned.card.due)
+        assertEquals(now, learned.card.lastReview)
+        // Rated Good: the memory starts like a first success, only the first recall is brought forward.
+        assertEquals(Fsrs().review(FsrsCard(), Rating.Good, now).stability, learned.card.stability)
+    }
+
+    @Test
+    fun aReviewedPositionIsNotALearningStep() {
+        val stored = Fsrs().review(FsrsCard(), Rating.Good, now - Duration.ofDays(3))
+        val item =
+            ReviewQueueBuilder
+                .build(repertoire, emptyMap(), now, zone)
+                .items
+                .first()
+                .copy(card = stored)
+        val session = DrillSession(listOf(item))
+        assertFalse(session.isLearning)
+        assertThrows(IllegalStateException::class.java) { session.learn(move("d2d4"), now) }
+    }
+
+    @Test
+    fun focusBringsAPendingPositionToTheFrontAndDropGivesItUp() {
+        val deep = repertoireOf(Side.WHITE, "1. d4 d5 2. c4 e6 *")
+        val items = ReviewQueueBuilder.build(deep, emptyMap(), now, zone).items
+        val session = DrillSession(items)
+        val second = items[1].id
+        assertTrue(session.focus(second))
+        assertEquals(second, session.current?.id)
+        assertEquals(2, session.remaining)
+
+        session.drop(second)
+        assertEquals(1, session.remaining)
+        assertFalse(session.focus(second))
+    }
+
+    @Test
+    fun practiceNeverGradesOrStoresAnything() {
+        val item = ReviewQueueBuilder.build(repertoire, emptyMap(), now, zone).items.first()
+        val right = practiceResult(item, move("d2d4"))
+        assertTrue(right.isCorrect)
+        assertNull(right.rating)
+        assertNull(right.updatedCard)
+        assertFalse(practiceResult(item, move("e2e4")).isCorrect)
+    }
+}
