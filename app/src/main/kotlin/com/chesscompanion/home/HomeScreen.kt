@@ -29,7 +29,7 @@ import com.chesscompanion.core.ui.theme.ChessTheme
 fun HomeScreen(
     onOpenPlay: () -> Unit,
     onOpenPlayEngine: () -> Unit,
-    onOpenEngineDebug: () -> Unit,
+    onOpenEngineDebug: (() -> Unit)?,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -48,7 +48,7 @@ internal fun HomeContent(
     onFlip: () -> Unit,
     onOpenPlay: () -> Unit,
     onOpenPlayEngine: () -> Unit,
-    onOpenEngineDebug: () -> Unit,
+    onOpenEngineDebug: (() -> Unit)?,
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
@@ -84,7 +84,7 @@ private fun SidePanel(
     onFlip: () -> Unit,
     onOpenPlay: () -> Unit,
     onOpenPlayEngine: () -> Unit,
-    onOpenEngineDebug: () -> Unit,
+    onOpenEngineDebug: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceVariant) {
@@ -92,7 +92,9 @@ private fun SidePanel(
             Button(onClick = onOpenPlayEngine) { Text(stringResource(R.string.home_play_engine)) }
             Button(onClick = onOpenPlay) { Text(stringResource(R.string.home_play)) }
             OutlinedButton(onClick = onFlip) { Text(stringResource(R.string.home_flip_board)) }
-            OutlinedButton(onClick = onOpenEngineDebug) { Text(stringResource(R.string.home_engine_debug)) }
+            if (onOpenEngineDebug != null) {
+                OutlinedButton(onClick = onOpenEngineDebug) { Text(stringResource(R.string.home_engine_debug)) }
+            }
         }
     }
 }

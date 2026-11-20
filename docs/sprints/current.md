@@ -81,7 +81,12 @@ d'une partie courte contre un faux moteur ; vérifié sur la tablette.
 une partie de Heidoji analysée sur la tablette, annulation vérifiée.
 
 ### S2-6 · Écrans de debug masqués en release
-- [ ] Écrans « Debug moteur » et Maia visibles en debug seulement.
+- [x] Écrans « Debug moteur » et Maia visibles en debug seulement.
+
+> Note : `NavigationEntries(debugEnabled = BuildConfig.DEBUG)` décide des routes ; le bouton de
+> l'accueil et la route `engine-debug` (Maia inclus) n'existent pas en release. Dette : le code
+> de debug reste dans l'APK release (inatteignable), à déplacer en source set `debug/` si on veut
+> l'en exclure.
 
 **Acceptation** : `assembleRelease` passe ; test de la navigation sans les entrées de debug.
 
