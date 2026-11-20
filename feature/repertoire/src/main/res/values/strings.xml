@@ -75,8 +75,8 @@
     <string name="explorer_loading">Chargement des statistiques…</string>
     <string name="explorer_cached">Statistiques en mémoire (pas de réseau utilisé).</string>
     <string name="explorer_no_move">Aucune partie de la base pour cette position et ce niveau.</string>
-    <string name="explorer_games">%1$d parties dans la base</string>
-    <string name="explorer_row_games">%1$d parties</string>
+    <string name="explorer_games">%1$s parties dans la base</string>
+    <string name="explorer_row_games">%1$s parties</string>
     <string name="explorer_row_shares">%1$d %% / %2$d %% / %3$d %%</string>
     <string name="explorer_add">Ajouter</string>
     <string name="explorer_follow">Suivre</string>
