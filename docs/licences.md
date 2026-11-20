@@ -21,6 +21,12 @@
   distribué par le projet Stockfish sous GPL v3 ; non versionné (`scripts/fetch-stockfish-net.ps1`).
 - **Conséquence** : publier l'application impose de publier son code source sous GPL v3.
 
+## FSRS (algorithme)
+
+- **Auteurs** : Jarrett Ye et la communauté open-spaced-repetition (free-spaced-repetition-scheduler).
+- **Licence** : MIT, compatible GPL v3. Algorithme réimplémenté en Kotlin dans `core/srs` (FSRS-5, poids par défaut
+  publiés) ; aucun code tiers copié.
+
 ## kotlinx.coroutines 1.10.2
 
 - **Licence** : Apache 2.0, compatible GPL v3.

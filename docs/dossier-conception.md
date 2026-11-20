@@ -412,7 +412,7 @@ Critères d'acceptation : import d'un PGN de 500 variantes sans perte ; les tran
 
 ### S8 — Entraînement d'ouvertures
 
-- [ ] Implémenter FSRS dans `:core:srs` avec tests.
+- [x] Implémenter FSRS dans `:core:srs` avec tests.
 - [ ] Modes apprentissage, drill et déviation ; retour factuel sur une déviation (coup attendu, coup joué, ligne du répertoire, évaluation Stockfish).
 - [ ] File de révisions quotidienne, notifications optionnelles.
 - [ ] Détection des trous du répertoire (réponses fréquentes non couvertes).

@@ -1,6 +1,6 @@
 # Sprint S8 — Entraînement d'ouvertures
 
-**Statut** : à planifier. Le plan détaillé des stories sera proposé puis validé avant tout code.
+**Statut** : en cours (plan validé le 2026-11-20).
 
 **Objectif** : réviser son répertoire en répétition espacée, avec un retour factuel quand on s'en écarte.
 
@@ -11,6 +11,22 @@ répertoire du joueur, retour factuel sur les déviations.
 s'espace de plusieurs jours.
 
 Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'exécution : ADR 0011.
+
+---
+
+## Stories
+
+### S8-1 · FSRS dans `:core:srs`
+- [x] Module `:core:srs` (Kotlin pur) : `Fsrs`, `FsrsCard`, `FsrsParameters`, `Rating`.
+- [x] FSRS-5 avec paramètres par défaut, intervalles en jours entiers, tests JUnit 5 (16 cas, dont les critères
+  d'acceptation : ligne ratée → lendemain, trois réussites → intervalles croissants, 3 puis ≥ 7 jours).
+- *Note* : un `Again` renvoie toujours au lendemain (règle produit, même pour une ligne déjà apprise où
+  FSRS donnerait ~3 jours) ; la stabilité, elle, suit FSRS. Pas de « fuzz » (déterminisme). Les poids par
+  défaut sont ceux publiés de FSRS-5 (MIT), non réentraînés sur les révisions de Heidoji : dette éventuelle.
+
+### S8-2 à S8-8
+Voir le plan validé : cartes et mesure de `save` (2), file et cas d'usage (3), écran de drill (4), apprentissage (5),
+trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
 
 ---
 

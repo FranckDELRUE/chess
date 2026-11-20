@@ -27,6 +27,7 @@ include(":core:chess")
 include(":core:ui")
 include(":core:data")
 include(":core:engine")
+include(":core:srs")
 include(":feature:play")
 include(":feature:repertoire")
 // :spike:llm (S0-6) is kept as a reference only and no longer built (ADR 0003).
