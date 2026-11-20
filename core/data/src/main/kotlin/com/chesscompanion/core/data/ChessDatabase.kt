@@ -75,7 +75,7 @@ interface AnalysisJobDao {
 
 /**
  * The app's database: background analyses (S2-5, version 1), repertoires (S7-2, version 2) and the
- * explorer cache (S7-7, version 3).
+ * explorer cache (S7-7, version 3) and review cards (S8-2, version 4).
  * Schemas are exported to `core/data/schemas`; migrations are in [Migrations].
  */
 @Database(
@@ -87,8 +87,9 @@ interface AnalysisJobDao {
             RepertoireNodeEntity::class,
             RepertoireEdgeEntity::class,
             ExplorerPositionEntity::class,
+            ReviewCardEntity::class,
         ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class ChessDatabase : RoomDatabase() {
@@ -101,6 +102,8 @@ abstract class ChessDatabase : RoomDatabase() {
     abstract fun repertoireContentDao(): RepertoireContentDao
 
     abstract fun explorerDao(): ExplorerDao
+
+    abstract fun reviewCardDao(): ReviewCardDao
 
     companion object {
         const val NAME = "chess-companion.db"

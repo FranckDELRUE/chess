@@ -83,6 +83,32 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun version3DataSurvivesAndTheReviewCardsExist() {
+        val path = ApplicationProvider.getApplicationContext<Context>().getDatabasePath("migration-test-4").path
+        helper.createDatabase(path, 3).apply {
+            execSQL(
+                "INSERT INTO repertoire (id, name, side, startFen, createdAt, updatedAt) " +
+                    "VALUES ('r', 'Scotch', 'WHITE', 'startpos', 1, 2)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(path, 4, true, Migrations.V3_TO_V4)
+
+        db.query("SELECT name FROM repertoire WHERE id = 'r'").use {
+            it.moveToFirst()
+            assertEquals("Scotch", it.getString(0))
+        }
+        db.execSQL(
+            "INSERT INTO review_card (repertoireId, `key`, fen, reps, lapses) VALUES ('r', 1, 'f', 0, 0)",
+        )
+        db.query("SELECT COUNT(*) FROM review_card").use {
+            it.moveToFirst()
+            assertEquals(1, it.getInt(0))
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

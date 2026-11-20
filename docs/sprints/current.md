@@ -24,8 +24,22 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   FSRS donnerait ~3 jours) ; la stabilité, elle, suit FSRS. Pas de « fuzz » (déterminisme). Les poids par
   défaut sont ceux publiés de FSRS-5 (MIT), non réentraînés sur les révisions de Heidoji : dette éventuelle.
 
-### S8-2 à S8-8
-Voir le plan validé : cartes et mesure de `save` (2), file et cas d'usage (3), écran de drill (4), apprentissage (5),
+### S8-2 · Cartes de révision et mesure de `save`
+- [x] Table `review_card` (Room v4, migration `V3_TO_V4`, schéma `4.json`) : clé (répertoire, clé Zobrist, FEN
+  canonique), état FSRS, sans clé étrangère vers les nœuds (ADR 0012) ; `ReviewCardStore` / `RoomReviewCardStore`
+  (`get`, `cards`, `put`, `dueCount`, `retainOnly`, `deleteAll`), fourni par Hilt ; `:core:data` dépend de `:core:srs`.
+- [x] Tests : aller-retour, remplacement, isolation entre répertoires, `dueCount`, `save` conserve les cartes,
+  suppression d'un répertoire supprime ses cartes, `retainOnly`, migration 3 → 4.
+- [x] Mesure (JVM/Robolectric, répertoire synthétique de 3 000 coups) : `save` ≈ 150 ms, `load` ≈ 190 ms, `save` avec
+  3 000 cartes présentes ≈ 110 ms (cartes non touchées par `save`), lecture de toutes les cartes ≈ 40 ms,
+  `put` unitaire ≈ 0,4 ms. Le coût de `save` ne dépend pas des cartes.
+- *Notes* : les chiffres JVM ne sont pas ceux de la tablette (~5 s pour 10 000 coups mesurés en S7) ; à remesurer
+  sur l'appareil au drill (S8-4). Une carte n'existe qu'après la première révision (position sans carte = nouvelle) ;
+  `retainOnly` est à appeler après une suppression de coups (S8-3). Un `put` en lot sera ajouté si l'apprentissage
+  (S8-5) crée beaucoup de cartes d'un coup. Sauvegarde incrémentale du répertoire non nécessaire pour les cartes.
+
+### S8-3 à S8-8
+Voir le plan validé : file et cas d'usage (3), écran de drill (4), apprentissage (5),
 trous du répertoire et notifications (6), export PGN (7), démo et clôture (8).
 
 ---

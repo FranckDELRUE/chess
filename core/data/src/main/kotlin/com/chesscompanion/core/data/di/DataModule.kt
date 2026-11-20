@@ -6,8 +6,10 @@ import com.chesscompanion.core.data.AnalysisStore
 import com.chesscompanion.core.data.ChessDatabase
 import com.chesscompanion.core.data.Migrations
 import com.chesscompanion.core.data.RepertoireStore
+import com.chesscompanion.core.data.ReviewCardStore
 import com.chesscompanion.core.data.RoomAnalysisStore
 import com.chesscompanion.core.data.RoomRepertoireStore
+import com.chesscompanion.core.data.RoomReviewCardStore
 import com.chesscompanion.core.data.explorer.CachedExplorer
 import com.chesscompanion.core.data.explorer.ExplorerLookup
 import com.chesscompanion.core.data.explorer.KeystoreTokenStore
@@ -41,7 +43,7 @@ object DataModule {
     ): ChessDatabase =
         Room
             .databaseBuilder(context, ChessDatabase::class.java, ChessDatabase.NAME)
-            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3)
+            .addMigrations(Migrations.V1_TO_V2, Migrations.V2_TO_V3, Migrations.V3_TO_V4)
             .build()
 
     @Provides
@@ -51,6 +53,10 @@ object DataModule {
     @Provides
     @Singleton
     fun provideRepertoireStore(database: ChessDatabase): RepertoireStore = RoomRepertoireStore(database)
+
+    @Provides
+    @Singleton
+    fun provideReviewCardStore(database: ChessDatabase): ReviewCardStore = RoomReviewCardStore(database)
 
     @Provides
     @Singleton

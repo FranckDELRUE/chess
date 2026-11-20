@@ -1,5 +1,6 @@
 package com.chesscompanion.core.data
 
+import androidx.room.withTransaction
 import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.Position
@@ -16,10 +17,11 @@ import java.util.UUID
 
 /** [RepertoireStore] on Room. [clock] gives the time of each write (tests pass a fixed one). */
 class RoomRepertoireStore(
-    database: ChessDatabase,
+    private val database: ChessDatabase,
     private val clock: () -> Long = System::currentTimeMillis,
 ) : RepertoireStore {
     private val dao = database.repertoireDao()
+    private val cards = database.reviewCardDao()
     private val content = database.repertoireContentDao()
 
     override fun repertoires(): Flow<List<RepertoireSummary>> =
@@ -88,7 +90,12 @@ class RoomRepertoireStore(
         name: String,
     ) = dao.rename(id, name, clock())
 
-    override suspend fun delete(id: String) = dao.delete(id)
+    // Cards have no foreign key (ADR 0012), so deleting a repertoire removes them explicitly.
+    override suspend fun delete(id: String) =
+        database.withTransaction {
+            cards.deleteAll(id)
+            dao.delete(id)
+        }
 
     private fun nodeRows(
         id: String,

@@ -25,6 +25,23 @@ object Migrations {
             }
         }
 
+    /** S8-2: adds the review cards; everything else is untouched. */
+    val V3_TO_V4: Migration =
+        object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `review_card` (`repertoireId` TEXT NOT NULL, `key` INTEGER NOT NULL, " +
+                        "`fen` TEXT NOT NULL, `stability` REAL, `difficulty` REAL, `due` INTEGER, " +
+                        "`lastReview` INTEGER, `reps` INTEGER NOT NULL, `lapses` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`repertoireId`, `key`, `fen`))",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_review_card_repertoireId_due` " +
+                        "ON `review_card` (`repertoireId`, `due`)",
+                )
+            }
+        }
+
     // Copied from core/data/schemas/.../2.json (createSql of the three new entities).
     private val MIGRATION_1_2_SQL: List<String> =
         listOf(
