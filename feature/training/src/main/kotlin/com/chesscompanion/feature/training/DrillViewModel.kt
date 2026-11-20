@@ -5,8 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.PieceLetters
+import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.repertoire.PositionId
 import com.chesscompanion.core.chess.repertoire.Repertoire
+import com.chesscompanion.core.chess.repertoire.RepertoireEdge
 import com.chesscompanion.core.chess.toSan
 import com.chesscompanion.core.data.RepertoireStore
 import com.chesscompanion.core.data.ReviewCardStore
@@ -14,13 +17,17 @@ import com.chesscompanion.core.engine.EngineScheduler
 import com.chesscompanion.core.srs.DrillOutcome
 import com.chesscompanion.core.srs.DrillResult
 import com.chesscompanion.core.srs.DrillSession
+import com.chesscompanion.core.srs.FsrsCard
 import com.chesscompanion.core.srs.LearnResult
+import com.chesscompanion.core.srs.LineWalk
 import com.chesscompanion.core.srs.ReviewItem
 import com.chesscompanion.core.srs.ReviewQueueBuilder
+import com.chesscompanion.core.srs.practiceResult
 import com.chesscompanion.core.ui.board.BoardAnnotations
 import com.chesscompanion.core.ui.board.BoardHighlights
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,8 +44,10 @@ const val DRILL_REPERTOIRE_ID_ARG = "id"
  * The drill of one repertoire (S8-4): asks the daily queue position by position (S8-3), stores each graded
  * answer as a review card, and after a miss tells the facts: the expected move, the move played, the line and
  * Stockfish's evaluation of both (shared engine at `LIVE` priority; no engine, no evaluation, nothing else changes).
- * One entry point, [onAction].
+ * The positions are reached by playing lines from the start of the repertoire: the player's moves are asked, the
+ * opponent's replies are played by the app, up to the end of the line. One entry point, [onAction].
  */
+@Suppress("TooManyFunctions") // one state machine: line walk, question, learning, feedback
 @HiltViewModel
 class DrillViewModel
     @Inject
@@ -61,6 +70,18 @@ class DrillViewModel
         private var leftDue = 0
         private var leftNew = 0
         private var evalJob: Job? = null
+        private var lineJob: Job? = null
+        private var walk: LineWalk? = null
+        private var target: ReviewItem? = null
+        private var targetReached = false
+        private var item: ReviewItem? = null
+        private var practice = false
+        private var nextEdge: RepertoireEdge? = null
+        private var known: Map<PositionId, FsrsCard> = emptyMap()
+        private val unreached = mutableMapOf<PositionId, Int>()
+
+        /** Pause before the app plays a move, in milliseconds (tests remove it). */
+        internal var replyPauseMs = REPLY_PAUSE_MS
         private val probe = EvaluationProbe(engine)
 
         init {
@@ -75,13 +96,14 @@ class DrillViewModel
             }
             repertoire = stored.repertoire
             val now = Instant.now(clock)
-            val queue =
-                ReviewQueueBuilder.build(stored.repertoire, cards.cards(id), now, clock.zone)
+            val stored1 = cards.cards(id)
+            known = stored1.filterValues { !it.isNew }
+            val queue = ReviewQueueBuilder.build(stored.repertoire, stored1, now, clock.zone)
             leftDue = queue.totalDue - queue.dueCount
             leftNew = queue.totalNew - queue.newCount
             session = DrillSession(queue.items)
             _state.value = DrillUiState(name = stored.name)
-            if (queue.items.isEmpty()) finish(nothingToReview = true) else ask()
+            if (queue.items.isEmpty()) finish(nothingToReview = true) else startLine()
         }
 
         fun onAction(action: DrillAction) {
@@ -113,20 +135,103 @@ class DrillViewModel
         }
 
         private fun showHint() {
-            val shown = session?.takeIf { _state.value.status == DrillStatus.ASKING } ?: return
-            val edge = shown.hint ?: return
-            val position = shown.current?.node?.position ?: return
+            if (_state.value.status != DrillStatus.ASKING) return
+            val shown = item ?: return
+            val edge = walk?.preferred(shown.expected) ?: return
+            val position = shown.node.position
             hintUsed = true
             _state.update { it.copy(hint = position.toSan(edge.move, PieceLetters.FRENCH)) }
         }
 
-        private fun ask() {
-            val shown = session?.current ?: return finish()
+        /** Starts a line from the root toward the position at the front of the queue. */
+        private fun startLine() {
+            val graph = checkNotNull(repertoire)
+            val head = session?.current ?: return finish()
+            target = head
+            targetReached = false
+            walk = LineWalk(graph, head.path)
+            showBoard(checkNotNull(graph.node(graph.root)).position, null)
+            runLine()
+        }
+
+        /** Plays the opponent's replies (and the player's unknown moves) until the player has a question. */
+        private fun runLine() {
+            lineJob?.cancel()
+            lineJob =
+                viewModelScope.launch {
+                    val line = checkNotNull(walk)
+                    val graph = checkNotNull(repertoire)
+                    while (!line.isOver) {
+                        if (line.isPlayerTurn && reachPlayerPosition(line, graph)) return@launch
+                        val edge =
+                            (if (line.isPlayerTurn) line.preferred(line.moves) else line.opponentReply()) ?: break
+                        if (line.played.isNotEmpty()) delay(replyPauseMs)
+                        line.advance(edge)
+                        showBoard(checkNotNull(graph.node(edge.to)).position, edge.move)
+                    }
+                    endLine()
+                }
+        }
+
+        /** True when the player is asked here: the position is in the queue, or known (practice). */
+        private fun reachPlayerPosition(
+            line: LineWalk,
+            graph: Repertoire,
+        ): Boolean {
+            val node = checkNotNull(graph.node(line.position))
+            if (node.id == target?.id) targetReached = true
+            val queued = session?.focus(node.id) == true
+            if (!queued && node.id !in known) return false
+            practice = !queued
+            val shown =
+                if (queued) {
+                    checkNotNull(session?.current).copy(path = line.played)
+                } else {
+                    ReviewItem(node, known[node.id], line.played, line.moves)
+                }
+            item = shown
+            ask(shown)
+            return true
+        }
+
+        private fun endLine() {
+            val missed = target
+            if (missed != null && !targetReached && unreached.merge(missed.id, 1, Int::plus) == MAX_UNREACHED) {
+                // The player keeps leaving the line before that position: it stays due for another day.
+                session?.drop(missed.id)
+                if (missed.isNew) leftNew++ else leftDue++
+            }
+            if (session?.isFinished == false) startLine() else finish()
+        }
+
+        private fun showBoard(
+            position: Position,
+            last: Move?,
+        ) {
+            val graph = checkNotNull(repertoire)
+            _state.update {
+                it.copy(
+                    status = DrillStatus.REPLYING,
+                    board = position.board,
+                    flipped = graph.side == Side.BLACK,
+                    highlights = BoardHighlights(lastMove = last, check = position.checkSquare()),
+                    annotations = BoardAnnotations.EMPTY,
+                    promotionSide = null,
+                    lineText = lineText(graph, walk?.played.orEmpty()),
+                    toMove = position.sideToMove,
+                    remaining = session?.remaining ?: 0,
+                    hint = null,
+                    feedback = null,
+                )
+            }
+        }
+
+        private fun ask(shown: ReviewItem) {
             val position = shown.node.position
             input = DrillInput(position)
             hintUsed = false
             val repertoire = checkNotNull(repertoire)
-            val learning = session?.isLearning == true
+            val learning = !practice && session?.isLearning == true
             val notes = repertoire.notes(shown.id)
             _state.update {
                 it.copy(
@@ -142,15 +247,14 @@ class DrillViewModel
                     learnComment = if (learning) notes.comment else "",
                     learnSource = if (learning) notes.source?.toText() else null,
                     learnMiss = false,
-                    board = position.board,
-                    flipped = repertoire.side == Side.BLACK,
-                    highlights = BoardHighlights(check = position.checkSquare()),
+                    highlights = BoardHighlights(lastMove = it.highlights.lastMove, check = position.checkSquare()),
                     annotations = if (learning) expectedArrows(shown) else BoardAnnotations.EMPTY,
                     promotionSide = null,
                     lineText = lineText(repertoire, shown.path),
                     toMove = position.sideToMove,
-                    isNewPosition = shown.isNew,
-                    isRetry = session?.isRetry == true,
+                    isNewPosition = !practice && shown.isNew,
+                    isRetry = !practice && session?.isRetry == true,
+                    isPractice = practice,
                     remaining = session?.remaining ?: 0,
                     hint = null,
                     feedback = null,
@@ -178,13 +282,14 @@ class DrillViewModel
         /** The player plays the repertoire move shown for a new position: the card is created, due tomorrow. */
         private fun learn(played: Move) {
             val shown = session ?: return
-            val item = shown.current ?: return
+            val item = item ?: return
             when (val result = shown.learn(played, Instant.now(clock))) {
                 is LearnResult.NotTheMove -> {
                     _state.update { it.copy(learnMiss = true) }
                     showInput()
                 }
                 is LearnResult.Learned -> {
+                    nextEdge = result.edge
                     viewModelScope.launch { cards.put(id, item.id, result.card) }
                     summary = summary.learnedOne()
                     _state.update {
@@ -200,9 +305,14 @@ class DrillViewModel
         }
 
         private fun answer(played: Move) {
-            val shown = session ?: return
-            val item = shown.current ?: return
-            val result = shown.answer(played, Instant.now(clock), hintUsed)
+            val item = item ?: return
+            val result =
+                if (practice) {
+                    practiceResult(item, played)
+                } else {
+                    checkNotNull(session).answer(played, Instant.now(clock), hintUsed)
+                }
+            nextEdge = (result.outcome as? DrillOutcome.Correct)?.edge ?: walk?.preferred(item.expected)
             result.updatedCard?.let { card -> viewModelScope.launch { cards.put(id, item.id, card) } }
             summary = summary.plus(result.rating)
             val feedback = feedbackOf(item, result, checkNotNull(repertoire))
@@ -239,10 +349,15 @@ class DrillViewModel
         private fun next() {
             if (_state.value.status != DrillStatus.FEEDBACK) return
             evalJob?.cancel()
-            if (session?.isFinished == true) finish() else ask()
+            val line = walk ?: return
+            val edge = nextEdge ?: return endLine()
+            line.advance(edge)
+            showBoard(checkNotNull(repertoire?.node(edge.to)).position, edge.move)
+            runLine()
         }
 
         private fun finish(nothingToReview: Boolean = false) {
+            lineJob?.cancel()
             _state.update {
                 it.copy(
                     status = DrillStatus.FINISHED,
@@ -256,5 +371,12 @@ class DrillViewModel
                     highlights = BoardHighlights(),
                 )
             }
+        }
+
+        private companion object {
+            const val REPLY_PAUSE_MS = 700L
+
+            /** A line that misses a position this many times gives it up for the session. */
+            const val MAX_UNREACHED = 2
         }
     }

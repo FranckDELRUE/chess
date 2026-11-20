@@ -136,4 +136,29 @@ class DrillSessionTest {
         assertFalse(session.isLearning)
         assertThrows(IllegalStateException::class.java) { session.learn(move("d2d4"), now) }
     }
+
+    @Test
+    fun focusBringsAPendingPositionToTheFrontAndDropGivesItUp() {
+        val deep = repertoireOf(Side.WHITE, "1. d4 d5 2. c4 e6 *")
+        val items = ReviewQueueBuilder.build(deep, emptyMap(), now, zone).items
+        val session = DrillSession(items)
+        val second = items[1].id
+        assertTrue(session.focus(second))
+        assertEquals(second, session.current?.id)
+        assertEquals(2, session.remaining)
+
+        session.drop(second)
+        assertEquals(1, session.remaining)
+        assertFalse(session.focus(second))
+    }
+
+    @Test
+    fun practiceNeverGradesOrStoresAnything() {
+        val item = ReviewQueueBuilder.build(repertoire, emptyMap(), now, zone).items.first()
+        val right = practiceResult(item, move("d2d4"))
+        assertTrue(right.isCorrect)
+        assertNull(right.rating)
+        assertNull(right.updatedCard)
+        assertFalse(practiceResult(item, move("e2e4")).isCorrect)
+    }
 }

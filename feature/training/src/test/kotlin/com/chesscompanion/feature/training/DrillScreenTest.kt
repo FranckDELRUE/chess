@@ -55,6 +55,7 @@ class DrillScreenTest {
                 scheduler(),
                 Clock.fixed(now, ZoneId.of("Europe/Paris")),
             )
+        viewModel.replyPauseMs = 0
         compose.setContent { ChessTheme { DrillScreen({ closed = true }, viewModel) } }
         compose.waitForIdle()
     }

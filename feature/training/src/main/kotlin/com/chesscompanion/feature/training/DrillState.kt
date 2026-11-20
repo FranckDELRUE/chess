@@ -8,8 +8,11 @@ import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.ui.board.BoardAnnotations
 import com.chesscompanion.core.ui.board.BoardHighlights
 
-/** [LEARNING]: a new position, the repertoire move is shown and the player plays it; [ASKING]: a review question. */
-enum class DrillStatus { LOADING, NOT_FOUND, LEARNING, ASKING, FEEDBACK, FINISHED }
+/**
+ * [LEARNING]: a new position, the repertoire move is shown and the player plays it; [ASKING]: a review question;
+ * [REPLYING]: the app plays the opponent's move.
+ */
+enum class DrillStatus { LOADING, NOT_FOUND, REPLYING, LEARNING, ASKING, FEEDBACK, FINISHED }
 
 /**
  * What the player is told after an answer (facts only: the explanation by the teacher comes in S4).
@@ -51,6 +54,8 @@ data class DrillUiState(
     val toMove: Side = Side.WHITE,
     val isNewPosition: Boolean = false,
     val isRetry: Boolean = false,
+    /** A known position met on the line but not due: asked for practice, nothing is graded. */
+    val isPractice: Boolean = false,
     val remaining: Int = 0,
     val hint: String? = null,
     /** Learning a new position: the repertoire moves to play (SAN), what the author wrote, and the last try missed. */

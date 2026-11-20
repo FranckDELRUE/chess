@@ -100,6 +100,11 @@ Sprint précédent : `docs/sprints/s7.md` (archive et rétrospective). Ordre d'e
   réglable ; WorkManager n'est pas exact à la minute.
 - [x] Correctif (retour du joueur) : bouton « Quitter la séance » toujours visible dans le drill, « Terminer » à la fin ; la
   progression est déjà enregistrée à chaque réponse. 1 test d'écran de plus.
+- [x] Révision par lignes (demande du joueur, ADR 0014) : le drill part de la position de départ, l'application joue les
+  réponses adverses, le joueur répond à tous ses coups jusqu'à la fin de la ligne. `LineWalk`, `DrillSession.focus/drop`,
+  `practiceResult` dans `:core:srs` ; `DrillViewModel` réécrit autour des lignes (statut `REPLYING`, entraînement non
+  noté). Tests : `LineWalkTest` (4), `DrillSessionTest` (+2), `DrillViewModelTest` (+3, 1 adapté). Installé sur la tablette.
+- *Notes* : pas de réglage de la pause ni de l'arrêt « à la position visée » ; non vérifié visuellement sur la tablette.
 ### S8-7 et S8-8
 Voir le plan validé : export PGN (7), démo et clôture (8).
 

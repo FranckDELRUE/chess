@@ -1,6 +1,7 @@
 package com.chesscompanion.core.srs
 
 import com.chesscompanion.core.chess.Move
+import com.chesscompanion.core.chess.repertoire.PositionId
 import com.chesscompanion.core.chess.repertoire.RepertoireEdge
 import java.time.Duration
 import java.time.Instant
@@ -69,6 +70,24 @@ class DrillSession(
     /** The move to show as a hint for the current position: the first repertoire move. */
     val hint: RepertoireEdge? get() = current?.expected?.firstOrNull()
 
+    /**
+     * Brings the pending position [id] to the front (a line walk reached it); a graded entry is preferred to a retry.
+     * False when the session has no such position.
+     */
+    fun focus(id: PositionId): Boolean {
+        val index =
+            pending.indexOfFirst { it.item.id == id && it.graded }.takeIf { it >= 0 }
+                ?: pending.indexOfFirst { it.item.id == id }
+        if (index < 0) return false
+        pending.addFirst(pending.removeAt(index))
+        return true
+    }
+
+    /** Gives up the pending position [id] (it stays due for another day). */
+    fun drop(id: PositionId) {
+        pending.removeAll { it.item.id == id }
+    }
+
     /** Answers the current position with [played]; [hintUsed] tells if the hint was shown first. */
     fun answer(
         played: Move,
@@ -122,4 +141,14 @@ sealed interface LearnResult {
     data class NotTheMove(
         val expected: List<RepertoireEdge>,
     ) : LearnResult
+}
+
+/** The result of an answer on a position that is not in the queue (practice on a line): never graded or stored. */
+fun practiceResult(
+    item: ReviewItem,
+    played: Move,
+): DrillResult {
+    val match = item.expected.firstOrNull { it.move == played }
+    val outcome = if (match != null) DrillOutcome.Correct(match) else DrillOutcome.Deviation(played, item.expected)
+    return DrillResult(item, outcome, rating = null, updatedCard = null)
 }

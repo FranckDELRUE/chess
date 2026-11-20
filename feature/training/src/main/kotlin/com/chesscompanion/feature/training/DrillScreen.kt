@@ -44,6 +44,7 @@ const val DRILL_FINISHED_TAG = "drill-finished"
 const val DRILL_SUMMARY_TAG = "drill-summary"
 const val DRILL_LEARNED_SUMMARY_TAG = "drill-learned-summary"
 const val DRILL_QUIT_TAG = "drill-quit"
+const val DRILL_PRACTICE_TAG = "drill-practice"
 
 /** The drill of one repertoire: the board on one side, the question and the feedback on the other. */
 @Composable
@@ -127,6 +128,7 @@ private fun DrillPanel(
     ) {
         Text(stringResource(R.string.drill_title, state.name), style = MaterialTheme.typography.headlineSmall)
         when (state.status) {
+            DrillStatus.REPLYING -> ReplyPanel(state)
             DrillStatus.LEARNING -> LearningPanel(state)
             DrillStatus.ASKING -> AskingPanel(state, onAction)
             DrillStatus.FEEDBACK -> FeedbackPanel(state, onAction)
@@ -144,10 +146,11 @@ private fun DrillPanel(
 }
 
 @Composable
-private fun LineHeader(state: DrillUiState) {
+internal fun LineHeader(state: DrillUiState) {
     Text(stringResource(R.string.drill_remaining, state.remaining), style = MaterialTheme.typography.labelLarge)
     if (state.isNewPosition) Text(stringResource(R.string.drill_new_position))
     if (state.isRetry) Text(stringResource(R.string.drill_retry))
+    if (state.isPractice) Text(stringResource(R.string.drill_practice), Modifier.testTag(DRILL_PRACTICE_TAG))
     Text(
         stringResource(
             R.string.drill_line,
@@ -155,31 +158,6 @@ private fun LineHeader(state: DrillUiState) {
         ),
         Modifier.testTag(DRILL_LINE_TAG),
     )
-}
-
-@Composable
-private fun LearningPanel(state: DrillUiState) {
-    Text(stringResource(R.string.drill_remaining, state.remaining), style = MaterialTheme.typography.labelLarge)
-    Text(
-        stringResource(R.string.drill_line, state.lineText.ifEmpty { stringResource(R.string.drill_line_start) }),
-        Modifier.testTag(DRILL_LINE_TAG),
-    )
-    Text(
-        stringResource(R.string.drill_learn_title),
-        Modifier.testTag(DRILL_LEARN_TAG),
-        style = MaterialTheme.typography.titleMedium,
-    )
-    Text(
-        stringResource(R.string.drill_learn_moves, state.learnMoves.joinToString(" / ")),
-        Modifier.testTag(DRILL_LEARN_MOVES_TAG),
-    )
-    if (state.learnComment.isNotEmpty()) Text(state.learnComment)
-    state.learnSource?.let {
-        Text(stringResource(R.string.drill_learn_source, it), style = MaterialTheme.typography.bodySmall)
-    }
-    if (state.learnMiss) {
-        Text(stringResource(R.string.drill_learn_miss), Modifier.testTag(DRILL_LEARN_MISS_TAG))
-    }
 }
 
 @Composable

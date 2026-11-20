@@ -68,7 +68,7 @@ class DrillViewModelTest {
         cards,
         scheduler(engine),
         clock,
-    )
+    ).also { it.replyPauseMs = 0 }
 
     private fun DrillViewModel.play(
         from: String,
@@ -235,9 +235,63 @@ class DrillViewModelTest {
         assertTrue(checkNotNull(vm.state.value.feedback).retry)
         assertEquals(before, cards.stored.values.toList())
 
+        // The line goes on after the retry: the next position is known but no longer due, so it is practice only.
+        vm.onAction(DrillAction.Continue)
+        assertTrue(vm.state.value.isPractice)
+        vm.play("c2", "c4")
         vm.onAction(DrillAction.Continue)
         assertEquals(DrillStatus.FINISHED, vm.state.value.status)
         assertEquals(DrillSummary(graded = 2, correct = 1, missed = 1), vm.state.value.summary)
+    }
+
+    // --- lines played from the start
+
+    @Test
+    fun theOpponentRepliesAreScriptedAndShownOnTheBoard() {
+        val vm = drill(reviewedCards())
+        vm.play("d2", "d4")
+        vm.onAction(DrillAction.Continue)
+        val state = vm.state.value
+        assertEquals(DrillStatus.ASKING, state.status)
+        assertEquals("1. d4 d5", state.lineText)
+        assertEquals(sq("d5"), state.highlights.lastMove?.to)
+    }
+
+    @Test
+    fun aBlackRepertoireStartsWithTheOpponentsFirstMove() {
+        val black = repertoireOf(Side.BLACK, "1. d4 d5 2. c4 e6 *")
+        val cards = FakeReviewCardStore()
+        ReviewQueueBuilder.build(black, emptyMap(), now, clock.zone).items.forEach {
+            val card = Fsrs().review(FsrsCard(), Rating.Good, now - Duration.ofDays(30))
+            runBlocking { cards.put("r", it.id, card) }
+        }
+        val state = drill(cards, graph = black).state.value
+        assertEquals(DrillStatus.ASKING, state.status)
+        assertEquals("1. d4", state.lineText)
+        assertEquals(Side.BLACK, state.toMove)
+    }
+
+    @Test
+    fun aKnownPositionNotDueOnTheWayIsAskedAsUngradedPractice() {
+        val cards = reviewedCards()
+        // The first position was seen today: not due; only the second one is.
+        val root = ReviewQueueBuilder.build(repertoire, emptyMap(), now, clock.zone).items.first()
+        runBlocking { cards.put("r", root.id, Fsrs().review(FsrsCard(), Rating.Good, now)) }
+        val before = cards.stored.values.toList()
+
+        val vm = drill(cards)
+        val first = vm.state.value
+        assertTrue(first.isPractice)
+        assertEquals("", first.lineText)
+        vm.play("d2", "d4")
+        assertTrue(checkNotNull(vm.state.value.feedback).retry)
+        assertEquals(before, cards.stored.values.toList())
+
+        vm.onAction(DrillAction.Continue)
+        val target = vm.state.value
+        assertEquals(DrillStatus.ASKING, target.status)
+        assertFalse(target.isPractice)
+        assertEquals("1. d4 d5", target.lineText)
     }
 
     @Test

@@ -29,6 +29,8 @@
     <string name="drill_summary_learned">%1$d nouvelles positions apprises.</string>
     <string name="drill_quit">Quitter la séance (progression conservée)</string>
     <string name="drill_done">Terminer</string>
+    <string name="drill_practice">Position connue, pas encore à réviser : entraînement (non noté)</string>
+    <string name="drill_replying">L’adversaire joue…</string>
     <string name="drill_continue">Continuer</string>
     <string name="drill_finished_title">Séance terminée</string>
     <string name="drill_nothing_title">Rien à réviser</string>
