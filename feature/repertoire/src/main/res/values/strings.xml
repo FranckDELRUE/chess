@@ -41,4 +41,23 @@
     <string name="editor_delete">Supprimer ce coup</string>
     <string name="editor_delete_title">Supprimer ce coup ?</string>
     <string name="editor_delete_message">Ce coup et les lignes qui n\'existent que par lui seront supprimés. Cette action est définitive.</string>
+    <string name="editor_import">Importer un PGN</string>
+    <string name="import_title">Importer un PGN</string>
+    <string name="import_help">Toutes les parties du fichier sont ajoutées à ce répertoire, variantes comprises. Les coups sont vérifiés avant d\'être gardés.</string>
+    <string name="import_choose_file">Choisir un fichier PGN</string>
+    <string name="import_paste">Ou colle le texte du PGN</string>
+    <string name="import_run">Importer</string>
+    <string name="import_progress">Partie %1$d sur %2$d</string>
+    <string name="import_report_title">Import terminé</string>
+    <string name="import_no_game">Aucune partie trouvée dans ce texte.</string>
+    <string name="import_games">Parties fusionnées : %1$d sur %2$d</string>
+    <string name="import_added">Coups ajoutés : %1$d</string>
+    <string name="import_existing">Coups déjà présents : %1$d</string>
+    <string name="import_duration">Durée : %1$.1f s</string>
+    <string name="import_rejected">Parties rejetées : %1$d</string>
+    <string name="import_rejected_unreadable">Partie %1$d, ligne %2$d : %3$s</string>
+    <string name="import_rejected_start">Partie %1$d : elle ne part pas de la position de départ du répertoire.</string>
+    <string name="import_rejected_more">… et %1$d autres.</string>
+    <string name="import_file_unreadable">Ce fichier n\'a pas pu être lu (illisible ou trop gros).</string>
+    <string name="import_close">Fermer</string>
 </resources>

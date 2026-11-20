@@ -59,6 +59,7 @@ internal fun RepertoireEditorContent(
         PromotionDialog(side, { onAction(EditorAction.Promote(it)) }, { onAction(EditorAction.CancelPromotion) })
     }
     if (state.confirmDelete) DeleteDialog(onAction)
+    ImportDialog(state.import, onAction)
 }
 
 @Composable

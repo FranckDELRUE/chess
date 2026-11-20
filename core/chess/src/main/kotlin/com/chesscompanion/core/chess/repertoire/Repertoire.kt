@@ -100,6 +100,12 @@ data class MergeResult(
     val notedPositions: Int = 0,
 )
 
+/** Outcome of [Repertoire.mergeAll]: [mismatched] are the indices of the games left out. */
+data class BatchMerge(
+    val merged: MergeResult,
+    val mismatched: List<Int>,
+)
+
 /** The start position of a game is not the repertoire's. */
 class StartMismatchException(
     message: String,
@@ -164,25 +170,29 @@ class Repertoire private constructor(
      * start from the repertoire's start position. Moves were already checked by `PgnReader`.
      */
     fun merge(game: Game): MergeResult {
-        val start = idOf(game.startPosition)
-        if (start != root) throw StartMismatchException("The game does not start from the repertoire position")
         val builder = Builder(this)
-        val pending = ArrayDeque<Pair<PositionId, MoveNode>>()
-        game.moves.asReversed().forEach { pending.addLast(root to it) }
-        while (pending.isNotEmpty()) {
-            val (fromId, moveNode) = pending.removeLast()
-            val source = builder.nodes.getValue(fromId)
-            val (target, _) = builder.addMove(source, moveNode.move, moveNode.position)
-            builder.addNotes(target, moveNode.commentsAfter)
-            moveNode.children.asReversed().forEach { pending.addLast(target to it) }
+        if (!builder.mergeGame(game)) {
+            throw StartMismatchException("The game does not start from the repertoire position")
         }
-        return MergeResult(
-            builder.build(),
-            builder.addedMoves,
-            builder.existingMoves,
-            builder.addedPositions,
-            builder.notedPositions,
-        )
+        return builder.result()
+    }
+
+    /**
+     * Merges [games] in one pass (one copy of the graph, not one per game). A game that does not start
+     * from the repertoire position is left out and its index in [games] is reported; [onGame] is told
+     * how many games were handled so far.
+     */
+    fun mergeAll(
+        games: List<Game>,
+        onGame: (Int) -> Unit = {},
+    ): BatchMerge {
+        val builder = Builder(this)
+        val mismatched = mutableListOf<Int>()
+        games.forEachIndexed { index, game ->
+            if (!builder.mergeGame(game)) mismatched += index
+            onGame(index + 1)
+        }
+        return BatchMerge(builder.result(), mismatched)
     }
 
     /**
@@ -278,6 +288,23 @@ class Repertoire private constructor(
                 }
             }
         }
+
+        /** Merges every line of [game]; false (and nothing changed) if it starts elsewhere than the root. */
+        fun mergeGame(game: Game): Boolean {
+            if (origin.idOf(game.startPosition) != origin.root) return false
+            val pending = ArrayDeque<Pair<PositionId, MoveNode>>()
+            game.moves.asReversed().forEach { pending.addLast(origin.root to it) }
+            while (pending.isNotEmpty()) {
+                val (fromId, moveNode) = pending.removeLast()
+                val source = nodes.getValue(fromId)
+                val (target, _) = addMove(source, moveNode.move, moveNode.position)
+                addNotes(target, moveNode.commentsAfter)
+                moveNode.children.asReversed().forEach { pending.addLast(target to it) }
+            }
+            return true
+        }
+
+        fun result() = MergeResult(build(), addedMoves, existingMoves, addedPositions, notedPositions)
 
         fun build(): Repertoire = Repertoire(origin.side, origin.root, nodes, outgoing, notes, origin.idOf)
     }

@@ -47,6 +47,7 @@ const val EDITOR_ANNOTATE_TAG = "editor-annotate"
 const val EDITOR_CLEAR_MARKS_TAG = "editor-clear-marks"
 const val EDITOR_COMMENT_TAG = "editor-comment"
 const val EDITOR_DELETE_TAG = "editor-delete"
+const val EDITOR_IMPORT_TAG = "editor-import"
 
 fun editorContinuationTag(uci: String) = "editor-continuation-$uci"
 
@@ -76,11 +77,17 @@ internal fun EditorPanel(
             MarksBar(state, onAction)
             CommentField(state, onAction)
             SourceFields(state, onAction)
-            OutlinedButton(
-                onClick = { onAction(EditorAction.AskDelete) },
-                enabled = state.canGoBack,
-                modifier = Modifier.testTag(EDITOR_DELETE_TAG),
-            ) { Text(stringResource(R.string.editor_delete)) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { onAction(EditorAction.AskDelete) },
+                    enabled = state.canGoBack,
+                    modifier = Modifier.testTag(EDITOR_DELETE_TAG),
+                ) { Text(stringResource(R.string.editor_delete)) }
+                OutlinedButton(
+                    onClick = { onAction(EditorAction.OpenImport) },
+                    modifier = Modifier.testTag(EDITOR_IMPORT_TAG),
+                ) { Text(stringResource(R.string.editor_import)) }
+            }
         }
     }
 }

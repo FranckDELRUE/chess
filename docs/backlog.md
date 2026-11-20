@@ -82,3 +82,6 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 - Marques jaunes (`Y`) dans l'éditeur de répertoire : ignorées en S7-4 (PGN `[%cal]`/`[%csl]` ne gardent que G/R/B).
 - Mutualiser la machine de saisie des coups (`EditorInput` dans `:feature:repertoire` duplique `MoveInput` de `:feature:play`).
 - Export PGN : conserver aussi les notes de la position de départ du répertoire.
+
+## Issu de S7-5
+- Import PGN : détecter l'encodage (Latin-1) des fichiers anciens ; `save` incrémental du répertoire si l'import de milliers de parties devient lent (4,5 s pour 9262 coups sur la tablette).

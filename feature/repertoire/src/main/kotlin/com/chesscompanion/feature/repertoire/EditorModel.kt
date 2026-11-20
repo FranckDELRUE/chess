@@ -135,7 +135,7 @@ internal data class EditorModel(
     private fun withNotes(value: NodeNotes): EditorModel = copy(repertoire = repertoire.withNotes(current, value))
 
     /** Shows the position at the end of [newTrail] in [newRepertoire], with a fresh input. */
-    private fun show(
+    internal fun show(
         newRepertoire: Repertoire,
         newTrail: List<RepertoireEdge>,
     ): EditorModel {
@@ -162,3 +162,6 @@ internal data class EditorModel(
         }
     }
 }
+
+/** The same position shown in [imported], a repertoire that only gained moves and notes. */
+internal fun EditorModel.withImported(imported: Repertoire): EditorModel = show(imported, trail)
