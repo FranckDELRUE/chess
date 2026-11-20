@@ -134,6 +134,32 @@ Dette : notification non vérifiée à l'écran (permission refusée pendant la 
 
 ---
 
+## Démo de fin de sprint (2026-11-20, tablette Honor HEY2-W09)
+
+Capture : `docs/sprints/s2-demo.png` (après une partie contre Stockfish abandonnée : barre d'évaluation, 3 lignes en SAN français à profondeur 20, mode sombre, paysage).
+Démo pilotée par adb (appuis injectés), build debug sauf mention contraire.
+
+| Parcours | Résultat |
+| --- | --- |
+| Partie contre Stockfish (Blancs, ELO 1500, 1 s par coup) : 1. e4 c6 2. d4 e6 3. Cf3 Fe7 4. Fd3 d6 5. O-O a6 | coups de Stockfish rendus en ≈ 1 s, analyse masquée pendant la partie, liste en SAN français |
+| Reprendre un coup, puis 5. c4 Cd7 | retour après 4… d6, Stockfish rejoue ; **mais** 5. c4 devient une variante (défaut 2) |
+| Abandonner | « Vous avez abandonné : Stockfish gagne », bouton grisé, interrupteur « Analyse » de retour |
+| Analyse en direct | barre à +1,1 et 3 lignes à profondeur 20 en 8 s, profondeur 24 ensuite, pendant que la file d'analyses tournait |
+| Analyser la partie (11 positions) | notification « Analyse de la partie : 4/11 » avec barre de progression, vue à l'écran ; « Partie analysée (11 positions) », notification retirée |
+| Partie de Heidoji (51 coups) ouverte par « Ouvrir… » | « 1 partie importée » ; la ligne stockée de la position de départ s'affiche aussitôt (profondeur 18) ; **mais** l'état de la partie contre Stockfish reste (défaut 1) |
+| Analyser la partie (102 positions), « Annuler » dans la notification | « Analyse annulée » à 18/102, notification retirée ; relance à 20/102 en 2 s (positions stockées sautées), fin « Partie analysée (102 positions) » en 188 s (≈ 2,3 s par position) |
+| APK release (signée avec la clé debug, installée par-dessus) | accueil sans « Debug moteur » ; Stockfish joue (1. e4 d6) ; APK de 131 Mo |
+
+**Défauts trouvés** (non corrigés dans S2-7, hors périmètre de la story) :
+1. **Ouvrir ou coller une partie après une partie contre Stockfish garde le mode adversaire.** `importText` et `PickGame` remplacent la partie sans réinitialiser `OpponentController` : l'en-tête reste « Vous avez abandonné », et `exportPgn()` passe par `opponent.finish(...)`, donc enregistrer la partie importée lui donnerait le résultat et les étiquettes de la partie contre Stockfish. Sans abandon, Stockfish jouerait sur la partie importée.
+2. **Après « Reprendre un coup », la partie réellement jouée est une variante.** `takeBackTarget` recule seulement ; le nouveau coup s'ajoute en variante et la ligne principale garde les coups repris. « Analyser la partie » et l'export PGN (avec le résultat) portent donc sur la ligne abandonnée (ici 5. O-O a6 au lieu de 5. c4 Cd7). L'ADR 0009 (« les coups repris restent comme variante ») annonçait l'inverse.
+3. Mineur : le statut de la file (« Partie analysée (72 positions) ») est celui de la dernière analyse, même sur une autre partie.
+
+Vérifié pour la première fois : notification de progression à l'écran et « Annuler » depuis la notification (dette de S2-5) ; build release sur la tablette (S2-6).
+Tablette remise en état : build debug réinstallée, fichier de démo supprimé de `Téléchargements`, rotation et thème inchangés.
+
+---
+
 ## Rétrospective S2 (brouillon, 2026-11-20 ; à finaliser après la démo)
 
 ### Résultat
