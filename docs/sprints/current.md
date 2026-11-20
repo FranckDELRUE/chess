@@ -71,11 +71,11 @@ tablette en paysage et en portrait, clair et sombre, sans saccade.
 d'une partie courte contre un faux moteur ; vérifié sur la tablette.
 
 ### S2-5 · File d'analyses en arrière-plan
-- [ ] « Analyser la partie » : chaque coup analysé à profondeur 18 par un worker WorkManager au
+- [x] « Analyser la partie » : chaque coup analysé à profondeur 18 par un worker WorkManager au
   premier plan (notification de progression, continue écran éteint), annulable.
-- [ ] Résultats dans Room (`:core:data`, table `position_analysis` indexée par clé Zobrist et
+- [x] Résultats dans Room (`:core:data`, table `position_analysis` indexée par clé Zobrist et
   profondeur), réutilisés par l'analyse en direct.
-- [ ] La file cède le moteur à l'analyse en direct et à l'adversaire (S2-1).
+- [x] La file cède le moteur à l'analyse en direct et à l'adversaire (S2-1).
 
 **Acceptation** : tests Room in-memory ; tests du worker (progression, annulation, reprise) ;
 une partie de Heidoji analysée sur la tablette, annulation vérifiée.
@@ -120,3 +120,9 @@ Dette : mesurer en build release (le build debug n'est pas optimisé) et allége
 Tests : `:feature:play` passe de 60 à 82 tests (adversaire 17 avec un faux moteur, réglages 4, parcours Robolectric : réglages, coup, reprise, abandon) ; `:core:engine` 57 ; test instrumenté : un coup de Stockfish à ELO 1500 est légal et rendu dans le temps imparti. `ktlintCheck detekt test assembleDebug` passent.
 Écart au plan : « Stockfish se prépare… » n'est pas affiché (le premier coup de la session coûte ≈ 2 s de plus, démarrage de Stockfish et chargement du réseau : le texte « Stockfish réfléchit… » couvre ce cas). Ajouts non prévus : retournement automatique du plateau côté Noirs.
 Dette : préchauffer Stockfish à l'ouverture de la partie ; pas de pendule (S3) ; `Hasard` n'est pas testé de façon déterministe ; le niveau 0 à 20 et l'ELO ne sont pas calibrés sur Chess.com ou Lichess.
+
+**S2-5** — Fait et vérifié sur la tablette le 2026-11-20 (ADR 0010). `:core:data` : base Room `ChessDatabase` v1 (schéma exporté dans `core/data/schemas`), table `position_analysis` (clé Zobrist, une ligne par position, la plus profonde gagne, FEN à 4 champs contre les collisions de clé) et table `analysis_job` (PGN, état, positions faites), interface `AnalysisStore` et `RoomAnalysisStore`, module Hilt. `:feature:play` : `GameAnalyzer` (ligne principale depuis la position de départ, profondeur 18, une ligne, priorité `BACKGROUND`, positions terminées et déjà analysées aussi profond sautées, coup et ligne validés par `:core:chess`, progression stockée après chaque position donc reprise après annulation ou mort du processus), `GameAnalysisWorker` (WorkManager au premier plan, type `specialUse`, notification de progression avec « Annuler », travail unique `APPEND_OR_REPLACE`), `WorkManagerAnalysisQueue`, bouton « Analyser la partie » avec progression et « Annuler » (masqué pendant une partie contre Stockfish en cours), permission de notification demandée au premier usage. L'analyse en direct affiche d'abord la ligne stockée, remplacée seulement par une ligne en direct au moins aussi profonde. WorkManager est initialisé par l'application avec la fabrique Hilt. Dépendances : `androidx.work` 2.12.0, `androidx.hilt:hilt-work` 1.4.0 (Apache 2.0, versions vérifiées sur le dépôt Maven de Google).
+Tablette : une partie de Heidoji de 72 positions importée par « Ouvrir… », analysée en ≈ 3 min (≈ 2,5 s par position), notification refusée (l'analyse tourne quand même), annulation (« Analyse annulée »), relance qui saute les positions déjà stockées (23/72 en 2 s), analyse poursuivie écran éteint (27 → 45 positions en 40 s), fin « Partie analysée (72 positions) » ; la ligne stockée s'affiche 0,3 s après l'activation de l'analyse en direct.
+Tests : `:core:data` 8 (Room en mémoire avec Robolectric), `:feature:play` 100 (`GameAnalyzer` 9, worker 3 avec `work-testing`, ViewModel 4, ligne stockée dans le contrôleur, parcours Robolectric du panneau). `ktlintCheck detekt test assembleDebug` passent.
+Écarts : table `analysis_job` ajoutée (WorkManager limite ses données d'entrée à 10 Ko) ; une seule ligne par position au lieu d'une par profondeur ; code dans `:feature:play` en attendant `:feature:review` (S6) ; annuler l'analyse annule aussi les parties en attente (chaîne WorkManager). La note de S2-2 annonçait ≈ 1,5 min par partie de 40 coups : c'est ≈ 3 min, la partie comptant 80 positions.
+Dette : notification non vérifiée à l'écran (permission refusée pendant la démo) ; reprise après arrêt par le système couverte par les tests seulement ; l'analyse en direct ne stocke pas ses propres résultats ; à déplacer dans `:feature:review` en S6.

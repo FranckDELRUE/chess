@@ -2,6 +2,7 @@ package com.chesscompanion.feature.play
 
 import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.Position
+import com.chesscompanion.core.data.StoredAnalysis
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.SearchLimit
 import com.chesscompanion.core.engine.SearchRequest
@@ -42,6 +43,8 @@ class AnalysisController(
     private val scope: CoroutineScope,
     private val debounceMs: Long = DEBOUNCE_MS,
     private val work: CoroutineDispatcher = analyzer.workDispatcher,
+    /** What the background analysis stored for a position (S2-5), shown before the search catches up. */
+    private val stored: suspend (Position) -> StoredAnalysis? = { null },
 ) {
     private val _state = MutableStateFlow(AnalysisState())
     val state: StateFlow<AnalysisState> = _state.asStateFlow()
@@ -96,8 +99,9 @@ class AnalysisController(
         if (gameOver) return
         job =
             scope.launch {
-                delay(debounceMs)
                 try {
+                    showStored(shown)
+                    delay(debounceMs)
                     // Folded on [work]; the screen gets the latest state at most every [UI_PERIOD_MS]
                     // (the engine sends hundreds of lines in the first fraction of a second).
                     analyzer
@@ -117,6 +121,11 @@ class AnalysisController(
                     _state.update { it.copy(error = e.message ?: e.toString(), finished = true) }
                 }
             }
+    }
+
+    private suspend fun showStored(position: Position) {
+        val line = stored(position)?.let { AnalysisReducer.storedLine(position, it) } ?: return
+        _state.update { if (it.fen == position.toFen() && it.lines.isEmpty()) it.copy(lines = listOf(line)) else it }
     }
 
     private fun request(position: Position) =

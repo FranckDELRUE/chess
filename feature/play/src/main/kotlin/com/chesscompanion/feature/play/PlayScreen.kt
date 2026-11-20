@@ -1,6 +1,9 @@
 package com.chesscompanion.feature.play
 
+import android.Manifest
 import android.content.ClipData
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -30,16 +33,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chesscompanion.core.chess.GameStatus
 import com.chesscompanion.core.chess.Position
 import com.chesscompanion.core.chess.Side
 import com.chesscompanion.core.chess.pgn.GameSession
+import com.chesscompanion.core.data.AnalysisJob
 import com.chesscompanion.core.ui.board.BoardHighlights
 import com.chesscompanion.core.ui.board.ChessBoard
 import com.chesscompanion.core.ui.board.DragMode
@@ -61,12 +67,21 @@ class DocumentActions(
     val onSave: () -> Unit = {},
     val onCopyPgn: () -> Unit = {},
     val onCopyFen: () -> Unit = {},
+    /** Sends the game to the background analysis, after asking to show its notification (Android 13+). */
+    val onAnalyseGame: () -> Unit = {},
 )
 
 @Composable
 fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val analysis by viewModel.analysisState.collectAsStateWithLifecycle()
+    val queue by viewModel.queueState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    // The analysis runs whatever the answer: without the right, only its notification is hidden.
+    val notifications =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            viewModel.onAction(PlayAction.AnalyseGame)
+        }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -94,6 +109,7 @@ fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
     PlayContent(
         state = state,
         analysis = analysis,
+        queue = queue,
         onAction = viewModel::onAction,
         documents =
             DocumentActions(
@@ -113,6 +129,17 @@ fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
                 onSave = { save.launch(saveName) },
                 onCopyPgn = { copy("PGN", viewModel.exportPgn(), copiedPgn) },
                 onCopyFen = { copy("FEN", state.fen, copiedFen) },
+                onAnalyseGame = {
+                    val asked =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                            PackageManager.PERMISSION_GRANTED
+                    if (asked) {
+                        notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.onAction(PlayAction.AnalyseGame)
+                    }
+                },
             ),
         snackbar = snackbar,
     )
@@ -124,6 +151,7 @@ fun PlayContent(
     analysis: AnalysisState,
     onAction: (PlayAction) -> Unit,
     documents: DocumentActions,
+    queue: AnalysisJob? = null,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val messageText = state.message?.let { messageText(it) }
@@ -161,12 +189,12 @@ fun PlayContent(
             if (maxWidth > maxHeight) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     boardArea(Modifier.weight(1f).fillMaxSize())
-                    SidePanel(state, analysis, onAction, documents, Modifier.weight(1f).fillMaxSize())
+                    SidePanel(state, analysis, queue, onAction, documents, Modifier.weight(1f).fillMaxSize())
                 }
             } else {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     boardArea(Modifier.fillMaxWidth().weight(1f))
-                    SidePanel(state, analysis, onAction, documents, Modifier.fillMaxWidth().weight(1f))
+                    SidePanel(state, analysis, queue, onAction, documents, Modifier.fillMaxWidth().weight(1f))
                 }
             }
         }
@@ -198,6 +226,7 @@ fun PlayContent(
 private fun SidePanel(
     state: PlayUiState,
     analysis: AnalysisState,
+    queue: AnalysisJob?,
     onAction: (PlayAction) -> Unit,
     documents: DocumentActions,
     modifier: Modifier = Modifier,
@@ -213,7 +242,10 @@ private fun SidePanel(
             state.opponent?.let { OpponentControls(it, onAction) }
             AnnotationBar(state, onAction)
             // Against Stockfish the analysis would be a free hint: it comes back when the game is over.
-            if (state.opponent?.over != false) AnalysisPanel(analysis, onAction)
+            if (state.opponent?.over != false) {
+                AnalysisPanel(analysis, onAction)
+                QueuePanel(queue, documents.onAnalyseGame, onAction)
+            }
             MoveList(state.moveList, onGoTo = { onAction(PlayAction.GoTo(it)) }, modifier = Modifier.weight(1f))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -46,6 +46,16 @@
     <string name="play_vs_cancel">Annuler</string>
     <string name="play_msg_engine_failed">Stockfish n\'a pas pu jouer son coup</string>
 
+    <string name="play_queue_analyse">Analyser la partie</string>
+    <string name="play_queue_progress">Analyse de la partie : %1$d/%2$d</string>
+    <string name="play_queue_waiting">Analyse en attente…</string>
+    <string name="play_queue_done">Partie analysée (%1$d positions)</string>
+    <string name="play_queue_cancelled">Analyse annulée</string>
+    <string name="play_queue_failed">L\'analyse a échoué</string>
+    <string name="play_queue_cancel">Annuler</string>
+    <string name="play_queue_channel">Analyse des parties</string>
+    <string name="play_queue_notification_title">Analyse de la partie</string>
+
     <string name="play_nav_start">Début de la partie</string>
     <string name="play_nav_back">Coup précédent</string>
     <string name="play_nav_forward">Coup suivant</string>

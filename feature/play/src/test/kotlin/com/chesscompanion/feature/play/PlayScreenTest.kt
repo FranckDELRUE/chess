@@ -17,6 +17,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.chesscompanion.core.chess.Square
 import com.chesscompanion.core.chess.pgn.PgnReader
+import com.chesscompanion.core.data.AnalysisJob
+import com.chesscompanion.core.data.AnalysisJobState
 import com.chesscompanion.core.ui.board.AnnotationColor
 import com.chesscompanion.core.ui.board.squareTestTag
 import com.chesscompanion.core.ui.theme.ChessTheme
@@ -25,6 +27,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.File
 
@@ -45,7 +48,7 @@ class PlayScreenTest {
         compose.setContent {
             ChessTheme {
                 PlayScreen(
-                    PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer(), FakeOpponent()),
+                    PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer(), FakeOpponent(), FakeQueue()),
                 )
             }
         }
@@ -135,7 +138,11 @@ class PlayScreenTest {
     fun gameAgainstStockfish() {
         compose.setContent {
             val saved = SavedStateHandle(mapOf("vs" to "engine"))
-            ChessTheme { PlayScreen(PlayViewModel(saved, FakeDocuments(), FakeAnalyzer(), FakeOpponent("e7e5"))) }
+            ChessTheme {
+                PlayScreen(
+                    PlayViewModel(saved, FakeDocuments(), FakeAnalyzer(), FakeOpponent("e7e5"), FakeQueue()),
+                )
+            }
         }
         compose.onNodeWithTag(setupTimeTestTag(500)).performClick()
         compose.onNodeWithTag(SETUP_SKILL_TAG).performClick()
@@ -154,6 +161,35 @@ class PlayScreenTest {
         compose.onNodeWithTag(VS_RESIGN_TAG).performClick()
         status().assertTextEquals("Vous avez abandonné : Stockfish gagne")
         compose.onNodeWithTag(ANALYSIS_SWITCH_TAG).assertExists()
+    }
+
+    /** S2-5: send the game to the background analysis, follow its progress, cancel it. */
+    @Test
+    fun backgroundAnalysisPanel() {
+        shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>())
+            .grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        val queue = FakeQueue()
+        compose.setContent {
+            ChessTheme {
+                PlayScreen(
+                    PlayViewModel(SavedStateHandle(), FakeDocuments(), FakeAnalyzer(), FakeOpponent(), queue),
+                )
+            }
+        }
+        tap("e2", "e4")
+        compose.onNodeWithTag(QUEUE_ANALYSE_TAG).performClick()
+        compose.waitForIdle()
+        assertEquals(1, queue.enqueued.size)
+
+        queue.latest.value =
+            AnalysisJob("job-1", queue.enqueued.single(), AnalysisJobState.RUNNING, done = 1, total = 2)
+        compose.onNodeWithTag(QUEUE_STATUS_TAG).assertTextEquals("Analyse de la partie : 1/2")
+        compose.onNodeWithTag(QUEUE_CANCEL_TAG).performClick()
+        compose.waitForIdle()
+        assertEquals(1, queue.cancelled)
+
+        queue.latest.value = AnalysisJob("job-1", queue.enqueued.single(), AnalysisJobState.DONE, done = 2, total = 2)
+        compose.onNodeWithTag(QUEUE_STATUS_TAG).assertTextEquals("Partie analysée (2 positions)")
     }
 }
 

@@ -32,6 +32,7 @@ android {
 dependencies {
     implementation(project(":core:chess"))
     implementation(project(":core:engine"))
+    implementation(project(":core:data"))
     implementation(project(":core:ui"))
 
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -45,6 +46,12 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
+
+    // Background analysis queue (S2-5).
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 }
 
 dependencies {
@@ -57,6 +64,7 @@ dependencies {
     testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

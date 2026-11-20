@@ -2,6 +2,7 @@ package com.chesscompanion.feature.play
 
 import com.chesscompanion.core.chess.Fen
 import com.chesscompanion.core.chess.Move
+import com.chesscompanion.core.data.StoredAnalysis
 import com.chesscompanion.core.engine.EngineEvent
 import com.chesscompanion.core.engine.EngineInfo
 import com.chesscompanion.core.engine.Score
@@ -70,6 +71,45 @@ class AnalysisControllerTest {
             assertTrue(seen.size < 10, "expected a few updates, got ${seen.size}")
             assertEquals(200, controller.state.value.depth)
             assertTrue(controller.state.value.finished)
+        }
+
+    @Test
+    fun `a stored line is shown before the search and kept while the search is shallower`() =
+        runTest {
+            val stored =
+                StoredAnalysis(
+                    Fen.START,
+                    18,
+                    scoreCp = 31,
+                    mateIn = null,
+                    bestMove = "e2e4",
+                    pv = listOf("e2e4", "e7e5"),
+                )
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val scope = CoroutineScope(dispatcher + Job()).also { scopes += it }
+            val controller =
+                AnalysisController(FakeAnalyzer(), scope, 150, dispatcher) {
+                    stored.takeIf { _ ->
+                        it ==
+                            start
+                    }
+                }
+            controller.setEnabled(true)
+            controller.show(start, over = false)
+            runCurrent()
+            assertEquals(18, controller.state.value.depth)
+            advanceUntilIdle()
+            // The fake search reaches depth 5 only: the stored depth 18 line stays as the best one.
+            assertEquals(
+                18,
+                controller.state.value.best!!
+                    .depth,
+            )
+            assertEquals(
+                listOf("e4", "e5"),
+                controller.state.value.best!!
+                    .moves,
+            )
         }
 
     @Test
