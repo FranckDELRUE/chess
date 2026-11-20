@@ -60,6 +60,29 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun version2DataSurvivesAndTheExplorerCacheExists() {
+        val path = ApplicationProvider.getApplicationContext<Context>().getDatabasePath("migration-test-3").path
+        helper.createDatabase(path, 2).apply {
+            execSQL(
+                "INSERT INTO repertoire (id, name, side, startFen, createdAt, updatedAt) " +
+                    "VALUES ('r', 'Scotch', 'WHITE', 'startpos', 1, 2)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(path, 3, true, Migrations.V2_TO_V3)
+
+        db.query("SELECT name FROM repertoire WHERE id = 'r'").use {
+            it.moveToFirst()
+            assertEquals("Scotch", it.getString(0))
+        }
+        db.query("SELECT COUNT(*) FROM explorer_position").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

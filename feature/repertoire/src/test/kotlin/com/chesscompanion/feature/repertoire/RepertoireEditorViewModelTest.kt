@@ -36,6 +36,9 @@ class RepertoireEditorViewModelTest {
 
     private val store = FakeRepertoireStore()
     private val studies = FakeStudyFetcher()
+    private val explorer = FakeExplorer()
+    private val tokens = FakeTokens()
+    private val engine = FakeEngine()
 
     private fun sq(name: String) = Square.parse(name)!!
 
@@ -55,6 +58,9 @@ class RepertoireEditorViewModelTest {
             SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)),
             store,
             studies,
+            explorer,
+            tokens,
+            scheduler(engine),
         ).also {
             it.saveDelayMs =
                 0

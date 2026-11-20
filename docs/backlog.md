@@ -85,3 +85,7 @@ Idées hors sprint, à trier en planification. Ne jamais les ajouter au sprint e
 
 ## Issu de S7-5
 - Import PGN : détecter l'encodage (Latin-1) des fichiers anciens ; `save` incrémental du répertoire si l'import de milliers de parties devient lent (4,5 s pour 9262 coups sur la tablette).
+
+## Issu de S7-7
+- Écran de réglages : le jeton Lichess se saisit aujourd'hui dans le panneau Explorateur ; le déplacer dans des réglages quand il en existera un.
+- Explorateur : mémoriser le niveau choisi, afficher les parties les plus jouées / l'ouverture nommée, évaluer chaque coup proposé (MultiPV) et ajouter un réglage de durée de l'évaluation (2 s fixes).

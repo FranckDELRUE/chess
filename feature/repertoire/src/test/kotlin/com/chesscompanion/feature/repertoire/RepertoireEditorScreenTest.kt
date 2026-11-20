@@ -46,11 +46,17 @@ class RepertoireEditorScreenTest {
         compose.setContent {
             ChessTheme {
                 RepertoireEditorScreen(
-                    RepertoireEditorViewModel(SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)), store, studies)
-                        .also {
-                            it.saveDelayMs = 0
-                            it.importDispatcher = Dispatchers.Main
-                        },
+                    RepertoireEditorViewModel(
+                        SavedStateHandle(mapOf(REPERTOIRE_ID_ARG to id)),
+                        store,
+                        studies,
+                        FakeExplorer(),
+                        FakeTokens(),
+                        scheduler(),
+                    ).also {
+                        it.saveDelayMs = 0
+                        it.importDispatcher = Dispatchers.Main
+                    },
                 )
             }
         }

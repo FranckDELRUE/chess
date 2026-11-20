@@ -79,6 +79,16 @@ sealed interface EditorAction {
         val uci: String,
     ) : EditorAction
 
+    /** Plays [uci] from the position shown: follows it if the repertoire has it, adds it otherwise. */
+    data class PlayUci(
+        val uci: String,
+    ) : EditorAction
+
+    /** An action of the explorer panel (level, token). */
+    data class Explorer(
+        val action: ExplorerAction,
+    ) : EditorAction
+
     data object Flip : EditorAction
 
     data object ToggleAnnotate : EditorAction
