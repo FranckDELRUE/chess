@@ -343,6 +343,8 @@ Critères d'acceptation : suite de tests perft validée sur les positions de ré
 
 ### S2 — Moteur Stockfish
 
+Détaillé story par story dans `docs/sprints/current.md`.
+
 - [ ] Intégrer Stockfish via le NDK derrière l'interface `ChessEngine` (protocole UCI).
 - [ ] Barre d'évaluation et 3 meilleures lignes en analyse libre.
 - [ ] Adversaire Stockfish réglable (niveau, limite d'ELO, temps par coup).
