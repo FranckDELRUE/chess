@@ -298,7 +298,7 @@ Le mode « Jouer le livre » ajoute **Book** (titre, auteur, notation utilisée)
 
 ## 6. Plan de sprints
 
-Quatorze sprints de deux semaines (environ sept mois en solo avec Claude Code) livrent un premier professeur jouable dès le sprint 4, puis l'enrichissent module par module. Chaque sprint se termine par une démo sur appareil réel.
+Quatorze sprints de deux semaines (environ sept mois en solo avec Claude Code) livrent le répertoire et l'entraînement d'ouvertures juste après le moteur, puis un premier professeur jouable, enrichi ensuite module par module. Chaque sprint se termine par une démo sur appareil réel.
 
 | Sprint | Objectif | Modules | Livrable démontrable |
 | --- | --- | --- | --- |
@@ -310,12 +310,14 @@ Quatorze sprints de deux semaines (environ sept mois en solo avec Claude Code) l
 | S5 | Puzzles | M2 | Puzzles par thème avec classement Glicko-2, professeur intégré |
 | S6 | Revue de parties | M5 | Parties Lichess/Chess.com importées, analysées et commentées |
 | S7 | Répertoire | M3 | Arbre d'ouvertures, import PGN, explorateur |
-| S8 | Entraînement d'ouvertures | M4 | Drill en répétition espacée, professeur sur les déviations |
+| S8 | Entraînement d'ouvertures | M4 | Drill en répétition espacée, retour factuel sur les déviations |
 | S9 | Station PC et IA locale | serveur PC, core:compute | Tablette appairée au PC, analyses et LLM déportés |
 | S10 | Livres : import photo et cours jouables | M3, M4 | Livre photographié transformé en cours jouable |
 | S11 | Professeur v2 et finales | M6, M7 | Explications par LLM local, questions libres, parcours de finales |
 | S12 | Progression, plan adaptatif, Maia personnel | M8, M9 | Tableau de bord, séance du jour, bot qui joue comme toi |
 | S13 | Finitions et version 1.0 | tous | Version stable sur la tablette |
+
+**Ordre d'exécution** (ADR 0011, depuis le 2026-11-20) : S0, S1, S2, **S7, S8**, S3, S4, S5, S6, S9, S10, S11, S12, S13. Les numéros désignent le contenu d'un sprint, pas son rang. Trois éléments ont changé de sprint pour suivre leurs dépendances : la partie d'entraînement contre Maia (S8 → S3), l'explication des déviations par le professeur (S8 → S4) et le lien entre la revue et le répertoire (S7 → S6).
 
 ### S0 — Fondations
 
@@ -359,6 +361,7 @@ Critères d'acceptation : analyse à profondeur 18 d'une position en moins de 5 
 - [ ] Pendules (rapide, blitz, personnalisée), abandon, nulle, revanche.
 - [ ] Enregistrement automatique des parties jouées dans la base.
 - [ ] Choix du palier au premier lancement (ELO saisi ou « je ne sais pas »).
+- [ ] Partie d'entraînement : Maia joue ton répertoire puis continue hors théorie (venue de S8, ADR 0011).
 
 Critères d'acceptation : sur 20 parties tests, le bot 1100 commet nettement plus d'erreurs que le bot 1900 ; la partie se reprend après fermeture de l'app.
 
@@ -372,6 +375,7 @@ Critères d'acceptation : sur 20 parties tests, le bot 1100 commet nettement plu
 - [ ] Reprise de coup proposée après une erreur ou une gaffe.
 - [ ] Réglage de l'intensité (silencieux, ponctuel, bavard).
 - [ ] Bilan de fin de partie en trois points et enregistrement des faits dans WeaknessStat.
+- [ ] Explication par le professeur des déviations dans l'entraînement d'ouvertures (venue de S8, ADR 0011).
 
 Critères d'acceptation : sur un corpus de 100 positions annotées à la main, le motif principal est correctement identifié dans au moins 85 % des cas ; le retour après un coup s'affiche en moins de 1 s ; le professeur ne propose jamais un coup absent de l'analyse moteur.
 
@@ -391,6 +395,7 @@ Critères d'acceptation : le classement converge après environ 50 puzzles ; les
 - [ ] Écran de revue : courbe d'évaluation, sauts vers les erreurs, meilleur coup, commentaire du professeur.
 - [ ] Génération de puzzles personnels à partir des gaffes et erreurs.
 - [ ] Bibliothèque de parties avec filtres (ouverture, résultat, cadence, adversaire).
+- [ ] Liaison avec le répertoire : « tu es sorti de ton répertoire au coup 8 » (venue de S7, ADR 0011).
 
 Critères d'acceptation : 200 parties importées et analysées sans intervention ; chaque gaffe produit un puzzle jouable.
 
@@ -399,18 +404,20 @@ Critères d'acceptation : 200 parties importées et analysées sans intervention
 - [ ] Créer des répertoires Blancs et Noirs, ajouter des lignes en jouant sur l'échiquier.
 - [ ] Commentaires, flèches, source (livre, chapitre, page) sur chaque nœud.
 - [ ] Import PGN et étude Lichess, fusion de variantes sans doublons (transpositions détectées par FEN).
-- [ ] Explorateur : statistiques de la base Lichess filtrées par niveau, évaluation moteur.
-- [ ] Liaison avec la revue : « tu es sorti de ton répertoire au coup 8 ».
+- [ ] Explorateur : statistiques de la base Lichess filtrées par niveau, évaluation moteur (statistiques mises en cache, l'import PGN et l'arbre restent hors ligne).
+
+Exécuté juste après S2 (ADR 0011). La liaison avec la revue passe en S6.
 
 Critères d'acceptation : import d'un PGN de 500 variantes sans perte ; les transpositions pointent vers le même nœud.
 
 ### S8 — Entraînement d'ouvertures
 
 - [ ] Implémenter FSRS dans `:core:srs` avec tests.
-- [ ] Modes apprentissage, drill et déviation.
+- [ ] Modes apprentissage, drill et déviation ; retour factuel sur une déviation (coup attendu, coup joué, ligne du répertoire, évaluation Stockfish).
 - [ ] File de révisions quotidienne, notifications optionnelles.
-- [ ] Partie d'entraînement : Maia joue ton répertoire puis continue hors théorie.
 - [ ] Détection des trous du répertoire (réponses fréquentes non couvertes).
+
+Exécuté juste après S7 (ADR 0011). La partie d'entraînement contre Maia passe en S3, l'explication des déviations par le professeur en S4.
 
 Critères d'acceptation : une ligne ratée revient le lendemain, une ligne réussie trois fois s'espace de plusieurs jours.
 
