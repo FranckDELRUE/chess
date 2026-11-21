@@ -4,6 +4,7 @@ import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.repertoire.PositionId
 import com.chesscompanion.core.chess.repertoire.Repertoire
 import com.chesscompanion.core.chess.repertoire.RepertoireEdge
+import com.chesscompanion.core.chess.repertoire.signature
 import kotlinx.coroutines.delay
 
 /**
@@ -25,12 +26,16 @@ data class RepertoireGap(
 /**
  * What a scan found. [scanned] positions were looked up out of [available] opponent positions of the repertoire;
  * [problem] is why the scan stopped early (no token, offline, rate limit...), null if it went through.
+ * [signature] are the starting moves of the opening (S8b-5) and [ignored] the opponent positions left out of the scan
+ * because a reply there would leave it.
  */
 data class GapReport(
     val gaps: List<RepertoireGap>,
     val scanned: Int,
     val available: Int,
     val problem: ExplorerProblem?,
+    val signature: List<RepertoireEdge> = emptyList(),
+    val ignored: Int = 0,
 ) {
     /** More positions exist than were scanned (the limit was reached). */
     val truncated: Boolean get() = problem == null && scanned < available
@@ -47,12 +52,23 @@ data class GapSettings(
     val maxPositions: Int = DEFAULT_MAX_POSITIONS,
     /** Pause after each answer that came from the network, in milliseconds (none for one from the cache). */
     val pauseMs: Long = DEFAULT_PAUSE_MS,
+    /** Plies (both sides) added when a gap is completed; a line always ends on the player's move. */
+    val completionPlies: Int = DEFAULT_COMPLETION_PLIES,
+    /** A move is followed when it was played in at least this many games. */
+    val completionMinGames: Long = DEFAULT_COMPLETION_MIN_GAMES,
+    /**
+     * Also scan the positions where a reply would leave the opening (1...c5 in a Scotch repertoire). Off by default:
+     * those replies belong to another opening (S8b-5).
+     */
+    val includeOffOpening: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_MIN_PERCENT = 5
         const val DEFAULT_MIN_GAMES = 100L
         const val DEFAULT_MAX_POSITIONS = 40
         const val DEFAULT_PAUSE_MS = 300L
+        const val DEFAULT_COMPLETION_PLIES = 12
+        const val DEFAULT_COMPLETION_MIN_GAMES = 50L
     }
 }
 
@@ -71,7 +87,9 @@ class GapFinder(
         settings: GapSettings = GapSettings(),
         onProgress: (Int, Int) -> Unit = { _, _ -> },
     ): GapReport {
-        val targets = opponentPositions(repertoire)
+        val signature = repertoire.signature()
+        val all = opponentPositions(repertoire)
+        val targets = if (settings.includeOffOpening) all else all.filter { (id, _) -> signature.covers(id) }
         val toScan = targets.take(settings.maxPositions)
         val gaps = mutableListOf<RepertoireGap>()
         var scanned = 0
@@ -88,7 +106,14 @@ class GapFinder(
             scanned++
             onProgress(scanned, toScan.size)
         }
-        return GapReport(gaps.sortedByDescending { it.games }, scanned, targets.size, problem)
+        return GapReport(
+            gaps = gaps.sortedByDescending { it.games },
+            scanned = scanned,
+            available = targets.size,
+            problem = problem,
+            signature = signature.edges,
+            ignored = all.size - targets.size,
+        )
     }
 
     private suspend fun lookup(

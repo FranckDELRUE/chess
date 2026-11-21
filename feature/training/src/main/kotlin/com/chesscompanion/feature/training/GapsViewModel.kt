@@ -5,12 +5,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chesscompanion.core.chess.PieceLetters
 import com.chesscompanion.core.chess.repertoire.Repertoire
+import com.chesscompanion.core.chess.repertoire.signature
 import com.chesscompanion.core.chess.toSan
 import com.chesscompanion.core.data.RepertoireStore
 import com.chesscompanion.core.data.explorer.ExplorerProblem
 import com.chesscompanion.core.data.explorer.GapFinder
 import com.chesscompanion.core.data.explorer.GapReport
 import com.chesscompanion.core.data.explorer.GapSettings
+import com.chesscompanion.core.data.explorer.LineCompleter
+import com.chesscompanion.core.data.explorer.RepertoireGap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +34,13 @@ data class GapRow(
     val moveSan: String,
     val games: Long,
     val percent: Int,
+    /** The line is being completed (the explorer is asked move after move). */
+    val adding: Boolean = false,
+    /** The line was added to the repertoire (by a tap on the row): [addedMoves] moves, both sides. */
+    val added: Boolean = false,
+    val addedMoves: Int = 0,
+    /** Why the continuation stopped early (no token, offline...); the gap move itself was added anyway. */
+    val addProblem: ExplorerProblem? = null,
 )
 
 data class GapsUiState(
@@ -45,12 +55,26 @@ data class GapsUiState(
     val truncated: Boolean = false,
     /** Why the scan stopped early (no token, offline...), if it did. */
     val problem: ExplorerProblem? = null,
+    /** The starting moves of the opening (S8b-5), e.g. `1. e4 e5 2. Cf3 Cc6 3. d4`; empty if there are none. */
+    val signature: String = "",
+    /** Positions left out of the last scan because a reply there leaves the opening. */
+    val ignored: Int = 0,
+    /** The scan also looks at the replies that leave the opening (off by default). */
+    val includeOffOpening: Boolean = false,
 )
 
 sealed interface GapsAction {
     data object Scan : GapsAction
 
     data object Cancel : GapsAction
+
+    /** Switches between the replies of the opening only and all the replies, for the next scan. */
+    data object ToggleOffOpening : GapsAction
+
+    /** Adds the missing move of the row [index] to the repertoire and completes the line after it. */
+    data class Add(
+        val index: Int,
+    ) : GapsAction
 }
 
 /**
@@ -65,6 +89,7 @@ class GapsViewModel
         savedState: SavedStateHandle,
         private val repertoires: RepertoireStore,
         private val finder: GapFinder,
+        private val completer: LineCompleter,
     ) : ViewModel() {
         private val id: String = savedState.get<String>(GAPS_REPERTOIRE_ID_ARG).orEmpty()
         private val _state = MutableStateFlow(GapsUiState())
@@ -72,6 +97,7 @@ class GapsViewModel
 
         private var repertoire: Repertoire? = null
         private var job: Job? = null
+        private var found: List<RepertoireGap> = emptyList()
 
         /** Thresholds of the scan; tests remove the pause between network requests. */
         internal var settings = GapSettings()
@@ -83,7 +109,12 @@ class GapsViewModel
                     _state.value = GapsUiState(status = GapsStatus.NOT_FOUND)
                 } else {
                     repertoire = stored.repertoire
-                    _state.value = GapsUiState(status = GapsStatus.IDLE, name = stored.name)
+                    _state.value =
+                        GapsUiState(
+                            status = GapsStatus.IDLE,
+                            name = stored.name,
+                            signature = lineText(stored.repertoire, stored.repertoire.signature().edges),
+                        )
                 }
             }
         }
@@ -92,6 +123,8 @@ class GapsViewModel
             when (action) {
                 GapsAction.Scan -> scan()
                 GapsAction.Cancel -> cancel()
+                GapsAction.ToggleOffOpening -> toggleOffOpening()
+                is GapsAction.Add -> add(action.index)
             }
         }
 
@@ -113,8 +146,52 @@ class GapsViewModel
                         finder.find(graph, settings) { done, total ->
                             _state.update { it.copy(done = done, total = total) }
                         }
+                    found = report.gaps
                     _state.update { it.copy(status = GapsStatus.DONE).withReport(report, graph) }
                 }
+        }
+
+        /**
+         * Adds the opponent's missing move to the repertoire, then the most played moves of both sides after it (the
+         * player's answer and the rest of the line, from the Lichess explorer), every move checked by the rules engine,
+         * and saves. Without the explorer only the gap move is added and the row says why.
+         */
+        private fun add(index: Int) {
+            if (!canAdd(index)) return
+            val gap = found.getOrNull(index) ?: return
+            val graph = repertoire ?: return
+            updateRow(index) { it.copy(adding = true) }
+            viewModelScope.launch {
+                val completed = completer.complete(graph, gap.position, gap.move, settings)
+                repertoire = completed.repertoire
+                repertoires.save(id, completed.repertoire)
+                updateRow(index) {
+                    it.copy(
+                        adding = false,
+                        added = true,
+                        addedMoves = completed.addedMoves,
+                        addProblem = completed.problem,
+                    )
+                }
+            }
+        }
+
+        /** The row exists, is not added yet and no other line is being completed (saves go one at a time). */
+        private fun canAdd(index: Int): Boolean {
+            val rows = _state.value.gaps
+            return rows.getOrNull(index)?.added == false && rows.none { it.adding }
+        }
+
+        private fun updateRow(
+            index: Int,
+            change: (GapRow) -> GapRow,
+        ) = _state.update { state ->
+            state.copy(gaps = state.gaps.mapIndexed { i, row -> if (i == index) change(row) else row })
+        }
+
+        private fun toggleOffOpening() {
+            settings = settings.copy(includeOffOpening = !settings.includeOffOpening)
+            _state.update { it.copy(includeOffOpening = settings.includeOffOpening) }
         }
 
         private fun cancel() {
@@ -142,4 +219,5 @@ private fun GapsUiState.withReport(
         available = report.available,
         truncated = report.truncated,
         problem = report.problem,
+        ignored = report.ignored,
     )

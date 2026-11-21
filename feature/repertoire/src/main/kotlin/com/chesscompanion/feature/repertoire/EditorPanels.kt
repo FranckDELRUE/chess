@@ -76,6 +76,7 @@ internal fun EditorPanel(
             NavigationRow(state, onAction)
             Continuations(state, onAction)
             MarksBar(state, onAction)
+            InsightFields(state, onAction)
             CommentField(state, onAction)
             SourceFields(state, onAction)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

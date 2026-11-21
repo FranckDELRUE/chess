@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Knight, kept inside the 66 dp safe zone of an adaptive icon. -->
+    <path
+        android:fillColor="#F3E9D2"
+        android:pathData="M40,76 C40,68 43,62 49,56 C43,56 37,52 34,46 L31,44 C30,42 31,40 33,38 L41,28 L41,22 L47,26 L51,24 C63,24 73,34 73,50 L73,76 Z" />
+    <path
+        android:fillColor="#C9A227"
+        android:pathData="M36,76 L77,76 L77,82 L36,82 Z" />
+    <path
+        android:fillColor="#1F2A44"
+        android:pathData="M52,36 m-2.2,0 a2.2,2.2 0 1,0 4.4,0 a2.2,2.2 0 1,0 -4.4,0" />
+</vector>

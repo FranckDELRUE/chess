@@ -1,4 +1,4 @@
-# Sprint S3 — Adversaires humains
+# Sprint S3 — Adversaires humains (après S8b)
 
 **Statut** : à planifier. Le plan détaillé des stories sera proposé puis validé avant tout code.
 
@@ -9,7 +9,7 @@
 **Critères d'acceptation du sprint** : sur 20 parties tests, le bot 1100 commet nettement plus d'erreurs que le bot 1900 ;
 la partie se reprend après fermeture de l'app.
 
-Sprint précédent : `docs/sprints/s8.md` (archive et rétrospective). Ordre d'exécution : ADR 0011 (S7, S8, puis S3).
+Sprints précédents : `docs/sprints/s8.md` et `docs/sprints/s8b.md` (archives et rétrospectives). Ordre d'exécution : ADR 0011 (S7, S8, puis S3).
 
 ---
 
@@ -21,7 +21,7 @@ Sprint précédent : `docs/sprints/s8.md` (archive et rétrospective). Ordre d'e
 - Choix du palier au premier lancement (ELO saisi ou « je ne sais pas »).
 - Partie d'entraînement : Maia joue ton répertoire puis continue hors théorie (venue de S8, ADR 0011).
 
-## Point de départ hérité de S8
-- `:core:srs` (FSRS, file quotidienne, `DrillSession`, `LineWalk`) et `:feature:training` ; base Room en version 4.
+## Point de départ hérité de S8 et S8b
+- `:core:srs` (FSRS, file quotidienne, `DrillSession`, `LineWalk`) et `:feature:training` ; base Room en version 5.
 - Le graphe `Repertoire` et `LineWalk` permettent de jouer un répertoire jusqu'à la sortie de théorie.
 - Dette et ajustements : voir la rétrospective de `docs/sprints/s8.md`.

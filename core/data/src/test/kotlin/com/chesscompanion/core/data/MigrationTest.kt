@@ -109,6 +109,32 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun version4NotesSurviveAndGetEmptyIdeaPlanAndTrap() {
+        val path = ApplicationProvider.getApplicationContext<Context>().getDatabasePath("migration-test-5").path
+        helper.createDatabase(path, 4).apply {
+            execSQL(
+                "INSERT INTO repertoire (id, name, side, startFen, createdAt, updatedAt) " +
+                    "VALUES ('r', 'Scotch', 'WHITE', 'startpos', 1, 2)",
+            )
+            execSQL(
+                "INSERT INTO repertoire_node (repertoireId, `key`, fen, positionFen, comment, arrows, squares) " +
+                    "VALUES ('r', 1, 'f', 'p', 'Mon commentaire', '', '')",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(path, 5, true, Migrations.V4_TO_V5)
+
+        db.query("SELECT comment, idea, plan, trap FROM repertoire_node WHERE repertoireId = 'r'").use {
+            it.moveToFirst()
+            assertEquals("Mon commentaire", it.getString(0))
+            assertEquals("", it.getString(1))
+            assertEquals("", it.getString(2))
+            assertEquals("", it.getString(3))
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

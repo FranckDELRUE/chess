@@ -80,6 +80,7 @@ internal data class EditorModel(
             is EditorAction.PickAnnotationColor -> copy(annotating = true, color = action.color)
             EditorAction.ClearAnnotations -> withNotes(notes.copy(arrows = emptyList(), squares = emptyList()))
             is EditorAction.EditComment -> withNotes(notes.copy(comment = action.text))
+            is EditorAction.EditInsight -> withNotes(notes.withInsight(action.field, action.text))
             is EditorAction.EditSource -> editSource(action)
             EditorAction.AskDelete -> if (trail.isEmpty()) this else copy(confirmDelete = true)
             EditorAction.ConfirmDelete -> deleteLastMove()

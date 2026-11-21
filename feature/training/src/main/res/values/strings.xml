@@ -39,6 +39,12 @@
     <string name="drill_left">Encore disponibles aujourd’hui : %1$d à réviser, %2$d nouvelles.</string>
     <string name="gaps_title">Trous du répertoire : %1$s</string>
     <string name="gaps_explanation">Cherche les coups fréquents de l’adversaire (base Lichess, niveau Club) auxquels ton répertoire ne répond pas. Les positions déjà consultées marchent hors ligne ; les autres demandent un jeton Lichess et du réseau.</string>
+    <string name="gaps_signature">Ouverture : %1$s</string>
+    <string name="gaps_off_opening">Inclure aussi les réponses qui sortent de l’ouverture</string>
+    <plurals name="gaps_ignored">
+        <item quantity="one">%1$d position hors ouverture ignorée (une réponse y mènerait à une autre ouverture).</item>
+        <item quantity="other">%1$d positions hors ouverture ignorées (une réponse y mènerait à une autre ouverture).</item>
+    </plurals>
     <string name="gaps_scan">Chercher les trous</string>
     <string name="gaps_rescan">Chercher à nouveau</string>
     <string name="gaps_cancel">Annuler</string>
@@ -47,6 +53,13 @@
     <string name="gaps_truncated">%1$d positions examinées sur %2$d, les plus proches du début.</string>
     <string name="gaps_missing">Pas de réponse à %1$s</string>
     <string name="gaps_frequency">%1$d %% des parties, %2$s parties</string>
+    <string name="gaps_tap_to_add">Appuie pour ajouter ce coup et compléter la ligne (coups les plus joués des deux camps).</string>
+    <string name="gaps_adding">Ajout en cours : recherche de la suite de la ligne…</string>
+    <plurals name="gaps_added">
+        <item quantity="one">Ajouté au répertoire : %1$d coup.</item>
+        <item quantity="other">Ajouté au répertoire : %1$d coups, la suite de la ligne comprise.</item>
+    </plurals>
+    <string name="gaps_added_incomplete">La ligne s’arrête là : %1$s Complète-la dans l’éditeur.</string>
     <string name="gaps_problem_no_token">Un jeton Lichess est nécessaire pour consulter de nouvelles positions (à saisir dans le panneau Explorateur de l’éditeur).</string>
     <string name="gaps_problem_bad_token">Le jeton Lichess est refusé. Vérifie-le dans le panneau Explorateur.</string>
     <string name="gaps_problem_rate_limited">Lichess demande de ralentir. Réessaie dans une minute.</string>
@@ -60,4 +73,23 @@
         <item quantity="one">%1$d position à réviser aujourd’hui.</item>
         <item quantity="other">%1$d positions à réviser aujourd’hui.</item>
     </plurals>
+    <string name="learn_title">Apprendre : %1$s</string>
+    <string name="learn_empty">Ce répertoire n’a pas encore de coup à apprendre : ajoute-y des lignes dans l’éditeur.</string>
+    <string name="learn_progress">Position %1$d sur %2$d · %3$d apprises</string>
+    <string name="learn_prompt">À toi : joue le coup du répertoire (flèches vertes) pour l’apprendre : %1$s</string>
+    <string name="learn_learned_now">Appris : %1$s. Cette position reviendra demain dans tes révisions.</string>
+    <string name="learn_already">Déjà appris : %1$s. Tu peux la rejouer pour t’entraîner.</string>
+    <string name="learn_facts_title">Pourquoi ce coup ? Les faits</string>
+    <string name="learn_fact_evaluation">Évaluation de Stockfish : %1$s</string>
+    <string name="learn_stats">Base Lichess (niveau Club) : %1$d %% des parties, %2$s parties. Résultats : Blancs %3$d %%, nulles %4$d %%, Noirs %5$d %%.</string>
+    <string name="learn_stats_never">Base Lichess (niveau Club) : ce coup n’y est presque jamais joué.</string>
+    <string name="learn_stats_pending">Statistiques Lichess : chargement…</string>
+    <string name="learn_stats_unavailable">Statistiques Lichess indisponibles. %1$s</string>
+    <string name="learn_idea">Idée</string>
+    <string name="learn_plan">Plan</string>
+    <string name="learn_trap">Piège</string>
+    <string name="learn_facts_note">Évaluation du point de vue des Blancs ; statistiques de la base Lichess. Les explications en phrases viendront de tes notes.</string>
+    <string name="learn_previous">Précédent</string>
+    <string name="learn_next">Suivant</string>
+    <string name="learn_quit">Quitter la leçon</string>
 </resources>

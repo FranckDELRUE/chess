@@ -3,7 +3,6 @@ package com.chesscompanion.core.srs
 import com.chesscompanion.core.chess.Move
 import com.chesscompanion.core.chess.repertoire.PositionId
 import com.chesscompanion.core.chess.repertoire.RepertoireEdge
-import java.time.Duration
 import java.time.Instant
 
 /** How the played move compares with the repertoire. */
@@ -123,7 +122,7 @@ class DrillSession(
         val edge =
             entry.item.expected.firstOrNull { it.move == played } ?: return LearnResult.NotTheMove(entry.item.expected)
         pending.removeFirst()
-        val card = fsrs.review(FsrsCard(), Rating.Good, now).copy(due = now.plus(Duration.ofDays(1)))
+        val card = learnedCard(now, fsrs)
         return LearnResult.Learned(entry.item, edge, card)
     }
 }

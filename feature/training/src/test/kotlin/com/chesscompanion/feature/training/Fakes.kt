@@ -34,8 +34,11 @@ fun repertoireOf(
 class FakeRepertoireStore(
     private val id: String,
     private val name: String,
-    private val repertoire: Repertoire,
+    private var repertoire: Repertoire,
 ) : RepertoireStore {
+    /** Repertoires written by [save], oldest first. */
+    val saved = mutableListOf<Repertoire>()
+
     override fun repertoires(): Flow<List<RepertoireSummary>> = emptyFlow()
 
     override suspend fun create(
@@ -50,7 +53,10 @@ class FakeRepertoireStore(
     override suspend fun save(
         id: String,
         repertoire: Repertoire,
-    ) = error("the drill never edits a repertoire")
+    ) {
+        this.repertoire = repertoire
+        saved += repertoire
+    }
 
     override suspend fun rename(
         id: String,

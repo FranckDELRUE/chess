@@ -114,6 +114,9 @@ class RoomRepertoireStore(
                 sourceBook = notes.source?.book,
                 sourceChapter = notes.source?.chapter,
                 sourcePage = notes.source?.page,
+                idea = notes.idea,
+                plan = notes.plan,
+                trap = notes.trap,
             )
         }
 
@@ -123,6 +126,9 @@ class RoomRepertoireStore(
             arrows = RepertoireCodec.readArrows(arrows),
             squares = RepertoireCodec.readSquares(squares),
             source = sourceBook?.let { Source(it, sourceChapter, sourcePage) },
+            idea = idea,
+            plan = plan,
+            trap = trap,
         )
 
     private fun sideOf(name: String): Side = Side.entries.first { it.name == name }

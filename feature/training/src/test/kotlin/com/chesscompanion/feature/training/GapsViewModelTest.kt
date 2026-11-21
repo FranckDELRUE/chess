@@ -2,6 +2,7 @@ package com.chesscompanion.feature.training
 
 import androidx.lifecycle.SavedStateHandle
 import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.repertoire.Repertoire
 import com.chesscompanion.core.data.explorer.ExplorerLevel
 import com.chesscompanion.core.data.explorer.ExplorerLookup
 import com.chesscompanion.core.data.explorer.ExplorerMove
@@ -9,6 +10,7 @@ import com.chesscompanion.core.data.explorer.ExplorerOutcome
 import com.chesscompanion.core.data.explorer.ExplorerProblem
 import com.chesscompanion.core.data.explorer.ExplorerStats
 import com.chesscompanion.core.data.explorer.GapFinder
+import com.chesscompanion.core.data.explorer.LineCompleter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -16,6 +18,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -46,14 +49,22 @@ class GapsViewModelTest {
             fromCache = true,
         )
 
+    private val store = FakeRepertoireStore("r", "Ma Queen", repertoire)
+
+    /**
+     * The tests of S8-6 and S8b-1 look at replies right after the first moves of a one-line repertoire, which the
+     * opening signature (S8b-5) would leave out: they switch the replies that leave the opening on, as a player can.
+     */
     private fun gaps(
         outcome: ExplorerOutcome,
         id: String = "r",
+        graph: Repertoire? = null,
     ) = GapsViewModel(
         SavedStateHandle(mapOf(GAPS_REPERTOIRE_ID_ARG to id)),
-        FakeRepertoireStore("r", "Ma Queen", repertoire),
+        graph?.let { FakeRepertoireStore("r", "Écossaise", it) } ?: store,
         GapFinder(FakeExplorer(outcome)),
-    )
+        LineCompleter(FakeExplorer(outcome)),
+    ).also { if (graph == null) it.onAction(GapsAction.ToggleOffOpening) }
 
     @Test
     fun anUnknownRepertoireIsNotFound() {
@@ -98,5 +109,79 @@ class GapsViewModelTest {
         assertEquals(GapsStatus.DONE, vm.state.value.status)
         assertEquals(ExplorerProblem.OFFLINE, vm.state.value.problem)
         assertEquals(0, vm.state.value.scanned)
+    }
+
+    @Test
+    fun tappingAGapAddsItsMoveToTheRepertoireAndSavesIt() {
+        val vm = gaps(stats("d7d5" to 6_000, "g8f6" to 4_000))
+        vm.onAction(GapsAction.Scan)
+        assertFalse(
+            vm.state.value.gaps
+                .single()
+                .added,
+        )
+
+        vm.onAction(GapsAction.Add(0))
+        assertTrue(
+            vm.state.value.gaps
+                .single()
+                .added,
+        )
+        val saved = store.saved.single()
+        assertEquals(repertoire.edgeCount + 1, saved.edgeCount)
+        assertTrue(saved.allMoves.any { it.move.uci == "g8f6" })
+    }
+
+    @Test
+    fun aGapIsOnlyAddedOnce() {
+        val vm = gaps(stats("d7d5" to 6_000, "g8f6" to 4_000))
+        vm.onAction(GapsAction.Scan)
+        vm.onAction(GapsAction.Add(0))
+        vm.onAction(GapsAction.Add(0))
+        assertEquals(1, store.saved.size)
+    }
+
+    @Test
+    fun anUnknownRowAddsNothing() {
+        val vm = gaps(stats("d7d5" to 6_000, "g8f6" to 4_000))
+        vm.onAction(GapsAction.Scan)
+        vm.onAction(GapsAction.Add(5))
+        assertTrue(store.saved.isEmpty())
+    }
+
+    // S8b-5: the starting moves of the opening (here 1. e4 e5 2. Cf3 Cc6 3. d4) decide which replies are gaps.
+    private val scotch =
+        repertoireOf(
+            Side.WHITE,
+            "1. e4 e5 2. Nf3 Nc6 3. d4 exd4 *",
+            "1. e4 e5 2. Nf3 Nc6 3. d4 d6 *",
+        )
+
+    @Test
+    fun theOpeningSignatureIsShownBeforeTheScan() {
+        val state = gaps(stats(), graph = scotch).state.value
+        assertEquals("1. e4 e5 2. Cf3 Cc6 3. d4", state.signature)
+        assertFalse(state.includeOffOpening)
+    }
+
+    @Test
+    fun repliesThatLeaveTheOpeningAreLeftOutByDefault() {
+        val vm = gaps(stats("a7a6" to 5_000), graph = scotch)
+        vm.onAction(GapsAction.Scan)
+        val state = vm.state.value
+        assertEquals(listOf("1. e4 e5 2. Cf3 Cc6 3. d4"), state.gaps.map { it.line })
+        assertEquals(1, state.scanned)
+        assertEquals(2, state.ignored)
+    }
+
+    @Test
+    fun theSwitchBringsBackTheRepliesThatLeaveTheOpening() {
+        val vm = gaps(stats("a7a6" to 5_000), graph = scotch)
+        vm.onAction(GapsAction.ToggleOffOpening)
+        vm.onAction(GapsAction.Scan)
+        val state = vm.state.value
+        assertTrue(state.includeOffOpening)
+        assertEquals(3, state.gaps.size)
+        assertEquals(0, state.ignored)
     }
 }

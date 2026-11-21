@@ -211,6 +211,26 @@ class RepertoireEditorViewModelTest {
     }
 
     @Test
+    fun `the idea, plan and trap are written on the position and saved`() {
+        val vm = editor()
+        vm.tap("e2", "e4")
+        vm.onAction(EditorAction.EditInsight(InsightField.IDEA, "Prendre le centre"))
+        vm.onAction(EditorAction.EditInsight(InsightField.PLAN, "Développer"))
+        vm.onAction(EditorAction.EditInsight(InsightField.TRAP, "Attention à ...d5"))
+        assertEquals("Prendre le centre", vm.ui.idea)
+        vm.onAction(EditorAction.ToStart)
+        assertEquals("", vm.ui.idea)
+        vm.onAction(EditorAction.Follow("e2e4"))
+        assertEquals("Développer", vm.ui.plan)
+        val saved = store.repertoireOf("r1")
+        val notes = saved.notes(saved.movesFrom(saved.root).single().to)
+        assertEquals(
+            Triple("Prendre le centre", "Développer", "Attention à ...d5"),
+            Triple(notes.idea, notes.plan, notes.trap),
+        )
+    }
+
+    @Test
     fun `a comment is written on the position and saved`() {
         val vm = editor()
         vm.tap("e2", "e4")

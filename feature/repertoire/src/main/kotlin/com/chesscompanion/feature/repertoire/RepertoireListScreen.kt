@@ -54,6 +54,7 @@ data class RepertoireRowActions(
     val onDrill: ((String) -> Unit)? = null,
     val onGaps: ((String) -> Unit)? = null,
     val onExport: ((String) -> Unit)? = null,
+    val onLearn: ((String) -> Unit)? = null,
 )
 
 /**
@@ -65,6 +66,7 @@ fun RepertoireListScreen(
     onOpen: ((String) -> Unit)? = null,
     onDrill: ((String) -> Unit)? = null,
     onGaps: ((String) -> Unit)? = null,
+    onLearn: ((String) -> Unit)? = null,
     viewModel: RepertoireListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -85,6 +87,7 @@ fun RepertoireListScreen(
             onOpen,
             onDrill,
             onGaps,
+            onLearn = onLearn,
             onExport = { id ->
                 exported = null
                 exporting = id
@@ -181,6 +184,7 @@ private fun RepertoireRow(
 ) {
     val (onOpen, onDrill, onGaps) = actions
     val onExport = actions.onExport
+    val onLearn = actions.onLearn
     val rowModifier = Modifier.fillMaxWidth().testTag(repertoireRowTag(item.id))
     val content: @Composable () -> Unit = {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -190,6 +194,12 @@ private fun RepertoireRow(
                     stringResource(R.string.repertoire_summary, sideLabel(item.side), moveCountLabel(item.moveCount)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+            if (onLearn != null && item.moveCount > 0) {
+                Button(
+                    onClick = { onLearn(item.id) },
+                    modifier = Modifier.testTag(repertoireLearnTag(item.id)),
+                ) { Text(stringResource(R.string.repertoire_learn)) }
             }
             if (onDrill != null && item.moveCount > 0) {
                 Button(

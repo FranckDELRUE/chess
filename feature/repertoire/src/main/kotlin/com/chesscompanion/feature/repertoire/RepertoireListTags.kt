@@ -10,6 +10,8 @@ fun repertoireDeleteTag(id: String) = "repertoire-delete-$id"
 
 fun repertoireDrillTag(id: String) = "repertoire-drill-$id"
 
+fun repertoireLearnTag(id: String) = "repertoire-learn-$id"
+
 fun repertoireGapsTag(id: String) = "repertoire-gaps-$id"
 
 fun repertoireExportTag(id: String) = "repertoire-export-$id"

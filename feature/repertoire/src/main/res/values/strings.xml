@@ -10,6 +10,7 @@
     <string name="repertoire_export">Exporter</string>
     <string name="repertoire_exported">Répertoire exporté en PGN.</string>
     <string name="repertoire_export_failed">L’export a échoué : le fichier n’a pas pu être écrit.</string>
+    <string name="repertoire_learn">Apprendre</string>
     <string name="repertoire_gaps">Trous</string>
     <string name="repertoire_rename">Renommer</string>
     <string name="repertoire_delete">Supprimer</string>
@@ -38,6 +39,9 @@
     <string name="editor_annotate">Annoter</string>
     <string name="editor_color">Couleur %1$s</string>
     <string name="editor_clear_marks">Effacer les marques</string>
+    <string name="editor_idea">Idée du coup (à quoi il sert)</string>
+    <string name="editor_plan">Plan (que faire ensuite)</string>
+    <string name="editor_trap">Piège (à quoi faire attention)</string>
     <string name="editor_comment">Commentaire</string>
     <string name="editor_source">Source</string>
     <string name="editor_source_book">Livre</string>
