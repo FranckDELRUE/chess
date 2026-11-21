@@ -2,6 +2,7 @@ package com.chesscompanion.feature.training
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,9 +14,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -33,6 +36,9 @@ const val GAPS_PROGRESS_TAG = "gaps-progress"
 const val GAPS_PROBLEM_TAG = "gaps-problem"
 const val GAPS_NONE_TAG = "gaps-none"
 const val GAPS_TRUNCATED_TAG = "gaps-truncated"
+const val GAPS_SIGNATURE_TAG = "gaps-signature"
+const val GAPS_OFF_OPENING_TAG = "gaps-off-opening"
+const val GAPS_IGNORED_TAG = "gaps-ignored"
 
 fun gapAddedTag(index: Int) = "gaps-added-$index"
 
@@ -71,6 +77,7 @@ private fun GapsBody(
     ) {
         Text(stringResource(R.string.gaps_title, state.name), style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(R.string.gaps_explanation), style = MaterialTheme.typography.bodyMedium)
+        OpeningSection(state, onAction)
         if (state.status == GapsStatus.SCANNING) {
             Text(
                 stringResource(R.string.gaps_progress, state.done, state.total),
@@ -88,12 +95,38 @@ private fun GapsBody(
     }
 }
 
+/** The starting moves that define the opening, and the switch to also look at the replies that leave it. */
+@Composable
+private fun OpeningSection(
+    state: GapsUiState,
+    onAction: (GapsAction) -> Unit,
+) {
+    if (state.signature.isNotEmpty()) {
+        Text(stringResource(R.string.gaps_signature, state.signature), Modifier.testTag(GAPS_SIGNATURE_TAG))
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Switch(
+            checked = state.includeOffOpening,
+            onCheckedChange = { onAction(GapsAction.ToggleOffOpening) },
+            modifier = Modifier.testTag(GAPS_OFF_OPENING_TAG),
+        )
+        Text(stringResource(R.string.gaps_off_opening), Modifier.weight(1f))
+    }
+}
+
 @Composable
 private fun GapsResult(
     state: GapsUiState,
     onAction: (GapsAction) -> Unit,
 ) {
     state.problem?.let { Text(stringResource(problemText(it)), Modifier.testTag(GAPS_PROBLEM_TAG)) }
+    if (state.ignored > 0) {
+        Text(
+            pluralStringResource(R.plurals.gaps_ignored, state.ignored, state.ignored),
+            Modifier.testTag(GAPS_IGNORED_TAG),
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
     if (state.gaps.isEmpty() && state.problem == null) {
         Text(stringResource(R.string.gaps_none, state.scanned), Modifier.testTag(GAPS_NONE_TAG))
     }

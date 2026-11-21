@@ -2,6 +2,7 @@ package com.chesscompanion.feature.training
 
 import androidx.lifecycle.SavedStateHandle
 import com.chesscompanion.core.chess.Side
+import com.chesscompanion.core.chess.repertoire.Repertoire
 import com.chesscompanion.core.data.explorer.ExplorerLevel
 import com.chesscompanion.core.data.explorer.ExplorerLookup
 import com.chesscompanion.core.data.explorer.ExplorerMove
@@ -50,15 +51,20 @@ class GapsViewModelTest {
 
     private val store = FakeRepertoireStore("r", "Ma Queen", repertoire)
 
+    /**
+     * The tests of S8-6 and S8b-1 look at replies right after the first moves of a one-line repertoire, which the
+     * opening signature (S8b-5) would leave out: they switch the replies that leave the opening on, as a player can.
+     */
     private fun gaps(
         outcome: ExplorerOutcome,
         id: String = "r",
+        graph: Repertoire? = null,
     ) = GapsViewModel(
         SavedStateHandle(mapOf(GAPS_REPERTOIRE_ID_ARG to id)),
-        store,
+        graph?.let { FakeRepertoireStore("r", "Écossaise", it) } ?: store,
         GapFinder(FakeExplorer(outcome)),
         LineCompleter(FakeExplorer(outcome)),
-    )
+    ).also { if (graph == null) it.onAction(GapsAction.ToggleOffOpening) }
 
     @Test
     fun anUnknownRepertoireIsNotFound() {
@@ -141,5 +147,41 @@ class GapsViewModelTest {
         vm.onAction(GapsAction.Scan)
         vm.onAction(GapsAction.Add(5))
         assertTrue(store.saved.isEmpty())
+    }
+
+    // S8b-5: the starting moves of the opening (here 1. e4 e5 2. Cf3 Cc6 3. d4) decide which replies are gaps.
+    private val scotch =
+        repertoireOf(
+            Side.WHITE,
+            "1. e4 e5 2. Nf3 Nc6 3. d4 exd4 *",
+            "1. e4 e5 2. Nf3 Nc6 3. d4 d6 *",
+        )
+
+    @Test
+    fun theOpeningSignatureIsShownBeforeTheScan() {
+        val state = gaps(stats(), graph = scotch).state.value
+        assertEquals("1. e4 e5 2. Cf3 Cc6 3. d4", state.signature)
+        assertFalse(state.includeOffOpening)
+    }
+
+    @Test
+    fun repliesThatLeaveTheOpeningAreLeftOutByDefault() {
+        val vm = gaps(stats("a7a6" to 5_000), graph = scotch)
+        vm.onAction(GapsAction.Scan)
+        val state = vm.state.value
+        assertEquals(listOf("1. e4 e5 2. Cf3 Cc6 3. d4"), state.gaps.map { it.line })
+        assertEquals(1, state.scanned)
+        assertEquals(2, state.ignored)
+    }
+
+    @Test
+    fun theSwitchBringsBackTheRepliesThatLeaveTheOpening() {
+        val vm = gaps(stats("a7a6" to 5_000), graph = scotch)
+        vm.onAction(GapsAction.ToggleOffOpening)
+        vm.onAction(GapsAction.Scan)
+        val state = vm.state.value
+        assertTrue(state.includeOffOpening)
+        assertEquals(3, state.gaps.size)
+        assertEquals(0, state.ignored)
     }
 }

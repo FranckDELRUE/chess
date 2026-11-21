@@ -39,6 +39,12 @@
     <string name="drill_left">Encore disponibles aujourd’hui : %1$d à réviser, %2$d nouvelles.</string>
     <string name="gaps_title">Trous du répertoire : %1$s</string>
     <string name="gaps_explanation">Cherche les coups fréquents de l’adversaire (base Lichess, niveau Club) auxquels ton répertoire ne répond pas. Les positions déjà consultées marchent hors ligne ; les autres demandent un jeton Lichess et du réseau.</string>
+    <string name="gaps_signature">Ouverture : %1$s</string>
+    <string name="gaps_off_opening">Inclure aussi les réponses qui sortent de l’ouverture</string>
+    <plurals name="gaps_ignored">
+        <item quantity="one">%1$d position hors ouverture ignorée (une réponse y mènerait à une autre ouverture).</item>
+        <item quantity="other">%1$d positions hors ouverture ignorées (une réponse y mènerait à une autre ouverture).</item>
+    </plurals>
     <string name="gaps_scan">Chercher les trous</string>
     <string name="gaps_rescan">Chercher à nouveau</string>
     <string name="gaps_cancel">Annuler</string>

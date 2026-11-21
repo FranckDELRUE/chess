@@ -47,7 +47,11 @@ class GapFinderTest {
             fromCache = true,
         )
 
-    private val settings = GapSettings(pauseMs = 0)
+    // The tests of S8-6 look at gaps right after the first moves: those count here, as in the S8-6 behaviour.
+    private val settings = GapSettings(pauseMs = 0, includeOffOpening = true)
+
+    // S8b-5: the default scan stays inside the opening.
+    private val strict = GapSettings(pauseMs = 0)
 
     /** A position about which the explorer knows almost nothing: no gap there. */
     private val quiet = stats("a7a6" to 1)
@@ -174,5 +178,62 @@ class GapFinderTest {
             assertEquals(0, report.available)
             assertTrue(report.gaps.isEmpty())
             assertNull(report.problem)
+        }
+
+    // Scotch: the signature is 1. e4 e5 2. Nf3 Nc6 3. d4, where Black's replies branch.
+    private val scotch =
+        repertoire(
+            Side.WHITE,
+            "1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 *",
+            "1. e4 e5 2. Nf3 Nc6 3. d4 d6 4. dxe5 *",
+        )
+    private val afterE4 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b"
+    private val afterNf3 = "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b"
+    private val afterD4InScotch = "r1bqkbnr/pppp1ppp/2n5/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b"
+
+    private fun scotchExplorer() =
+        FakeExplorer(
+            mapOf(
+                afterE4 to stats("c7c5" to 5_000),
+                afterNf3 to stats("g8f6" to 5_000),
+                afterD4InScotch to stats("e5d4" to 5_000, "d7d6" to 3_000, "g8f6" to 2_000),
+            ),
+            quiet,
+        )
+
+    @Test
+    fun repliesThatLeaveTheOpeningAreNotScanned() =
+        runTest {
+            val explorer = scotchExplorer()
+            val report = GapFinder(explorer).find(scotch, strict)
+
+            assertEquals(listOf("g8f6"), report.gaps.map { it.move.uci })
+            val asked = explorer.asked.map { it.split(' ').take(2).joinToString(" ") }
+            assertFalse(afterE4 in asked || afterNf3 in asked)
+            assertEquals(afterD4InScotch, asked.first())
+            assertEquals(3, report.scanned)
+            assertEquals(2, report.ignored)
+            assertEquals(listOf("e4", "e5", "Nf3", "Nc6", "d4"), report.signature.map { it.san })
+        }
+
+    @Test
+    fun theOldBehaviourCanBeAskedFor() =
+        runTest {
+            val report = GapFinder(scotchExplorer()).find(scotch, strict.copy(includeOffOpening = true))
+
+            assertEquals(setOf("c7c5", "g8f6"), report.gaps.map { it.move.uci }.toSet())
+            assertEquals(5, report.scanned)
+            assertEquals(0, report.ignored)
+        }
+
+    @Test
+    fun theScanBudgetIsNotSpentOutsideTheOpening() =
+        runTest {
+            val report = GapFinder(scotchExplorer()).find(scotch, strict.copy(maxPositions = 1))
+
+            // One position only is looked up: the nearest one of the opening, not 1...c5 or 2...Nf6.
+            assertEquals(listOf("g8f6"), report.gaps.map { it.move.uci })
+            assertEquals(1, report.scanned)
+            assertEquals(3, report.available)
         }
 }

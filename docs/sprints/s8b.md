@@ -86,3 +86,28 @@ Aucun défaut relevé. La démo a appris une vraie position du répertoire de la
 | Les coups ajoutés à un trou sont les plus joués, pas les meilleurs ; pas d'aperçu avant ajout | S8b-1 | selon l'usage |
 | Leçon : pas de saut direct vers une ligne ni de filtre « non apprises » | S8b-2 | selon l'usage |
 
+
+## S8b-5 · Les trous restent dans l'ouverture (ajoutée après la clôture, demande du joueur)
+
+**Besoin** : les coups de départ qualifient une ouverture (1. e4 e5 2. Cf3 Cc6 3. d4 = Écossaise) ; les trous de
+l'écran « Trous » ne doivent pas en sortir (1…c5 est une Sicilienne, 2…Cf6 une Pétrov).
+
+- [x] `OpeningSignature` (`:core:chess`) : à partir de la racine, on suit le coup qui porte l'ouverture, c'est-à-dire
+  l'unique coup d'une position ou celui qui mène à au moins 75 % des positions situées sous les coups de cette position
+  (une branche isolée comme 1…c5 n'arrête pas la marche), jusqu'au premier vrai embranchement. Mesuré sur le répertoire
+  de la tablette : 1.e4 (218 positions) → e5 205 / c5 12 ; Cf3 200 / d4 4 ; après 3.d4 : exd4 76, f6 49, Cf6 23… donc
+  la signature s'arrête après 3.d4. Une première règle « un seul coup par position » donnait seulement 1.e4 et a été
+  abandonnée sur ces données.
+- [x] `GapFinder` ignore les positions qui ne suivent pas la signature (`GapReport.signature`, `GapReport.ignored`),
+  donc le budget de 40 positions n'est plus consommé hors de l'ouverture. Réglage `GapSettings.includeOffOpening`
+  (désactivé par défaut) pour retrouver l'ancien comportement.
+- [x] `LineCompleter` inchangé : la ligne ajoutée part d'un trou qui suit déjà la signature, elle reste donc dans
+  l'ouverture.
+- [x] Écran « Trous » : « Ouverture : 1. e4 e5 2. Cf3 Cc6 3. d4 », interrupteur « Inclure aussi les réponses qui sortent
+  de l'ouverture », « n positions hors ouverture ignorées ».
+- [x] Tests : `OpeningSignatureTest` (7), `GapFinderTest` (+3), `GapsViewModelTest` (+3). Vu sur la tablette
+  (`s8b-demo/05-trous-signature.png`) : signature correcte, 10 positions hors ouverture ignorées, plus aucun trou 1…c5 ni
+  2…Cf6.
+- *Notes* : seuil de 75 % choisi sur un seul répertoire ; la signature est recalculée à chaque ouverture de l'écran
+  (pas mémorisée, pas modifiable à la main). Un répertoire à une seule ligne a pour signature toute la ligne.
+  La complétion garde les coups les plus joués (pas de filtre sur le schéma de pions).

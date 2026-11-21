@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chesscompanion.core.chess.PieceLetters
 import com.chesscompanion.core.chess.repertoire.Repertoire
+import com.chesscompanion.core.chess.repertoire.signature
 import com.chesscompanion.core.chess.toSan
 import com.chesscompanion.core.data.RepertoireStore
 import com.chesscompanion.core.data.explorer.ExplorerProblem
@@ -54,12 +55,21 @@ data class GapsUiState(
     val truncated: Boolean = false,
     /** Why the scan stopped early (no token, offline...), if it did. */
     val problem: ExplorerProblem? = null,
+    /** The starting moves of the opening (S8b-5), e.g. `1. e4 e5 2. Cf3 Cc6 3. d4`; empty if there are none. */
+    val signature: String = "",
+    /** Positions left out of the last scan because a reply there leaves the opening. */
+    val ignored: Int = 0,
+    /** The scan also looks at the replies that leave the opening (off by default). */
+    val includeOffOpening: Boolean = false,
 )
 
 sealed interface GapsAction {
     data object Scan : GapsAction
 
     data object Cancel : GapsAction
+
+    /** Switches between the replies of the opening only and all the replies, for the next scan. */
+    data object ToggleOffOpening : GapsAction
 
     /** Adds the missing move of the row [index] to the repertoire and completes the line after it. */
     data class Add(
@@ -99,7 +109,12 @@ class GapsViewModel
                     _state.value = GapsUiState(status = GapsStatus.NOT_FOUND)
                 } else {
                     repertoire = stored.repertoire
-                    _state.value = GapsUiState(status = GapsStatus.IDLE, name = stored.name)
+                    _state.value =
+                        GapsUiState(
+                            status = GapsStatus.IDLE,
+                            name = stored.name,
+                            signature = lineText(stored.repertoire, stored.repertoire.signature().edges),
+                        )
                 }
             }
         }
@@ -108,6 +123,7 @@ class GapsViewModel
             when (action) {
                 GapsAction.Scan -> scan()
                 GapsAction.Cancel -> cancel()
+                GapsAction.ToggleOffOpening -> toggleOffOpening()
                 is GapsAction.Add -> add(action.index)
             }
         }
@@ -173,6 +189,11 @@ class GapsViewModel
             state.copy(gaps = state.gaps.mapIndexed { i, row -> if (i == index) change(row) else row })
         }
 
+        private fun toggleOffOpening() {
+            settings = settings.copy(includeOffOpening = !settings.includeOffOpening)
+            _state.update { it.copy(includeOffOpening = settings.includeOffOpening) }
+        }
+
         private fun cancel() {
             job?.cancel()
             _state.update { it.copy(status = GapsStatus.IDLE) }
@@ -198,4 +219,5 @@ private fun GapsUiState.withReport(
         available = report.available,
         truncated = report.truncated,
         problem = report.problem,
+        ignored = report.ignored,
     )
